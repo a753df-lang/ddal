@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="커피트럭 포스">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3003/3003984.png">
+  <title>커피트럭 포스</title>
+  <style>
+    /* 아이패드 미니2 호환을 위한 CSS 완벽 수정 (gap 속성 제거, margin 대체) */
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; }
+    html, body { height: 100%; overflow: hidden; display: flex; flex-direction: column; transition: background-color 0.2s; }
+    
+    header { height: 64px; min-height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 2px solid rgba(0,0,0,0.1); }
+    .tab-side-btn { height: 48px; padding: 0 20px; border-radius: 8px; font-weight: 900; font-size: 17px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 6px rgba(0,0,0,0.15); transition: transform 0.1s; }
+    .tab-side-btn:active { transform: scale(0.96); }
+    
+    .header-center-box { display: flex; align-items: center; }
+    .header-event-text { font-size: 16px; font-weight: 900; color: #0288d1; cursor: pointer; margin-right: 16px; } /* gap 대신 margin 적용 */
+    .header-center-clock { font-size: 18px; font-weight: 900; letter-spacing: 0.5px; }
+    
+    .header-right-group { display: flex; align-items: center; }
+    .btn-action-top { height: 48px; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 8px; } /* gap 대신 margin 적용 */
+    .btn-action-top:active { transform: scale(0.96); }
+
+    body.theme-reg { background-color: #ffffff; color: #222; }
+    body.theme-reg header { background-color: #f8f9fa; border-color: #e0e0e0; }
+    body.theme-reg .header-center-clock { color: #1b5e20; }
+    body.theme-reg #btnTabReg { background-color: #2e7d32; color: #fff; border-color: #1b5e20; }
+    body.theme-reg #btnTabCoup { background-color: #e9ecef; color: #666; }
+    body.theme-reg .menu-panel { background-color: #f1f3f5; }
+    body.theme-reg .cart-panel { background-color: #ffffff; border-left: 2px solid #dee2e6; }
+    body.theme-reg .cart-nav-header { background-color: #e9ecef; border-bottom: 1px solid #ced4da; }
+    body.theme-reg .cart-bottom { background-color: #f8f9fa; border-top: 2px solid #dee2e6; }
+    body.theme-reg .item-row { border-bottom: 1px dashed #dee2e6; color: #212529; }
+    body.theme-reg .btn-opt-theme { background: #495057; color: #fff; }
+
+    body.theme-coup { background-color: #1e1e1e; color: #f1f1f1; }
+    body.theme-coup header { background-color: #121212; border-color: #333; }
+    body.theme-coup .header-center-clock { color: #ffb74d; }
+    body.theme-coup #btnTabReg { background-color: #2c2c2c; color: #888; }
+    body.theme-coup #btnTabCoup { background-color: #ff9800; color: #fff; border-color: #f57c00; }
+    body.theme-coup .menu-panel { background-color: #181818; }
+    body.theme-coup .cart-panel { background-color: #242424; border-left: 2px solid #333; }
+    body.theme-coup .cart-nav-header { background-color: #2c2c2c; border-bottom: 1px solid #3d3d3d; }
+    body.theme-coup .cart-bottom { background-color: #1c1c1c; border-top: 2px solid #333; }
+    body.theme-coup .item-row { border-bottom: 1px dashed #444; color: #f1f1f1; }
+    body.theme-coup .row { color: #bbb; }
+    body.theme-coup .btn-opt-theme { background: #e65100; color: #fff; }
+
+    .container { display: flex; flex: 1; height: calc(100% - 64px); overflow: hidden; }
+    .menu-panel { flex: 70; padding: 12px; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; font-weight: bold; }
+    .badge-board-name { background: rgba(0,0,0,0.1); padding: 4px 10px; border-radius: 4px; }
+    body.theme-coup .badge-board-name { background: rgba(255,255,255,0.1); }
+
+    /* 그리드 간격은 지원하므로 유지 */
+    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding-bottom: 30px; }
+    .btn-item { width: 100%; aspect-ratio: 1 / 1; border: none; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; position: relative; text-align: center; padding: 6px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); background-size: cover; background-position: center; overflow: hidden; }
+    .btn-item:active { transform: scale(0.96); }
+    .btn-square { border-radius: 12px; }
+    .btn-circle { border-radius: 50%; }
+    .m-title { font-size: clamp(14px, 1.6vw, 18px); font-weight: 900; line-height: 1.25; margin-bottom: 4px; }
+    .m-price { font-size: clamp(12px, 1.3vw, 15px); opacity: 0.95; }
+    .badge { position: absolute; top: 6px; right: 6px; background: #d32f2f; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; z-index: 3; }
+    .edit-tag { position: absolute; top: 6px; left: 6px; background: #ffd43b; color: #000; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 3px; z-index: 3; }
+
+    .cart-panel { flex: 30; min-width: 300px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+    .cart-nav-header { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+    .nav-arrow-btn { background: #495057; color: #fff; border: none; border-radius: 6px; padding: 7px 12px; font-weight: bold; font-size: 14px; cursor: pointer; }
+    .nav-arrow-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .status-text { font-size: 15px; font-weight: bold; }
+    .btn-new-order { background: #00897b; color: #fff; border: none; border-radius: 6px; padding: 7px 10px; font-size: 13px; font-weight: bold; cursor: pointer; margin-left: 6px; }
+
+    .cart-list { flex: 1; overflow-y: auto; padding: 8px 12px; }
+    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; font-size: 16px; }
+    .item-title { font-weight: bold; font-size: 16px; }
+    .item-sub { font-size: 13px; margin-top: 3px; }
+    .qty-controls { display: flex; align-items: center; }
+    .btn-qty { width: 32px; height: 32px; background: #adb5bd; color:#fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 18px; line-height: 1; margin: 0 6px; }
+    .qty-text { min-width: 24px; text-align: center; font-weight: bold; font-size: 17px; }
+    .btn-row-del { border: none; background: none; color: #fa5252; font-size: 20px; font-weight: bold; cursor: pointer; padding: 0 4px; margin-left: 6px; }
+
+    .cart-bottom { padding: 12px 14px; }
+    .row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 5px; }
+    .row.total { font-size: 22px; font-weight: bold; color: #2e7d32; border-top: 1px solid #ccc; padding-top: 8px; margin-top: 4px; }
+    body.theme-coup .row.total { color: #ff9800; border-color: #444; }
+    
+    .action-grid { display: flex; justify-content: space-between; margin-top: 8px; }
+    .btn-action { width: 48%; height: 50px; border: none; border-radius: 6px; font-size: 17px; font-weight: bold; cursor: pointer; }
+    .btn-card { background: #1971c2; color: #fff; }
+    .btn-cash { background: #2f9e44; color: #fff; }
+    .btn-checkout-coupon { width: 100%; height: 52px; background: #ff9800; color: #fff; border: none; border-radius: 6px; font-size: 19px; font-weight: bold; cursor: pointer; }
+
+    /* 모달 공통 */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-box { background: #fff; color: #222; border-radius: 14px; padding: 22px; box-shadow: 0 8px 28px rgba(0,0,0,0.5); max-height: 94vh; overflow-y: auto; }
+
+    .opt-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+    .opt-card-title { font-size: 16px; font-weight: 900; margin-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; }
+    .board-select-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #ced4da; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
+    .form-group input, .form-group select { width: 100%; height: 42px; border: 1px solid #ccc; border-radius: 6px; padding: 0 10px; font-size: 15px; }
+
+    /* 슬러시 모달 */
+    .slush-box { width: 94%; max-width: 680px; padding: 26px; }
+    .slush-grid { display: flex; justify-content: space-between; margin: 20px 0; }
+    .btn-slush-card { width: 31%; height: 160px; border: none; border-radius: 14px; color: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; box-shadow: 0 6px 14px rgba(0,0,0,0.25); }
+    .btn-slush-card:active { transform: scale(0.97); }
+    .slush-orange { background-color: #ff9800; }
+    .slush-grape { background-color: #7b1fa2; }
+    .slush-mix { background: linear-gradient(135deg, #ff9800 50%, #7b1fa2 50%); }
+    .slush-badge-count { position: absolute; top: 8px; right: 8px; background: #fff; color: #d32f2f; font-size: 20px; font-weight: 900; padding: 3px 12px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .btn-slush-minus { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.7); width: 36px; height: 36px; border-radius: 50%; font-size: 22px; font-weight: 900; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 5; }
+    .btn-slush-minus:active { background: #d32f2f; }
+
+    /* 현금 모달 */
+    .cash-box-lg { width: 94%; max-width: 580px; padding: 26px; }
+    .cash-display-box { background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; padding: 16px; margin-bottom: 14px; text-align: center; }
+    .cash-suggest-grid { display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 16px; }
+    .btn-suggest { width: 48%; height: 60px; background: #e7f5ff; border: 2px solid #74c0fc; color: #1864ab; border-radius: 8px; font-weight: 900; font-size: 19px; cursor: pointer; margin-bottom: 8px; }
+    .cash-add-grid { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .btn-add-cash { width: 23%; height: 52px; background: #f1f3f5; border: 1px solid #ced4da; border-radius: 8px; font-weight: 900; font-size: 16px; cursor: pointer; color: #333; }
+  </style>
+</head>
+<body class="theme-reg">
+
+  <header>
+    <button id="btnTabReg" class="tab-side-btn" onclick="setMode('REG')">일반 판매 (카드/현금)</button>
+    <div class="header-center-box">
+      <div class="header-event-text" onclick="changeEventName()">행사명: <span id="lblHeaderEventName">미지정</span></div>
+      <div class="header-center-clock" id="liveClock">2026. 10. 04 (일) 00:00:00</div>
+    </div>
+    <div class="header-right-group">
+      <button id="btnTabCoup" class="tab-side-btn" onclick="setMode('COUP')">★ 쿠폰 판매</button>
+      <button class="btn-action-top" style="background:#5c7cfa; color:#fff;" onclick="openPastEventsModal()">📅 과거 내역</button>
+      <button class="btn-action-top btn-opt-theme" onclick="openModeOptionModal()">⚙ 옵션</button>
+      <button class="btn-action-top" style="background:#1b5e20; color:#fff;" id="btnReceiptTop" onclick="showReceipt()">🧾 일반 매출 마감</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="menu-panel">
+      <div class="current-board-info">
+        <span>현재 메뉴판: <span class="badge-board-name" id="lblCurrentBoardName">기본 음료</span></span>
+        <span id="editModeNotice" style="display:none; color:#ffd43b; font-weight:900;">✏ 메뉴 수정 모드 (메뉴 누르면 변경)</span>
+      </div>
+      <div class="grid-container" id="mGrid"></div>
+    </div>
+
+    <div class="cart-panel">
+      <div class="cart-nav-header">
+        <button class="nav-arrow-btn" id="btnPrevOrder" onclick="navigateOrder(-1)">◀ 이전</button>
+        <div class="status-text" id="orderStatusTitle">신규 주문</div>
+        <div style="display:flex; align-items:center;">
+          <button class="nav-arrow-btn" id="btnNextOrder" onclick="navigateOrder(1)" disabled>다음 ▶</button>
+          <button class="btn-new-order" onclick="resetToNewOrder()">새 주문</button>
+        </div>
+      </div>
+      <div class="cart-list" id="cList"></div>
+      <div class="cart-bottom">
+        <div class="row"><span>일반 결제액:</span><b id="vDirect">0원</b></div>
+        <div class="row"><span>쿠폰 회수:</span><b id="vCoup">0장</b></div>
+        <div class="row" style="color:#e65100;"><span>사후 청구차액:</span><b id="vExtra">+0원</b></div>
+        <div class="row total"><span>받을 금액:</span><span id="vTotal">0원</span></div>
+        <div id="paymentBtnArea" style="margin-top: 8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 슬러시 모달 -->
+  <div class="modal-overlay" id="slushModal">
+    <div class="modal-box slush-box" style="text-align:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="font-size:24px; font-weight:900;">🍧 슬러시 맛 선택 (터치: +1잔 / [-] 터치: 1잔 취소)</h2>
+        <button style="background:#fa5252; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="resetSlushCounts()">전체 초기화</button>
+      </div>
+      <div class="slush-grid">
+        <div class="btn-slush-card slush-orange" onclick="clickSlushFlavor('오렌지')"><div class="btn-slush-minus" id="minusSlush_오렌지" onclick="event.stopPropagation(); minusSlushFlavor('오렌지')">-</div><span class="slush-badge-count" id="badgeSlush_오렌지" style="display:none;">0잔</span><div style="font-size:32px;">🍊</div><div style="font-size:26px; font-weight:900; margin-top:6px;">오렌지</div></div>
+        <div class="btn-slush-card slush-grape" onclick="clickSlushFlavor('포도')"><div class="btn-slush-minus" id="minusSlush_포도" onclick="event.stopPropagation(); minusSlushFlavor('포도')">-</div><span class="slush-badge-count" id="badgeSlush_포도" style="display:none;">0잔</span><div style="font-size:32px;">🍇</div><div style="font-size:26px; font-weight:900; margin-top:6px;">포도</div></div>
+        <div class="btn-slush-card slush-mix" onclick="clickSlushFlavor('혼합')"><div class="btn-slush-minus" id="minusSlush_혼합" onclick="event.stopPropagation(); minusSlushFlavor('혼합')">-</div><span class="slush-badge-count" id="badgeSlush_혼합" style="display:none;">0잔</span><div style="font-size:32px;">🌓</div><div style="font-size:26px; font-weight:900; margin-top:6px;">혼합(반반)</div></div>
+      </div>
+      <div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:12px; font-size:18px; font-weight:bold; margin-bottom:16px;">
+        선택 합계: <span style="color:#d32f2f;" id="lblSlushTotalSummary">0잔 선택됨</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <button id="btnCompleteSlush" style="width:65%; height:58px; background:#2e7d32; color:#fff; border:none; border-radius:10px; font-weight:900; font-size:22px; cursor:pointer;" onclick="finishSlushSelection()">선택 완료 (전표에 담기)</button>
+        <button style="width:32%; height:58px; background:#868e96; color:#fff; border:none; border-radius:10px; font-weight:bold; font-size:18px; cursor:pointer;" onclick="closeSlushModal()">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 옵션 모달 -->
+  <div class="modal-overlay" id="modeOptModal">
+    <div class="modal-box" style="width:92%; max-width:500px;">
+      <h3 style="font-size:20px; font-weight:900; margin-bottom:14px;" id="modalOptTitle">⚙ 옵션 설정</h3>
+      <div class="opt-card" id="optCouponSection" style="display:none;">
+        <div class="opt-card-title">🎟 이번 행사 쿠폰 기준금액</div>
+        <div style="display:flex;"><input type="number" id="inpBaseCouponPrice" style="flex:1; height:42px; border:1px solid #ccc; border-radius:6px; padding:0 10px; font-size:16px; font-weight:bold; margin-right:8px;"><button style="height:42px; padding:0 16px; background:#e65100; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="saveBaseCouponPrice()">적용</button></div>
+      </div>
+      <div class="opt-card">
+        <div class="opt-card-title"><span>📋 메뉴판 맞바꾸기</span><button style="background:#2e7d32; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="addNewMenuBoard()">+ 새 메뉴판</button></div>
+        <div id="boardSwapList"></div>
+      </div>
+      <div class="opt-card">
+        <div class="opt-card-title">✏ 메뉴 추가 및 수정</div>
+        <div style="display:flex; justify-content:space-between; margin-top:10px;">
+          <button style="width:48%; height:44px; background:#0288d1; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:15px; cursor:pointer;" onclick="addNewMenuItem()">+ 새 메뉴 추가</button>
+          <button id="btnToggleEditInModal" style="width:48%; height:44px; background:#ffd43b; color:#000; border:none; border-radius:6px; font-weight:bold; font-size:15px; cursor:pointer;" onclick="toggleEditModeFromModal()">✏ 기존 메뉴 수정 켜기</button>
+        </div>
+      </div>
+      <button style="width:100%; height:46px; background:#495057; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer; margin-top:6px;" onclick="closeModeOptionModal()">닫기</button>
+    </div>
+  </div>
+
+  <!-- 메뉴 추가/수정 폼 -->
+  <div class="modal-overlay" id="menuEditModal">
+    <div class="modal-box" style="width:90%; max-width:440px;">
+      <h3 style="margin-bottom:14px;" id="menuEditModalTitle">메뉴 옵션 수정</h3>
+      <input type="hidden" id="editMenuIdx">
+      <div class="form-group"><label>메뉴 이름</label><input type="text" id="editMName" placeholder="예: 1.아메리카노(ice)"></div>
+      <div class="form-group"><label>판매 가격 (원)</label><input type="number" id="editMPrice" placeholder="예: 4000"></div>
+      <div class="form-group"><label>버튼 모양</label><select id="editMShape"><option value="square">사각형 버튼</option><option value="circle">원형 버튼</option></select></div>
+      <div class="form-group"><label>버튼 색상</label><select id="editMColor"><option value="#0288d1">파랑</option><option value="#d32f2f">빨강</option><option value="#689f38">초록</option><option value="#fbc02d">노랑</option><option value="#e91e63">분홍</option><option value="#f57c00">주황</option><option value="#7b1fa2">보라</option><option value="#455a64">회색</option></select></div>
+      <div class="form-group"><label>사진 등록</label><input type="file" id="editMFile" accept="image/*" onchange="handleImageFile(event)"></div>
+      <div class="form-group" style="display:flex; align-items:center;"><input type="checkbox" id="editMIsSlush" style="width:20px; height:20px; margin-right:8px;"><label for="editMIsSlush" style="margin:0; font-size:14px; cursor:pointer;">슬러시 메뉴 지정 (맛 선택창 열림)</label></div>
+      
+      <div style="display:flex; justify-content:space-between; margin-top:16px;">
+        <button style="width:32%; height:44px; background:#2e7d32; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="saveEditedMenu()">저장</button>
+        <button id="btnDeleteMenu" style="width:32%; height:44px; background:#e03131; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="deleteSelectedMenu()">삭제</button>
+        <button style="width:32%; height:44px; background:#868e96; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="closeMenuEditModal()">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 현금 모달 -->
+  <div class="modal-overlay" id="cashModal">
+    <div class="modal-box cash-box-lg">
+      <h2 style="font-size:24px; font-weight:900; margin-bottom:14px;">💵 현금 거스름돈 계산</h2>
+      <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+        <div class="cash-display-box" style="width:48%;"><div style="font-size:14px; color:#666;">받을 금액</div><div style="font-size:26px; font-weight:900; color:#d32f2f;" id="modalDueAmount">0원</div></div>
+        <div class="cash-display-box" style="width:48%; background:#e7f5ff; border-color:#74c0fc;"><div style="font-size:14px; color:#1864ab;">받은 금액</div><div style="font-size:26px; font-weight:900; color:#1971c2;" id="modalReceivedAmount">0원</div></div>
+      </div>
+      <div style="font-size:15px; font-weight:900; margin-bottom:8px; color:#333;">자주 내는 금액:</div><div class="cash-suggest-grid" id="suggestButtons"></div>
+      <div style="font-size:15px; font-weight:900; margin-bottom:8px; color:#333;">권종 더하기 (+):</div>
+      <div class="cash-add-grid"><button class="btn-add-cash" onclick="addReceivedCash(1000)">+1,000</button><button class="btn-add-cash" onclick="addReceivedCash(5000)">+5,000</button><button class="btn-add-cash" onclick="addReceivedCash(10000)">+10,000</button><button class="btn-add-cash" onclick="addReceivedCash(50000)">+50,000</button></div>
+      <div class="cash-display-box" style="background:#e8f5e9; border-color:#a5d6a7; margin-bottom:18px;"><div style="font-size:16px; color:#2e7d32; font-weight:bold;">거스름돈</div><div style="font-size:36px; font-weight:900; color:#1b5e20;" id="modalChangeAmount">0원</div></div>
+      <div style="display:flex; justify-content:space-between;">
+        <button style="width:48%; height:54px; background:#2e7d32; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:20px; cursor:pointer;" onclick="completeCashOrder()">결제 완료</button>
+        <button style="width:24%; height:54px; background:#fa5252; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;" onclick="resetReceivedCash()">초기화</button>
+        <button style="width:24%; height:54px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;" onclick="closeCashModal()">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 과거 내역 조회 창 -->
+  <div class="modal-overlay" id="pastEventsModal">
+    <div class="modal-box" style="width:92%; max-width:600px; padding:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h2 style="font-size:22px; font-weight:900;">📅 저장된 과거 행사 내역</h2>
+        <button style="background:#495057; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-weight:bold; font-size:15px; cursor:pointer;" onclick="closePastEventsModal()">닫기</button>
+      </div>
+      <div id="pastEventsList" style="max-height:65vh; overflow-y:auto; border-top:2px solid #222; padding-top:12px;"></div>
+    </div>
+  </div>
+
+  <!-- 마감 영수증 모달 -->
+  <div class="modal-overlay" id="rModal">
+    <div class="modal-box" style="font-family:monospace; width:92%; max-width:460px; padding:20px;">
+      <div style="text-align:center;">
+        <h2 style="font-size:22px; font-weight:900; margin-bottom:4px;" id="rPrintTitle">[ 마감 영수증 ]</h2>
+        <div style="font-size:16px; font-weight:900; color:#0288d1; margin:4px 0;" id="rPrintEventName">행사명: 미지정</div>
+        <div style="font-size:13px; color:#444;" id="rPrintDateTime">날짜</div>
+      </div>
+      <hr style="border:none; border-top:2px dashed #222; margin:14px 0;">
+
+      <!-- 쿠폰 표 -->
+      <div id="rCouponSection" style="display:none; background:#fff3e0; border:1px solid #ffe0b2; border-radius:6px; padding:12px; margin-bottom:12px;">
+        <div style="font-size:15px; font-weight:900; color:#e65100; margin-bottom:8px;">🎟 쿠폰 행사 정산 (주최측 청구용)</div>
+        <table style="width:100%; font-size:13px; border-collapse:collapse;">
+          <thead><tr style="border-bottom:1px solid #e65100; color:#555;"><th style="text-align:left; padding:4px 0;">품목</th><th style="text-align:right;">단가</th><th style="text-align:right;">차액</th><th style="text-align:right;">총잔수</th><th style="text-align:right;">합계</th></tr></thead>
+          <tbody id="rCouponItems"></tbody>
+        </table>
+        <div id="rCouponEmptyMsg" style="display:none; text-align:center; padding:10px; color:#999; font-size:13px;">쿠폰 판매 내역이 없습니다.</div>
+        <div style="border-top:1px dashed #e65100; margin-top:10px; padding-top:8px; font-size:13px;">
+          <div class="row" style="margin-bottom:4px;"><span>• 쿠폰 총 회수:</span><b id="rTotQty">0장</b></div>
+          <div class="row" style="margin-bottom:4px;"><span>• 기본액 (<span id="rBasePriceLbl">4,000</span>원×수량):</span><span id="rTotBase">0원</span></div>
+          <div class="row" style="color:#d32f2f; margin-bottom:4px;"><span>• 사후 초과차액:</span><span id="rTotExtra">+0원</span></div>
+          <div class="row" style="font-size:18px; font-weight:900; color:#e65100; border-top:2px solid #e65100; padding-top:8px; margin-top:6px;"><span>▶ 청구 총합계:</span><span id="rGrandClaim">0원</span></div>
+        </div>
+      </div>
+
+      <!-- 일반 표 -->
+      <div id="rDirectSection" style="display:none; background:#e8f5e9; border:1px solid #c8e6c9; border-radius:6px; padding:12px; margin-bottom:12px;">
+        <div style="font-size:15px; font-weight:900; color:#1b5e20; margin-bottom:8px;">💳 일반 현장 매출 (자체 보관용)</div>
+        <table style="width:100%; font-size:13px; border-collapse:collapse;">
+          <thead><tr style="border-bottom:1px solid #1b5e20; color:#555;"><th style="text-align:left; padding:4px 0;">품목</th><th style="text-align:right;">단가</th><th style="text-align:right;">총잔수</th><th style="text-align:right;">합계액</th></tr></thead>
+          <tbody id="rDirectItems"></tbody>
+        </table>
+        <div id="rDirectEmptyMsg" style="display:none; text-align:center; padding:10px; color:#999; font-size:13px;">일반 판매 내역이 없습니다.</div>
+        <div style="border-top:1px dashed #1b5e20; margin-top:10px; padding-top:8px;">
+          <div class="row" style="font-size:13px; color:#555; margin-bottom:2px;"><span>• 카드 결제:</span><span id="rDirectCard">0원</span></div>
+          <div class="row" style="font-size:13px; color:#555; margin-bottom:6px;"><span>• 현금 결제:</span><span id="rDirectCash">0원</span></div>
+          <div class="row" style="font-size:18px; font-weight:900; color:#1b5e20; border-top:1px solid #c8e6c9; padding-top:6px;"><span>▶ 현장 총합계:</span><span id="rDirectPay">0원</span></div>
+        </div>
+      </div>
+      
+      <hr style="border:none; border-top:2px solid #222; margin:14px 0;">
+      <div class="row" style="font-size:20px; font-weight:900; color:#000;"><span>★ 당일 총 매출:</span><span id="rTotalAll">0원</span></div>
+      
+      <div style="display:flex; justify-content:space-between; margin-top:20px;" id="receiptActionArea"></div>
+    </div>
+  </div>
+
+  <script>
+    let baseCouponVal = parseInt(localStorage.getItem('coffee_base_coupon')) || 4000;
+    let eventName = localStorage.getItem('coffee_event_name') || "미지정";
+    let pastEvents = JSON.parse(localStorage.getItem('coffee_past_events')) || [];
+    
+    let menuBoards = JSON.parse(localStorage.getItem('coffee_menu_boards')) || [
+      { id: "default", name: "기본 음료", items: [
+          { n:"1.아메리카노(ice)", p:4000, c:"#0288d1", shape:"square", img:"", isSlush:false },
+          { n:"2.카페라떼(ice)", p:4500, c:"#0288d1", shape:"square", img:"", isSlush:false },
+          { n:"3.카페모카(ice)", p:5000, c:"#0288d1", shape:"square", img:"", isSlush:false },
+          { n:"4.마끼아또(ice)", p:5000, c:"#0288d1", shape:"square", img:"", isSlush:false },
+          { n:"5.바닐라라떼(ice)", p:5000, c:"#0288d1", shape:"square", img:"", isSlush:false },
+          { n:"6.아메리카노(hot)", p:4000, c:"#d32f2f", shape:"circle", img:"", isSlush:false },
+          { n:"7.카페라떼(hot)", p:4500, c:"#d32f2f", shape:"circle", img:"", isSlush:false },
+          { n:"8.카페모카(hot)", p:5000, c:"#d32f2f", shape:"circle", img:"", isSlush:false },
+          { n:"9.마끼아또(hot)", p:4500, c:"#d32f2f", shape:"circle", img:"", isSlush:false },
+          { n:"a.바닐라라떼(hot)", p:4500, c:"#d32f2f", shape:"circle", img:"", isSlush:false },
+          { n:"b.매실아이스티", p:4000, c:"#689f38", shape:"square", img:"", isSlush:false },
+          { n:"b.복숭아아이스티", p:4000, c:"#689f38", shape:"square", img:"", isSlush:false },
+          { n:"C.자몽에이드", p:5000, c:"#fbc02d", shape:"square", img:"", isSlush:false },
+          { n:"d.청포도에이드", p:5000, c:"#fbc02d", shape:"square", img:"", isSlush:false },
+          { n:"e.레몬에이드", p:5000, c:"#fbc02d", shape:"square", img:"", isSlush:false },
+          { n:"e.슬러시", p:4000, c:"#689f38", shape:"square", img:"", isSlush:true },
+          { n:"f.딸기라떼", p:6000, c:"#e91e63", shape:"square", img:"", isSlush:false },
+          { n:"f.딸기쥬스", p:6000, c:"#e91e63", shape:"square", img:"", isSlush:false },
+          { n:"h.생강차", p:4000, c:"#f57c00", shape:"square", img:"", isSlush:false },
+          { n:"h.유자차", p:4000, c:"#f57c00", shape:"square", img:"", isSlush:false }
+      ]}
+    ];
+
+    let currentBoardId = "default";
+    let mode = 'REG';
+    let isEditMode = false;
+    let newCart = [], orderHistory = [];
+    let currentViewingIndex = -1, orderSeq = 1;
+    let currentDueAmount = 0, currentReceivedAmount = 0;
+    let tempUploadedImg = "", pendingSlushItem = null;
+    let slushCounts = { "오렌지": 0, "포도": 0, "혼합": 0 };
+
+    function updateClock() {
+      const now = new Date(); const days = ['일', '월', '화', '수', '목', '금', '토'];
+      document.getElementById('liveClock').innerText = `${now.getFullYear()}. ${(now.getMonth()+1).toString().padStart(2,'0')}. ${now.getDate().toString().padStart(2,'0')} (${days[now.getDay()]})  ${now.toLocaleTimeString('ko-KR', { hour12: false })}`;
+    }
+    setInterval(updateClock, 1000); updateClock();
+
+    function updateEventNameUI() { document.getElementById('lblHeaderEventName').innerText = eventName; }
+    updateEventNameUI();
+    function changeEventName() {
+      const input = prompt("행사 이름을 입력하세요 (영수증 출력용):", eventName === "미지정" ? "" : eventName);
+      if (input !== null) { eventName = input.trim() || "미지정"; localStorage.setItem('coffee_event_name', eventName); updateEventNameUI(); }
+    }
+
+    function setMode(m) {
+      mode = m; document.body.className = (m === 'REG') ? 'theme-reg' : 'theme-coup';
+      document.getElementById('btnReceiptTop').innerText = (m === 'REG') ? '🧾 일반 매출 마감' : '🧾 쿠폰 정산 마감';
+      document.getElementById('btnReceiptTop').style.background = (m === 'REG') ? '#1b5e20' : '#e65100';
+      drawGrid();
+    }
+
+    function openModeOptionModal() {
+      const isCoup = (mode === 'COUP');
+      document.getElementById('modalOptTitle').innerText = isCoup ? '⚙ 쿠폰 판매 전용 옵션' : '⚙ 일반 판매 옵션';
+      document.getElementById('optCouponSection').style.display = isCoup ? 'block' : 'none';
+      if(isCoup) document.getElementById('inpBaseCouponPrice').value = baseCouponVal;
+      renderBoardSwapList(); updateEditToggleBtnText(); document.getElementById('modeOptModal').style.display = 'flex';
+    }
+    function closeModeOptionModal() { document.getElementById('modeOptModal').style.display = 'none'; }
+    
+    function saveBaseCouponPrice() {
+      const val = parseInt(document.getElementById('inpBaseCouponPrice').value, 10);
+      if(isNaN(val) || val <= 0) return alert('올바른 금액을 입력하세요.');
+      baseCouponVal = val; localStorage.setItem('coffee_base_coupon', baseCouponVal);
+      alert(`쿠폰 단가가 ${val.toLocaleString()}원으로 변경됨.`); drawGrid(); renderCurrentCart(); closeModeOptionModal();
+    }
+
+    function renderBoardSwapList() {
+      const box = document.getElementById('boardSwapList'); box.innerHTML = '';
+      menuBoards.forEach((board, idx) => {
+        const isCurrent = (board.id === currentBoardId);
+        box.innerHTML += `<div class="board-select-row"><div><b>${board.name}</b> ${isCurrent ? '<span style="color:#2e7d32; font-weight:bold;">(현재)</span>' : ''}</div><div style="display:flex;"><button style="background:#0288d1; color:#fff; border:none; padding:5px 10px; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:4px;" onclick="swapToBoard('${board.id}')">교체</button>${menuBoards.length > 1 ? `<button style="background:#e03131; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="deleteBoard(${idx})">삭제</button>` : ''}</div></div>`;
+      });
+    }
+    function swapToBoard(boardId) { currentBoardId = boardId; renderBoardSwapList(); drawGrid(); closeModeOptionModal(); }
+    function addNewMenuBoard() {
+      const name = prompt("새 메뉴판 이름:"); if (!name) return;
+      menuBoards.push({ id: "board_" + Date.now(), name: name, items: JSON.parse(JSON.stringify(menuBoards[0].items)) });
+      saveBoardsData(); renderBoardSwapList();
+    }
+    function deleteBoard(idx) {
+      if(!confirm("이 메뉴판을 삭제하시겠습니까?")) return;
+      if(menuBoards[idx].id === currentBoardId) currentBoardId = menuBoards[0].id;
+      menuBoards.splice(idx, 1); saveBoardsData(); renderBoardSwapList(); drawGrid();
+    }
+    function saveBoardsData() { localStorage.setItem('coffee_menu_boards', JSON.stringify(menuBoards)); }
+
+    function toggleEditModeFromModal() {
+      isEditMode = !isEditMode; updateEditToggleBtnText();
+      document.getElementById('editModeNotice').style.display = isEditMode ? 'inline' : 'none'; drawGrid(); closeModeOptionModal();
+    }
+    function updateEditToggleBtnText() {
+      const btn = document.getElementById('btnToggleEditInModal');
+      btn.innerText = isEditMode ? '✓ 메뉴 수정 끄기' : '✏ 기존 메뉴 수정 켜기'; btn.style.background = isEditMode ? '#adb5bd' : '#ffd43b';
+    }
+
+    function drawGrid() {
+      const g = document.getElementById('mGrid'); g.innerHTML = '';
+      const currentBoard = menuBoards.find(b => b.id === currentBoardId) || menuBoards[0];
+      document.getElementById('lblCurrentBoardName').innerText = currentBoard.name;
+
+      currentBoard.items.forEach((it, idx) => {
+        const extra = Math.max(0, it.p - baseCouponVal);
+        const b = document.createElement('button');
+        b.className = `btn-item ${it.shape === 'circle' ? 'btn-circle' : 'btn-square'}`;
+        b.style.backgroundColor = it.c || '#0288d1';
+        b.style.color = (it.c === '#fbc02d') ? '#222' : '#fff';
+        b.style.backgroundImage = it.img ? `url(${it.img})` : 'none';
+
+        const isSlushMenu = (it.isSlush === true || it.n.includes("슬러시"));
+
+        b.onclick = () => {
+          if (isEditMode) openMenuEditModal(idx);
+          else if (isSlushMenu) openSlushModal(it);
+          else addToCurrentCart(it.n, it.p, 1);
+        };
+        let badge = (mode === 'COUP' && !isEditMode) ? `<span class="badge">${extra > 0 ? '+' + extra : '0'}</span>` : '';
+        let editBadge = isEditMode ? `<span class="edit-tag">수정</span>` : '';
+        b.innerHTML = `${badge} ${editBadge} <div class="m-title">${it.n}</div> <div class="m-price">${it.p.toLocaleString()}원</div>`;
+        g.appendChild(b);
+      });
+    }
+
+    function addNewMenuItem() {
+      closeModeOptionModal();
+      document.getElementById('menuEditModalTitle').innerText = '새 메뉴 추가';
+      document.getElementById('editMenuIdx').value = -1;
+      document.getElementById('editMName').value = ''; document.getElementById('editMPrice').value = '';
+      document.getElementById('editMShape').value = 'square'; document.getElementById('editMColor').value = '#0288d1';
+      document.getElementById('editMIsSlush').checked = false; document.getElementById('editMFile').value = '';
+      tempUploadedImg = ''; document.getElementById('btnDeleteMenu').style.display = 'none';
+      document.getElementById('menuEditModal').style.display = 'flex';
+    }
+
+    function openMenuEditModal(idx) {
+      document.getElementById('menuEditModalTitle').innerText = '기존 메뉴 수정';
+      const it = (menuBoards.find(b => b.id === currentBoardId)).items[idx];
+      document.getElementById('editMenuIdx').value = idx;
+      document.getElementById('editMName').value = it.n; document.getElementById('editMPrice').value = it.p;
+      document.getElementById('editMShape').value = it.shape || 'square'; document.getElementById('editMColor').value = it.c || '#0288d1';
+      document.getElementById('editMIsSlush').checked = !!it.isSlush; document.getElementById('editMFile').value = '';
+      tempUploadedImg = it.img || ""; document.getElementById('btnDeleteMenu').style.display = 'block';
+      document.getElementById('menuEditModal').style.display = 'flex';
+    }
+
+    function closeMenuEditModal() { document.getElementById('menuEditModal').style.display = 'none'; tempUploadedImg = ""; }
+    function handleImageFile(e) { const file = e.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(evt) { tempUploadedImg = evt.target.result; }; reader.readAsDataURL(file); }
+    
+    function saveEditedMenu() {
+      const currentBoard = menuBoards.find(b => b.id === currentBoardId);
+      const idx = parseInt(document.getElementById('editMenuIdx').value, 10);
+      const name = document.getElementById('editMName').value.trim(); const price = parseInt(document.getElementById('editMPrice').value, 10);
+      
+      if(!name || isNaN(price)) return alert('메뉴 이름과 올바른 가격을 입력하세요.');
+      
+      const newItem = { n: name, p: price, shape: document.getElementById('editMShape').value, c: document.getElementById('editMColor').value, isSlush: document.getElementById('editMIsSlush').checked, img: tempUploadedImg };
+      if (idx === -1) currentBoard.items.push(newItem); else currentBoard.items[idx] = newItem;
+      saveBoardsData(); closeMenuEditModal(); drawGrid();
+    }
+    
+    function deleteSelectedMenu() {
+      if(!confirm("이 메뉴를 삭제하시겠습니까?")) return;
+      (menuBoards.find(b => b.id === currentBoardId)).items.splice(document.getElementById('editMenuIdx').value, 1);
+      saveBoardsData(); closeMenuEditModal(); drawGrid();
+    }
+
+    function openSlushModal(it) { pendingSlushItem = it; resetSlushCounts(); document.getElementById('slushModal').style.display = 'flex'; }
+    function closeSlushModal() { document.getElementById('slushModal').style.display = 'none'; pendingSlushItem = null; }
+    function resetSlushCounts() { slushCounts = { "오렌지": 0, "포도": 0, "혼합": 0 }; updateSlushUI(); }
+    function clickSlushFlavor(flavor) { slushCounts[flavor] += 1; updateSlushUI(); }
+    function minusSlushFlavor(flavor) { if (slushCounts[flavor] > 0) { slushCounts[flavor] -= 1; updateSlushUI(); } }
+    
+    function updateSlushUI() {
+      let total = 0;
+      for (let f in slushCounts) {
+        const cnt = slushCounts[f]; total += cnt;
+        const badge = document.getElementById(`badgeSlush_${f}`); const minusBtn = document.getElementById(`minusSlush_${f}`);
+        if (cnt > 0) { badge.style.display = 'inline-block'; badge.innerText = `${cnt}잔`; minusBtn.style.display = 'flex'; } 
+        else { badge.style.display = 'none'; minusBtn.style.display = 'none'; }
+      }
+      document.getElementById('lblSlushTotalSummary').innerText = `총 ${total}잔 선택됨`;
+      document.getElementById('btnCompleteSlush').innerText = total > 0 ? `총 ${total}잔 선택 완료` : `선택 완료`;
+    }
+    
+    function finishSlushSelection() {
+      if (!pendingSlushItem) return; let total = 0;
+      for (let f in slushCounts) { if (slushCounts[f] > 0) { addToCurrentCart(`${pendingSlushItem.n}(${f})`, pendingSlushItem.p, slushCounts[f]); total += slushCounts[f]; } }
+      if (total === 0) return alert("원하시는 맛을 터치해 수량을 선택해주세요."); closeSlushModal();
+    }
+
+    function addToCurrentCart(name, price, qtyToAdd = 1) {
+      const isC = (mode === 'COUP'); const extra = isC ? Math.max(0, price - baseCouponVal) : 0;
+      let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
+      const existing = targetList.find(it => it.n === name && it.isC === isC);
+      if(existing) existing.qty += qtyToAdd; else targetList.push({ n: name, p: price, isC: isC, ex: extra, qty: qtyToAdd });
+      renderCurrentCart();
+    }
+    function changeQty(idx, delta) {
+      let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
+      targetList[idx].qty += delta; if(targetList[idx].qty <= 0) targetList.splice(idx, 1); renderCurrentCart();
+    }
+    function removeItem(idx) {
+      let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
+      targetList.splice(idx, 1); renderCurrentCart();
+    }
+
+    function renderCurrentCart() {
+      const el = document.getElementById('cList'); el.innerHTML = '';
+      let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
+      let dir = 0, cCount = 0, exTotal = 0;
+
+      targetList.forEach((it, idx) => {
+        if(it.isC) { cCount += it.qty; exTotal += (it.ex * it.qty); } else { dir += (it.p * it.qty); }
+        el.innerHTML += `<div class="item-row"><div style="flex:1;"><div class="item-title"><span style="color:${it.isC ? '#ff9800' : '#2f9e44'};">[${it.isC ? '쿠폰' : '일반'}]</span> ${it.n}</div><div class="item-sub" style="color:${it.isC ? '#fa5252' : '#555'};">${it.isC ? '사후차액: +'+(it.ex*it.qty).toLocaleString()+'원' : '단가: '+it.p.toLocaleString()+'원'}</div></div><div class="qty-controls"><button class="btn-qty" onclick="changeQty(${idx}, -1)">-</button><span class="qty-text">${it.qty}</span><button class="btn-qty" onclick="changeQty(${idx}, 1)">+</button><button class="btn-row-del" onclick="removeItem(${idx})">✕</button></div><div style="width:70px; text-align:right; font-weight:bold;">${it.isC ? '0원' : (it.p*it.qty).toLocaleString()+'원'}</div></div>`;
+      });
+
+      currentDueAmount = dir;
+      document.getElementById('vDirect').innerText = dir.toLocaleString() + '원'; document.getElementById('vCoup').innerText = cCount + '장';
+      document.getElementById('vExtra').innerText = '+' + exTotal.toLocaleString() + '원'; document.getElementById('vTotal').innerText = dir.toLocaleString() + '원';
+
+      const btnArea = document.getElementById('paymentBtnArea'); const titleEl = document.getElementById('orderStatusTitle');
+      if(currentViewingIndex === -1) {
+        titleEl.innerHTML = `● 신규 주문`;
+        if(dir === 0 && cCount > 0) btnArea.innerHTML = `<button class="btn-checkout-coupon" onclick="completeOrder('COUPON')">쿠폰 완료 (0원)</button>`;
+        else btnArea.innerHTML = `<div class="action-grid"><button class="btn-action btn-card" onclick="completeOrder('CARD')">카드 결제</button><button class="btn-action btn-cash" onclick="openCashModal()">현금 결제</button></div>`;
+      } else {
+        const ord = orderHistory[currentViewingIndex]; titleEl.innerHTML = `<span style="color:#1971c2;">#${ord.seq} [${ord.time}]</span>`;
+        btnArea.innerHTML = `<button class="btn-checkout-coupon" style="background:#1971c2;" onclick="saveEditedOrder()">✓ 변경 내용 저장</button>`;
+      }
+      document.getElementById('btnPrevOrder').disabled = (currentViewingIndex >= orderHistory.length - 1);
+      document.getElementById('btnNextOrder').disabled = (currentViewingIndex <= -1);
+    }
+
+    function openCashModal() {
+      if(currentDueAmount <= 0) return;
+      currentReceivedAmount = currentDueAmount; document.getElementById('modalDueAmount').innerText = currentDueAmount.toLocaleString() + '원';
+      generateCashSuggestions(); updateCashModalDisplay(); document.getElementById('cashModal').style.display = 'flex';
+    }
+    function generateCashSuggestions() {
+      const sBox = document.getElementById('suggestButtons'); sBox.innerHTML = ''; const set = new Set(); set.add(currentDueAmount);
+      const n5k = Math.ceil(currentDueAmount / 5000) * 5000; if(n5k > currentDueAmount) set.add(n5k);
+      const n10k = Math.ceil(currentDueAmount / 10000) * 10000; if(n10k > currentDueAmount) set.add(n10k);
+      const n50k = Math.ceil(currentDueAmount / 50000) * 50000; if(n50k > currentDueAmount) set.add(n50k);
+      Array.from(set).sort((a,b)=>a-b).forEach(val => {
+        const btn = document.createElement('button'); btn.className = 'btn-suggest'; btn.innerText = val.toLocaleString() + '원';
+        btn.onclick = () => { currentReceivedAmount = val; updateCashModalDisplay(); }; sBox.appendChild(btn);
+      });
+    }
+    function addReceivedCash(amt) { if(currentReceivedAmount === currentDueAmount) currentReceivedAmount = amt; else currentReceivedAmount += amt; updateCashModalDisplay(); }
+    function resetReceivedCash() { currentReceivedAmount = 0; updateCashModalDisplay(); }
+    function updateCashModalDisplay() {
+      document.getElementById('modalReceivedAmount').innerText = currentReceivedAmount.toLocaleString() + '원';
+      document.getElementById('modalChangeAmount').innerText = Math.max(0, currentReceivedAmount - currentDueAmount).toLocaleString() + '원';
+    }
+    function closeCashModal() { document.getElementById('cashModal').style.display = 'none'; }
+    function completeCashOrder() { if(currentReceivedAmount < currentDueAmount && !confirm("받은 금액이 부족합니다. 완료하시겠습니까?")) return; closeCashModal(); completeOrder('CASH'); }
+
+    function completeOrder(payType) {
+      if(!newCart.length) return; const now = new Date();
+      orderHistory.unshift({ id: Date.now(), seq: orderSeq++, time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }), payType: payType, items: JSON.parse(JSON.stringify(newCart)) });
+      newCart = []; renderCurrentCart();
+    }
+    function saveEditedOrder() {
+      if(orderHistory[currentViewingIndex].items.length === 0) { orderHistory.splice(currentViewingIndex, 1); alert("주문이 취소됨."); } else alert(`주문 #${orderHistory[currentViewingIndex].seq} 저장됨.`); resetToNewOrder();
+    }
+    function navigateOrder(dir) {
+      if(!orderHistory.length) return alert("과거 주문 없음.");
+      currentViewingIndex = Math.max(-1, Math.min(currentViewingIndex - dir, orderHistory.length - 1)); renderCurrentCart();
+    }
+    function resetToNewOrder() { currentViewingIndex = -1; renderCurrentCart(); }
+
+    function saveCurrentEvent() {
+      if (orderHistory.length === 0) return alert("저장할 판매 내역이 없습니다.");
+      if (!confirm("현재 내역을 마감하고 과거 기록으로 영구 저장하시겠습니까?\n저장 후 현재 판매 장부는 0원으로 초기화됩니다.")) return;
+      const now = new Date(); const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      const dateText = `${now.getFullYear()}년 ${(now.getMonth()+1).toString().padStart(2,'0')}월 ${now.getDate().toString().padStart(2,'0')}일 (${days[now.getDay()]})`;
+      const timeText = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} 마감`;
+      const evData = { id: Date.now(), dateStr: dateText, timeStr: timeText, eventName: eventName, baseCouponVal: baseCouponVal, history: JSON.parse(JSON.stringify(orderHistory)) };
+      pastEvents.push(evData); localStorage.setItem('coffee_past_events', JSON.stringify(pastEvents));
+      orderHistory = []; orderSeq = 1; renderCurrentCart(); closeReceipt();
+      alert("성공적으로 마감 저장되었습니다!\n[과거 내역] 버튼에서 언제든 다시 볼 수 있습니다.");
+    }
+
+    function openPastEventsModal() {
+      const list = document.getElementById('pastEventsList'); list.innerHTML = '';
+      if (pastEvents.length === 0) list.innerHTML = '<div style="text-align:center; padding:20px; color:#666; font-size:15px;">저장된 과거 행사 내역이 없습니다.</div>';
+      else {
+        [...pastEvents].reverse().forEach((ev, i) => {
+          const actualIdx = pastEvents.length - 1 - i;
+          let tSales = 0, tCoup = 0;
+          ev.history.forEach(ord => ord.items.forEach(it => { if(it.isC) tCoup += it.qty; else tSales += (it.p * it.qty); }));
+          list.innerHTML += `<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:12px; margin-bottom:12px;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;"><div><div style="font-size:18px; font-weight:900; color:#0288d1;">${ev.eventName}</div><div style="font-size:13px; color:#555; margin-top:4px;">${ev.dateStr} ${ev.timeStr}</div></div><button style="background:#e03131; color:#fff; border:none; padding:6px 10px; border-radius:6px; font-size:13px; cursor:pointer; font-weight:bold;" onclick="deletePastEvent(${actualIdx})">삭제</button></div><div style="font-size:15px; font-weight:bold; color:#333; margin-bottom:10px;">현장매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span> / 쿠폰: <span style="color:#e65100">${tCoup}장</span></div><button style="width:100%; height:44px; background:#495057; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:16px; cursor:pointer;" onclick="viewPastReceipt(${actualIdx})">🧾 마감 영수증 보기</button></div>`;
+        });
+      }
+      document.getElementById('pastEventsModal').style.display = 'flex';
+    }
+    function closePastEventsModal() { document.getElementById('pastEventsModal').style.display = 'none'; }
+    function deletePastEvent(idx) { if(!confirm("이 과거 마감 기록을 완전히 삭제하시겠습니까?")) return; pastEvents.splice(idx, 1); localStorage.setItem('coffee_past_events', JSON.stringify(pastEvents)); openPastEventsModal(); }
+    function viewPastReceipt(idx) { closePastEventsModal(); showReceipt(pastEvents[idx]); }
+
+    /* 모달 닫기 안되던 에러 완벽 차단 및 영수증 처리 로직 */
+    function showReceipt(histData = null) {
+      try {
+        const isHist = (histData !== null);
+        const targetHistory = isHist ? histData.history : orderHistory;
+        const targetEventName = isHist ? histData.eventName : eventName;
+        const targetCouponVal = isHist ? histData.baseCouponVal : baseCouponVal;
+
+        let dateText = "";
+        if (isHist) { dateText = `${histData.dateStr} ${histData.timeStr}`; } 
+        else {
+          const now = new Date(); const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+          dateText = `${now.getFullYear()}년 ${(now.getMonth()+1).toString().padStart(2,'0')}월 ${now.getDate().toString().padStart(2,'0')}일 (${days[now.getDay()]}) ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} 마감`;
+        }
+
+        document.getElementById('rPrintEventName').innerText = `행사명: ${targetEventName}`;
+        document.getElementById('rPrintDateTime').innerText = dateText;
+
+        const isCoupMode = (mode === 'COUP');
+        document.getElementById('rPrintTitle').innerText = isCoupMode ? '[ 쿠폰 정산 영수증 ]' : '[ 일반 매출 영수증 ]';
+        document.getElementById('rCouponSection').style.display = isCoupMode ? 'block' : 'none';
+        document.getElementById('rDirectSection').style.display = isCoupMode ? 'none' : 'block';
+
+        let stats = {}, totalQty = 0, totalSalesOrClaim = 0, totalExtra = 0, totalCard = 0, totalCash = 0; 
+        let grandAbsoluteTotalDirect = 0, grandAbsoluteTotalCoupBase = 0, grandAbsoluteTotalCoupExtra = 0;
+
+        targetHistory.forEach(order => {
+          order.items.forEach(it => {
+            if (it.isC) { grandAbsoluteTotalCoupBase += (it.qty * targetCouponVal); grandAbsoluteTotalCoupExtra += (it.ex * it.qty); } 
+            else { grandAbsoluteTotalDirect += (it.p * it.qty); }
+
+            if (isCoupMode && it.isC) {
+              if(!stats[it.n]) stats[it.n] = { p: it.p, ex: it.ex, qty: 0 };
+              stats[it.n].qty += it.qty; totalQty += it.qty; totalExtra += (it.ex * it.qty);
+            } else if (!isCoupMode && !it.isC) {
+              if(!stats[it.n]) stats[it.n] = { p: it.p, qty: 0 };
+              stats[it.n].qty += it.qty; totalSalesOrClaim += (it.p * it.qty);
+              if(order.payType === 'CARD') totalCard += (it.p * it.qty);
+              if(order.payType === 'CASH') totalCash += (it.p * it.qty);
+            }
+          });
+        });
+
+        if (isCoupMode) {
+          const tbody = document.getElementById('rCouponItems'); tbody.innerHTML = '';
+          if(Object.keys(stats).length === 0) document.getElementById('rCouponEmptyMsg').style.display = 'block';
+          else {
+            document.getElementById('rCouponEmptyMsg').style.display = 'none';
+            Object.keys(stats).forEach(k => { 
+              const item = stats[k]; 
+              tbody.innerHTML += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:4px 0;">${k}</td><td style="text-align:right;">${item.p.toLocaleString()}</td><td style="text-align:right; color:#d32f2f;">+${item.ex.toLocaleString()}</td><td style="text-align:right; font-weight:bold;">${item.qty}잔</td><td style="text-align:right; font-weight:bold;">${(item.p * item.qty).toLocaleString()}원</td></tr>`; 
+            });
+          }
+          const baseClaim = totalQty * targetCouponVal;
+          document.getElementById('rBasePriceLbl').innerText = targetCouponVal.toLocaleString(); document.getElementById('rTotQty').innerText = totalQty + '장';
+          document.getElementById('rTotBase').innerText = baseClaim.toLocaleString() + '원'; document.getElementById('rTotExtra').innerText = '+' + totalExtra.toLocaleString() + '원';
+          document.getElementById('rGrandClaim').innerText = (baseClaim + totalExtra).toLocaleString() + '원';
+        } else {
+          const tbody = document.getElementById('rDirectItems'); tbody.innerHTML = '';
+          if(Object.keys(stats).length === 0) document.getElementById('rDirectEmptyMsg').style.display = 'block';
+          else {
+            document.getElementById('rDirectEmptyMsg').style.display = 'none';
+            Object.keys(stats).forEach(k => { 
+              const item = stats[k]; 
+              tbody.innerHTML += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:4px 0;">${k}</td><td style="text-align:right;">${item.p.toLocaleString()}</td><td style="text-align:right; font-weight:bold;">${item.qty}잔</td><td style="text-align:right; font-weight:bold;">${(item.p * item.qty).toLocaleString()}원</td></tr>`; 
+            });
+          }
+          document.getElementById('rDirectCard').innerText = totalCard.toLocaleString() + '원';
+          document.getElementById('rDirectCash').innerText = totalCash.toLocaleString() + '원';
+          document.getElementById('rDirectPay').innerText = totalSalesOrClaim.toLocaleString() + '원';
+        }
+
+        const finalAbsoluteGrandTotal = grandAbsoluteTotalDirect + grandAbsoluteTotalCoupBase + grandAbsoluteTotalCoupExtra;
+        document.getElementById('rTotalAll').innerText = finalAbsoluteGrandTotal.toLocaleString() + '원';
+
+        const actionArea = document.getElementById('receiptActionArea');
+        if (isHist) {
+          actionArea.innerHTML = `<button style="width:65%; height:50px; background:#2e7d32; color:#fff; border:none; font-weight:900; font-size:18px; border-radius:6px; cursor:pointer;" onclick="window.print()">프린터로 인쇄하기</button><button style="width:32%; height:50px; background:#333; color:#fff; border:none; font-weight:bold; font-size:16px; border-radius:6px; cursor:pointer;" onclick="closeReceipt()">닫기</button>`;
+        } else {
+          actionArea.innerHTML = `<button style="width:38%; height:50px; background:#1971c2; color:#fff; border:none; font-weight:900; font-size:16px; border-radius:6px; cursor:pointer;" onclick="saveCurrentEvent()">💾 마감 (저장)</button><button style="width:30%; height:50px; background:#2e7d32; color:#fff; border:none; font-weight:900; font-size:17px; border-radius:6px; cursor:pointer;" onclick="window.print()">인쇄</button><button style="width:28%; height:50px; background:#333; color:#fff; border:none; font-weight:bold; font-size:16px; border-radius:6px; cursor:pointer;" onclick="closeReceipt()">닫기</button>`;
+        }
+        document.getElementById('rModal').style.display = 'flex';
+      } catch (err) {
+        alert('영수증을 불러오는 중 오류가 발생했습니다.');
+        console.error(err);
+      }
+    }
+    
+    /* 여기서 모달 창이 닫힙니다 */
+    function closeReceipt() { 
+      document.getElementById('rModal').style.display = 'none'; 
+    }
+
+    setMode('REG'); renderCurrentCart();
+  </script>
+</body>
+</html>
