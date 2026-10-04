@@ -22,7 +22,7 @@
     
     .coupon-counter { display: none; align-items: center; margin-left: 8px; background: #ffe0b2; color: #e65100; padding: 3px 6px; border-radius: 6px; font-weight: 900; font-size: 12px; white-space: nowrap; }
     .coupon-counter span { margin: 0 3px; font-size: 14px; }
-    .btn-coup-set { background: #e65100; color: #fff; border: none; padding: 2px 5px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; }
+    .btn-coup-set { background: #e65100; color: #fff; border-radius: 4px; padding: 2px 5px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; }
 
     .header-right-group { display: flex; align-items: center; }
     .btn-action-top { height: 36px; padding: 0 6px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 4px; white-space: nowrap; }
@@ -52,30 +52,32 @@
     body.theme-coup .row { color: #bbb; }
 
     .container { display: flex; flex: 1; height: calc(100% - 48px); overflow: hidden; }
-    .menu-panel { flex: 72; padding: 8px; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+    
+    /* ★ 메뉴판 영역을 꽉 채우고 세로 4줄에 딱 맞게 자동 분할 (flex: 72) ★ */
+    .menu-panel { flex: 72; padding: 6px; display: flex; flex-direction: column; overflow: hidden; }
     .cart-panel { flex: 28; min-width: 260px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
-    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; }
-    .badge-board-name { background: rgba(0,0,0,0.1); padding: 3px 6px; border-radius: 4px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
+    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 12px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; height: 22px; min-height: 22px; }
+    .badge-board-name { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
     body.theme-coup .badge-board-name { background: rgba(255,255,255,0.1); }
 
-    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-gap: 6px; padding-bottom: 15px; }
+    /* ★ 가로 5칸 세로 4칸(총 20칸) 고정 배치 및 높이 자동 꽉 채우기 ★ */
+    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); grid-gap: 6px; flex: 1; height: calc(100% - 26px); }
     
     .btn-item {
-      width: 100%; height: 115px; border: none; color: #fff; display: flex; flex-direction: column;
+      width: 100%; height: 100%; border: none; color: #fff; display: flex; flex-direction: column;
       align-items: center; justify-content: center; font-weight: bold; cursor: pointer;
-      position: relative; text-align: center; padding: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      position: relative; text-align: center; padding: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
       background-size: cover; background-position: center; overflow: hidden;
     }
     .btn-item:active { transform: scale(0.96); }
     .btn-square { border-radius: 10px; }
     .btn-circle { border-radius: 50%; }
     
-    /* ★ 메뉴 이름 짤림 방지: 줄바꿈 허용(normal) 및 두 줄 정렬 ★ */
     .m-title { 
       font-size: 12px; 
-      line-height: 1.2; 
-      margin-bottom: 3px; 
+      line-height: 1.15; 
+      margin-bottom: 2px; 
       width: 98%; 
       white-space: normal; 
       word-break: keep-all; 
