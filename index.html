@@ -12,7 +12,17 @@
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; }
     html, body { height: 100%; overflow: hidden; display: flex; flex-direction: column; transition: background-color 0.2s; }
     
-    header { height: 48px; min-height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 6px; border-bottom: 2px solid rgba(0,0,0,0.1); }
+    /* ★ 상단 안전 여백 배경색을 확실하게 대비시켜 상태바가 돋보이게 수정 ★ */
+    header { 
+      height: 72px; 
+      min-height: 72px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 22px 6px 4px 6px; 
+      border-bottom: 2px solid rgba(0,0,0,0.15); 
+    }
+    
     .tab-side-btn { height: 36px; padding: 0 8px; border-radius: 6px; font-weight: 900; font-size: 13px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.15); white-space: nowrap; }
     .tab-side-btn:active { transform: scale(0.96); }
     
@@ -28,11 +38,12 @@
     .btn-action-top { height: 36px; padding: 0 6px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 4px; white-space: nowrap; }
     .btn-action-top:active { transform: scale(0.96); }
 
+    /* 일반 모드 상단 헤더 배경을 살짝 톤다운 주어 상태바 구분 */
     body.theme-reg { background-color: #ffffff; color: #222; }
-    body.theme-reg header { background-color: #f8f9fa; border-color: #e0e0e0; }
+    body.theme-reg header { background-color: #e9ecef; border-color: #ced4da; }
     body.theme-reg .header-center-clock { color: #1b5e20; }
     body.theme-reg #btnTabReg { background-color: #2e7d32; color: #fff; border-color: #1b5e20; }
-    body.theme-reg #btnTabCoup { background-color: #e9ecef; color: #666; }
+    body.theme-reg #btnTabCoup { background-color: #dee2e6; color: #666; }
     body.theme-reg .menu-panel { background-color: #f1f3f5; }
     body.theme-reg .cart-panel { background-color: #ffffff; border-left: 2px solid #dee2e6; }
     body.theme-reg .cart-nav-header { background-color: #e9ecef; border-bottom: 1px solid #ced4da; }
@@ -40,7 +51,7 @@
     body.theme-reg .item-row { border-bottom: 1px dashed #dee2e6; color: #212529; }
 
     body.theme-coup { background-color: #1e1e1e; color: #f1f1f1; }
-    body.theme-coup header { background-color: #121212; border-color: #333; }
+    body.theme-coup header { background-color: #111111; border-color: #333; }
     body.theme-coup .header-center-clock { color: #ffb74d; }
     body.theme-coup #btnTabReg { background-color: #2c2c2c; color: #888; }
     body.theme-coup #btnTabCoup { background-color: #ff9800; color: #fff; border-color: #f57c00; }
@@ -51,7 +62,7 @@
     body.theme-coup .item-row { border-bottom: 1px dashed #444; color: #f1f1f1; }
     body.theme-coup .row { color: #bbb; }
 
-    .container { display: flex; flex: 1; height: calc(100% - 48px); overflow: hidden; }
+    .container { display: flex; flex: 1; height: calc(100% - 72px); overflow: hidden; }
     .menu-panel { flex: 68; padding: 6px; display: flex; flex-direction: column; overflow: hidden; }
     .cart-panel { flex: 32; min-width: 300px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
@@ -191,7 +202,6 @@
     <div class="cart-panel">
       <div class="cart-nav-header">
         <button class="nav-arrow-btn" id="btnPrevOrder" onclick="navigateOrder(-1)">◀ 이전</button>
-        <!-- ★ '신규 주문'에서 '현재 주문'으로 변경 완료 ★ -->
         <div class="status-text" id="orderStatusTitle">현재 주문</div>
         <div style="display:flex; align-items:center;">
           <button class="nav-arrow-btn" id="btnNextOrder" onclick="navigateOrder(1)" disabled>다음 ▶</button>
@@ -228,7 +238,7 @@
       </div>
       <div style="display:flex; justify-content:space-between;">
         <button id="btnCompleteSlush" style="width:65%; height:50px; background:#2e7d32; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:18px; cursor:pointer;" onclick="finishSlushSelection()">선택 완료 (전표에 담기)</button>
-        <button style="width:32%; height:50px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;" onclick="closeSlushModal()">취소</button>
+        <button style="width:32%; height:50px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:18px; cursor:pointer;" onclick="closeSlushModal()">취소</button>
       </div>
     </div>
   </div>
@@ -670,7 +680,7 @@
 
       const btnArea = document.getElementById('paymentBtnArea'); const titleEl = document.getElementById('orderStatusTitle');
       if(currentViewingIndex === -1) {
-        titleEl.innerHTML = `현재 주문`; // ★ '현재 주문'으로 고정 ★
+        titleEl.innerHTML = `현재 주문`;
         if(dir === 0 && cCount > 0) btnArea.innerHTML = `<button class="btn-checkout-coupon" onclick="completeOrder('COUPON')">쿠폰 완료 (0원)</button>`;
         else btnArea.innerHTML = `<div class="action-grid"><button class="btn-action btn-card" onclick="completeOrder('CARD')">카드 결제</button><button class="btn-action btn-cash" onclick="openCashModal()">현금 결제</button></div>`;
       } else {
@@ -711,7 +721,6 @@
     
     function completeCashOrder() { if(currentReceivedAmount < currentDueAmount && !confirm("받은 금액이 부족합니다. 완료하시겠습니까?")) return; closeCashModal(); completeOrder('CASH'); }
 
-    // ★ [새주문] 버튼 먹통 현상 완벽 해결 (현재 조회 상태를 강제로 신규주문으로 리셋) ★
     function completeOrder(payType) {
       if(!newCart.length) return; const now = new Date();
       
@@ -725,7 +734,7 @@
 
       orderHistory.unshift({ id: Date.now(), seq: orderSeq++, time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }), payType: payType, items: JSON.parse(JSON.stringify(newCart)) });
       newCart = []; 
-      currentViewingIndex = -1; // 강제로 신규 주문 상태로 전환
+      currentViewingIndex = -1; 
       renderCurrentCart();
     }
 
