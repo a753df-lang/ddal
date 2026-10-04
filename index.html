@@ -12,7 +12,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; }
     html, body { height: 100%; overflow: hidden; display: flex; flex-direction: column; transition: background-color 0.2s; }
     
-    /* ★ 상단 안전 여백 배경색을 확실하게 대비시켜 상태바가 돋보이게 수정 ★ */
     header { 
       height: 72px; 
       min-height: 72px; 
@@ -38,7 +37,6 @@
     .btn-action-top { height: 36px; padding: 0 6px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 4px; white-space: nowrap; }
     .btn-action-top:active { transform: scale(0.96); }
 
-    /* 일반 모드 상단 헤더 배경을 살짝 톤다운 주어 상태바 구분 */
     body.theme-reg { background-color: #ffffff; color: #222; }
     body.theme-reg header { background-color: #e9ecef; border-color: #ced4da; }
     body.theme-reg .header-center-clock { color: #1b5e20; }
@@ -64,7 +62,7 @@
 
     .container { display: flex; flex: 1; height: calc(100% - 72px); overflow: hidden; }
     .menu-panel { flex: 68; padding: 6px; display: flex; flex-direction: column; overflow: hidden; }
-    .cart-panel { flex: 32; min-width: 300px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+    .cart-panel { flex: 32; min-width: 320px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
     .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 12px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; height: 22px; min-height: 22px; }
     .badge-board-name { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
@@ -630,16 +628,31 @@
     }
 
     function addToCurrentCart(name, price, qtyToAdd = 1) {
-      const isC = (mode === 'COUP'); const extra = isC ? Math.max(0, price - baseCouponVal) : 0;
+      const isC = (mode === 'COUP'); 
+      const extraPerCup = isC ? Math.max(0, price - baseCouponVal) : 0;
       let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
       const existing = targetList.find(it => it.n === name && it.isC === isC);
-      if(existing) existing.qty += qtyToAdd; else targetList.push({ n: name, p: price, isC: isC, ex: extra, qty: qtyToAdd });
+      
+      if(existing) {
+        existing.qty += qtyToAdd;
+        existing.exTotal = existing.ex * existing.qty;
+      } else {
+        targetList.push({ n: name, p: price, isC: isC, ex: extraPerCup, exTotal: extraPerCup * qtyToAdd, qty: qtyToAdd });
+      }
       renderCurrentCart();
     }
+    
     function changeQty(idx, delta) {
       let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
-      targetList[idx].qty += delta; if(targetList[idx].qty <= 0) targetList.splice(idx, 1); renderCurrentCart();
+      targetList[idx].qty += delta; 
+      if(targetList[idx].qty <= 0) {
+        targetList.splice(idx, 1);
+      } else {
+        targetList[idx].exTotal = targetList[idx].ex * targetList[idx].qty;
+      }
+      renderCurrentCart();
     }
+    
     function removeItem(idx) {
       let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
       targetList.splice(idx, 1); renderCurrentCart();
@@ -652,12 +665,20 @@
 
       targetList.forEach((it, idx) => {
         totalQtyCount += it.qty;
-        if(it.isC) { cCount += it.qty; exTotal += (it.ex * it.qty); } else { dir += (it.p * it.qty); }
+        if(it.isC) { 
+          cCount += it.qty; 
+          it.exTotal = it.ex * it.qty; 
+          exTotal += it.exTotal; 
+        } else { 
+          dir += (it.p * it.qty); 
+        }
+        
         el.innerHTML += `
           <div class="item-row">
             <div class="item-info">
               <div class="item-title">${it.n}</div>
-              <div class="item-sub">${it.isC ? '단가차액: +'+(it.ex).toLocaleString()+'원' : '단가: '+it.p.toLocaleString()+'원'}</div>
+              <!-- ★ 개별 목록 차액을 수량이 곱해진 총 차액(exTotal)으로 정확히 표기 ★ -->
+              <div class="item-sub">${it.isC ? '단가차액: +'+(it.exTotal).toLocaleString()+'원' : '단가: '+it.p.toLocaleString()+'원'}</div>
             </div>
             <div class="qty-controls">
               <button class="btn-qty" onclick="changeQty(${idx}, -1)">-</button>
@@ -807,12 +828,19 @@
 
         targetHistory.forEach(order => {
           order.items.forEach(it => {
-            if (it.isC) { grandAbsoluteTotalCoupBase += (it.qty * targetCouponVal); grandAbsoluteTotalCoupExtra += (it.ex * it.qty); } 
-            else { grandAbsoluteTotalDirect += (it.p * it.qty); }
+            if (it.isC) { 
+              let itemExTotal = it.exTotal || (it.ex * it.qty);
+              grandAbsoluteTotalCoupBase += (it.qty * targetCouponVal); 
+              grandAbsoluteTotalCoupExtra += itemExTotal; 
+            } else { 
+              grandAbsoluteTotalDirect += (it.p * it.qty); 
+            }
 
             if (isCoupMode && it.isC) {
               if(!stats[it.n]) stats[it.n] = { p: it.p, ex: it.ex, qty: 0 };
-              stats[it.n].qty += it.qty; totalQty += it.qty; totalExtra += (it.ex * it.qty);
+              stats[it.n].qty += it.qty; 
+              totalQty += it.qty; 
+              totalExtra += (it.exTotal || (it.ex * it.qty));
             } else if (!isCoupMode && !it.isC) {
               if(!stats[it.n]) stats[it.n] = { p: it.p, qty: 0 };
               stats[it.n].qty += it.qty; totalSalesOrClaim += (it.p * it.qty);
@@ -829,7 +857,8 @@
             document.getElementById('rCouponEmptyMsg').style.display = 'none';
             Object.keys(stats).forEach(k => { 
               const item = stats[k]; 
-              tbody.innerHTML += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:4px 0;">${k}</td><td style="text-align:right;">${item.p.toLocaleString()}</td><td style="text-align:right; color:#d32f2f;">+${item.ex.toLocaleString()}</td><td style="text-align:right; font-weight:bold;">${item.qty}잔</td><td style="text-align:right; font-weight:bold;">${(item.p * item.qty).toLocaleString()}원</td></tr>`; 
+              let rowExtraTotal = item.ex * item.qty; // 영수증 표에서도 수량 곱해진 총 차액 반영
+              tbody.innerHTML += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:4px 0;">${k}</td><td style="text-align:right;">${item.p.toLocaleString()}</td><td style="text-align:right; color:#d32f2f;">+${rowExtraTotal.toLocaleString()}</td><td style="text-align:right; font-weight:bold;">${item.qty}잔</td><td style="text-align:right; font-weight:bold;">${(item.p * item.qty).toLocaleString()}원</td></tr>`; 
             });
           }
           const baseClaim = totalQty * targetCouponVal;
