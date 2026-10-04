@@ -51,18 +51,16 @@
     body.theme-coup .item-row { border-bottom: 1px dashed #444; color: #f1f1f1; }
     body.theme-coup .row { color: #bbb; }
 
-    /* ★ 아이패드 미니 화면 비율 최적화: 메뉴판을 넓히고 전표창을 슬림하게 조정 ★ */
     .container { display: flex; flex: 1; height: calc(100% - 48px); overflow: hidden; }
-    .menu-panel { flex: 70; padding: 8px; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-    .cart-panel { flex: 30; min-width: 270px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+    .menu-panel { flex: 72; padding: 8px; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+    .cart-panel { flex: 28; min-width: 260px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
-    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; font-weight: bold; }
-    .badge-board-name { background: rgba(0,0,0,0.1); padding: 3px 6px; border-radius: 4px; }
+    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; }
+    .badge-board-name { background: rgba(0,0,0,0.1); padding: 3px 6px; border-radius: 4px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
     body.theme-coup .badge-board-name { background: rgba(255,255,255,0.1); }
 
     .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-gap: 6px; padding-bottom: 15px; }
     
-    /* 메뉴 버튼 높이 조절로 짤림 방지 */
     .btn-item {
       width: 100%; height: 115px; border: none; color: #fff; display: flex; flex-direction: column;
       align-items: center; justify-content: center; font-weight: bold; cursor: pointer;
@@ -73,7 +71,20 @@
     .btn-square { border-radius: 10px; }
     .btn-circle { border-radius: 50%; }
     
-    .m-title { font-size: 13px; line-height: 1.15; margin-bottom: 4px; width: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 900; }
+    /* ★ 메뉴 이름 짤림 방지: 줄바꿈 허용(normal) 및 두 줄 정렬 ★ */
+    .m-title { 
+      font-size: 12px; 
+      line-height: 1.2; 
+      margin-bottom: 3px; 
+      width: 98%; 
+      white-space: normal; 
+      word-break: keep-all; 
+      overflow: hidden; 
+      display: -webkit-box; 
+      -webkit-line-clamp: 2; 
+      -webkit-box-orient: vertical; 
+      font-weight: 900; 
+    }
     .m-price { font-size: 11px; opacity: 0.95; }
     .badge { position: absolute; top: 3px; right: 3px; background: #d32f2f; color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 4px; font-weight: bold; z-index: 3; }
     .edit-tag { position: absolute; top: 3px; left: 3px; background: #ffd43b; color: #000; font-size: 10px; font-weight: bold; padding: 2px 4px; border-radius: 3px; z-index: 3; }
@@ -82,39 +93,40 @@
     .cart-nav-header { padding: 6px 8px; display: flex; justify-content: space-between; align-items: center; }
     .nav-arrow-btn { background: #495057; color: #fff; border: none; border-radius: 6px; padding: 6px 8px; font-weight: bold; font-size: 12px; cursor: pointer; white-space: nowrap; }
     .nav-arrow-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-    .status-text { font-size: 14px; font-weight: bold; white-space: nowrap; margin: 0 2px; }
+    .status-text { font-size: 13px; font-weight: bold; white-space: nowrap; margin: 0 2px; }
     .btn-new-order { background: #00897b; color: #fff; border: none; border-radius: 6px; padding: 6px 8px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
 
     .cart-list { flex: 1; overflow-y: auto; padding: 4px 8px; }
     .item-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px dashed #ccc; width: 100%; }
     
     .item-info { flex: 1; min-width: 0; padding-right: 4px; }
-    /* ★ 주문 음료 이름 진한 검정색(블랙)으로 선명하게 강조 ★ */
-    .item-title { font-weight: 900; font-size: 14px; color: #000; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-    body.theme-coup .item-title { color: #fff; }
+    .item-title { font-weight: 900; font-size: 14px; color: #000 !important; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+    body.theme-coup .item-title { color: #fff !important; }
     
     .item-sub { font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #555; font-weight: bold; }
     body.theme-coup .item-sub { color: #aaa; }
     
     .qty-controls { display: flex; align-items: center; flex-shrink: 0; margin-right: 4px; }
-    .btn-qty { width: 28px; height: 28px; background: #adb5bd; color:#fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; line-height: 1; margin: 0 2px; }
-    .qty-text { width: 20px; text-align: center; font-weight: bold; font-size: 15px; }
+    .btn-qty { width: 26px; height: 26px; background: #adb5bd; color:#fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; line-height: 1; margin: 0 2px; }
+    .qty-text { width: 20px; text-align: center; font-weight: bold; font-size: 14px; }
     
-    .item-price { width: 60px; text-align: right; font-weight: 900; font-size: 14px; flex-shrink: 0; margin-right: 4px; }
-    .btn-row-del { border: none; background: none; color: #fa5252; font-size: 20px; font-weight: bold; cursor: pointer; padding: 0 2px; }
+    .item-price { width: 55px; text-align: right; font-weight: 900; font-size: 13px; flex-shrink: 0; margin-right: 4px; color: #000; }
+    body.theme-coup .item-price { color: #fff; }
+    
+    .btn-row-del { border: none; background: none; color: #fa5252; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0 2px; }
 
     .cart-bottom { padding: 10px; }
     .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
     
-    .row.total { font-size: 20px; font-weight: bold; color: #2e7d32; border-top: 2px solid #ccc; padding-top: 8px; margin-top: 4px; align-items: center; }
-    .row.total span:last-child { font-size: 28px; font-weight: 900; }
+    .row.total { font-size: 18px; font-weight: bold; color: #2e7d32; border-top: 2px solid #ccc; padding-top: 8px; margin-top: 4px; align-items: center; }
+    .row.total span:last-child { font-size: 26px; font-weight: 900; }
     body.theme-coup .row.total { color: #ff9800; border-color: #444; }
     
     .action-grid { display: flex; justify-content: space-between; margin-top: 8px; }
-    .btn-action { width: 48%; height: 46px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
+    .btn-action { width: 48%; height: 44px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
     .btn-card { background: #1971c2; color: #fff; }
     .btn-cash { background: #2f9e44; color: #fff; }
-    .btn-checkout-coupon { width: 100%; height: 48px; background: #ff9800; color: #fff; border: none; border-radius: 6px; font-size: 17px; font-weight: bold; cursor: pointer; }
+    .btn-checkout-coupon { width: 100%; height: 46px; background: #ff9800; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
 
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 1000; }
     .modal-box { background: #fff; color: #222; border-radius: 12px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
@@ -149,8 +161,7 @@
   <header>
     <button id="btnTabReg" class="tab-side-btn" onclick="setMode('REG')">일반 판매</button>
     <div class="header-center-box">
-      <!-- "행사명:" 글자 완전 삭제됨 -->
-      <div class="header-event-text" onclick="changeEventName()"><span id="lblHeaderEventName">미지정</span></div>
+      <div class="header-event-text" onclick="changeEventName()"><span id="lblHeaderEventName">이름을 터치하세요</span></div>
       <div class="header-center-clock" id="liveClock">00:00</div>
       
       <div class="coupon-counter" id="couponCounterBox">
@@ -240,7 +251,7 @@
       <div class="opt-card" style="border-color:#fa5252; background:#fff5f5;">
         <div class="opt-card-title" style="color:#e03131;">🚨 당일 내역 리셋</div>
         <p style="font-size:12px; color:#666; margin-bottom:8px; line-height:1.3;">오늘 받은 주문 내역만 0건으로 리셋합니다.<br>(메뉴판과 과거 내역은 유지됩니다)</p>
-        <button style="width:100%; height:40px; background:#fa5252; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="resetTodaySales()">⚠️️ 당일 판매내역 초기화</button>
+        <button style="width:100%; height:40px; background:#fa5252; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="resetTodaySales()">⚠ 당일 판매내역 초기화</button>
       </div>
 
       <button style="width:100%; height:42px; background:#495057; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer; margin-top:4px;" onclick="closeModeOptionModal()">닫기</button>
@@ -629,7 +640,7 @@
         el.innerHTML += `
           <div class="item-row">
             <div class="item-info">
-              <div class="item-title" style="color:${it.isC ? '#ff9800' : '#2f9e44'};">${it.n}</div>
+              <div class="item-title">${it.n}</div>
               <div class="item-sub">${it.isC ? '단가차액: +'+(it.ex).toLocaleString()+'원' : '단가: '+it.p.toLocaleString()+'원'}</div>
             </div>
             <div class="qty-controls">
