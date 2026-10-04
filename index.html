@@ -117,7 +117,6 @@
     .cart-bottom { padding: 10px; }
     .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
     
-    /* ★ 주문 총잔수 표시 추가 ★ */
     .row.total-qty { font-size: 15px; font-weight: bold; color: #1971c2; border-top: 1px solid #ddd; padding-top: 6px; margin-top: 2px; }
     
     .row.total { font-size: 18px; font-weight: bold; color: #2e7d32; border-top: 2px solid #ccc; padding-top: 8px; margin-top: 4px; align-items: center; }
@@ -192,7 +191,8 @@
     <div class="cart-panel">
       <div class="cart-nav-header">
         <button class="nav-arrow-btn" id="btnPrevOrder" onclick="navigateOrder(-1)">◀ 이전</button>
-        <div class="status-text" id="orderStatusTitle">신규 주문</div>
+        <!-- ★ '신규 주문'에서 '현재 주문'으로 변경 완료 ★ -->
+        <div class="status-text" id="orderStatusTitle">현재 주문</div>
         <div style="display:flex; align-items:center;">
           <button class="nav-arrow-btn" id="btnNextOrder" onclick="navigateOrder(1)" disabled>다음 ▶</button>
           <button class="btn-new-order" onclick="resetToNewOrder()">새주문</button>
@@ -203,7 +203,6 @@
         <div class="row" id="rowDirectPay"><span>일반 결제액:</span><b id="vDirect">0원</b></div>
         <div class="row" id="rowCoupCount" style="display:none; color:#e65100;"><span>쿠폰 회수:</span><b id="vCoup">0장</b></div>
         
-        <!-- ★ 주문 총잔수 표시줄 복구 완료 ★ -->
         <div class="row total-qty"><span>주문 총잔수:</span><span id="vTotalQty" style="font-weight:900;">0잔</span></div>
         
         <div class="row total"><span>받을 금액:</span><span id="vTotal">0원</span></div>
@@ -671,7 +670,7 @@
 
       const btnArea = document.getElementById('paymentBtnArea'); const titleEl = document.getElementById('orderStatusTitle');
       if(currentViewingIndex === -1) {
-        titleEl.innerHTML = `● 신규 주문`;
+        titleEl.innerHTML = `현재 주문`; // ★ '현재 주문'으로 고정 ★
         if(dir === 0 && cCount > 0) btnArea.innerHTML = `<button class="btn-checkout-coupon" onclick="completeOrder('COUPON')">쿠폰 완료 (0원)</button>`;
         else btnArea.innerHTML = `<div class="action-grid"><button class="btn-action btn-card" onclick="completeOrder('CARD')">카드 결제</button><button class="btn-action btn-cash" onclick="openCashModal()">현금 결제</button></div>`;
       } else {
@@ -712,6 +711,7 @@
     
     function completeCashOrder() { if(currentReceivedAmount < currentDueAmount && !confirm("받은 금액이 부족합니다. 완료하시겠습니까?")) return; closeCashModal(); completeOrder('CASH'); }
 
+    // ★ [새주문] 버튼 먹통 현상 완벽 해결 (현재 조회 상태를 강제로 신규주문으로 리셋) ★
     function completeOrder(payType) {
       if(!newCart.length) return; const now = new Date();
       
@@ -724,7 +724,9 @@
       }
 
       orderHistory.unshift({ id: Date.now(), seq: orderSeq++, time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }), payType: payType, items: JSON.parse(JSON.stringify(newCart)) });
-      newCart = []; renderCurrentCart();
+      newCart = []; 
+      currentViewingIndex = -1; // 강제로 신규 주문 상태로 전환
+      renderCurrentCart();
     }
 
     function saveEditedOrder() {
@@ -734,7 +736,11 @@
       if(!orderHistory.length) return alert("과거 주문 없음.");
       currentViewingIndex = Math.max(-1, Math.min(currentViewingIndex - dir, orderHistory.length - 1)); renderCurrentCart();
     }
-    function resetToNewOrder() { currentViewingIndex = -1; renderCurrentCart(); }
+    function resetToNewOrder() { 
+      currentViewingIndex = -1; 
+      newCart = []; 
+      renderCurrentCart(); 
+    }
 
     function saveCurrentEvent() {
       if (orderHistory.length === 0) return alert("저장할 판매 내역이 없습니다.");
