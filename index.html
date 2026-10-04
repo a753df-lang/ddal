@@ -9,20 +9,20 @@
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3003/3003984.png">
   <title>커피트럭 포스</title>
   <style>
-    /* 아이패드 미니2 호환을 위한 CSS 완벽 수정 (gap 속성 제거, margin 대체) */
+    /* 구형 아이패드(iOS 12) 완벽 호환 CSS */
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; }
     html, body { height: 100%; overflow: hidden; display: flex; flex-direction: column; transition: background-color 0.2s; }
     
-    header { height: 64px; min-height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 2px solid rgba(0,0,0,0.1); }
-    .tab-side-btn { height: 48px; padding: 0 20px; border-radius: 8px; font-weight: 900; font-size: 17px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 6px rgba(0,0,0,0.15); transition: transform 0.1s; }
+    header { height: 50px; min-height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; border-bottom: 2px solid rgba(0,0,0,0.1); }
+    .tab-side-btn { height: 38px; padding: 0 10px; border-radius: 6px; font-weight: 900; font-size: 14px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 6px rgba(0,0,0,0.15); white-space: nowrap; }
     .tab-side-btn:active { transform: scale(0.96); }
     
     .header-center-box { display: flex; align-items: center; }
-    .header-event-text { font-size: 16px; font-weight: 900; color: #0288d1; cursor: pointer; margin-right: 16px; } /* gap 대신 margin 적용 */
-    .header-center-clock { font-size: 18px; font-weight: 900; letter-spacing: 0.5px; }
+    .header-event-text { font-size: 13px; font-weight: 900; color: #0288d1; cursor: pointer; margin-right: 8px; white-space: nowrap; }
+    .header-center-clock { font-size: 13px; font-weight: 900; letter-spacing: 0.5px; white-space: nowrap; }
     
     .header-right-group { display: flex; align-items: center; }
-    .btn-action-top { height: 48px; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 8px; } /* gap 대신 margin 적용 */
+    .btn-action-top { height: 38px; padding: 0 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 6px; white-space: nowrap; }
     .btn-action-top:active { transform: scale(0.96); }
 
     body.theme-reg { background-color: #ffffff; color: #222; }
@@ -50,114 +50,136 @@
     body.theme-coup .row { color: #bbb; }
     body.theme-coup .btn-opt-theme { background: #e65100; color: #fff; }
 
-    .container { display: flex; flex: 1; height: calc(100% - 64px); overflow: hidden; }
-    .menu-panel { flex: 70; padding: 12px; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; font-weight: bold; }
-    .badge-board-name { background: rgba(0,0,0,0.1); padding: 4px 10px; border-radius: 4px; }
+    .container { display: flex; flex: 1; height: calc(100% - 50px); overflow: hidden; padding-bottom: 20px; }
+    
+    /* ★ 전표 칸이 넓어지도록 비율 수정 (기존 70:30 -> 62:38) ★ */
+    .menu-panel { flex: 62; padding: 10px; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+    .cart-panel { flex: 38; min-width: 320px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+
+    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; font-weight: bold; }
+    .badge-board-name { background: rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 4px; }
     body.theme-coup .badge-board-name { background: rgba(255,255,255,0.1); }
 
-    /* 그리드 간격은 지원하므로 유지 */
-    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding-bottom: 30px; }
-    .btn-item { width: 100%; aspect-ratio: 1 / 1; border: none; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; position: relative; text-align: center; padding: 6px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); background-size: cover; background-position: center; overflow: hidden; }
+    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-gap: 8px; padding-bottom: 30px; }
+    
+    /* ★ 찌그러짐 원천 차단: 비율코드 삭제하고 높이를 120px로 완전 고정 ★ */
+    .btn-item {
+      width: 100%; height: 120px; border: none; color: #fff; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; font-weight: bold; cursor: pointer;
+      position: relative; text-align: center; padding: 4px; box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+      background-size: cover; background-position: center; overflow: hidden;
+    }
     .btn-item:active { transform: scale(0.96); }
     .btn-square { border-radius: 12px; }
     .btn-circle { border-radius: 50%; }
-    .m-title { font-size: clamp(14px, 1.6vw, 18px); font-weight: 900; line-height: 1.25; margin-bottom: 4px; }
-    .m-price { font-size: clamp(12px, 1.3vw, 15px); opacity: 0.95; }
-    .badge { position: absolute; top: 6px; right: 6px; background: #d32f2f; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; z-index: 3; }
-    .edit-tag { position: absolute; top: 6px; left: 6px; background: #ffd43b; color: #000; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 3px; z-index: 3; }
+    
+    /* 메뉴 버튼 글씨 짤림 방지 */
+    .m-title { font-size: 13px; line-height: 1.2; margin-bottom: 4px; width: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 900; }
+    .m-price { font-size: 12px; opacity: 0.95; }
+    .badge { position: absolute; top: 4px; right: 4px; background: #d32f2f; color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 4px; font-weight: bold; z-index: 3; }
+    .edit-tag { position: absolute; top: 4px; left: 4px; background: #ffd43b; color: #000; font-size: 10px; font-weight: bold; padding: 2px 4px; border-radius: 3px; z-index: 3; }
 
-    .cart-panel { flex: 30; min-width: 300px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-    .cart-nav-header { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
-    .nav-arrow-btn { background: #495057; color: #fff; border: none; border-radius: 6px; padding: 7px 12px; font-weight: bold; font-size: 14px; cursor: pointer; }
+    /* ★ 전표 영역 글자 내려감 현상 완벽 방지 코드 ★ */
+    .cart-nav-header { padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; }
+    .nav-arrow-btn { background: #495057; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-weight: bold; font-size: 12px; cursor: pointer; white-space: nowrap; }
     .nav-arrow-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-    .status-text { font-size: 15px; font-weight: bold; }
-    .btn-new-order { background: #00897b; color: #fff; border: none; border-radius: 6px; padding: 7px 10px; font-size: 13px; font-weight: bold; cursor: pointer; margin-left: 6px; }
+    .status-text { font-size: 14px; font-weight: bold; white-space: nowrap; margin: 0 4px; }
+    .btn-new-order { background: #00897b; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: bold; cursor: pointer; margin-left: 4px; white-space: nowrap; }
 
-    .cart-list { flex: 1; overflow-y: auto; padding: 8px 12px; }
-    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; font-size: 16px; }
-    .item-title { font-weight: bold; font-size: 16px; }
-    .item-sub { font-size: 13px; margin-top: 3px; }
-    .qty-controls { display: flex; align-items: center; }
-    .btn-qty { width: 32px; height: 32px; background: #adb5bd; color:#fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 18px; line-height: 1; margin: 0 6px; }
-    .qty-text { min-width: 24px; text-align: center; font-weight: bold; font-size: 17px; }
-    .btn-row-del { border: none; background: none; color: #fa5252; font-size: 20px; font-weight: bold; cursor: pointer; padding: 0 4px; margin-left: 6px; }
+    .cart-list { flex: 1; overflow-y: auto; padding: 6px 10px; }
+    .item-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px dashed #ccc; width: 100%; }
+    
+    /* 글자 칸이 남은 공간을 유연하게 쓰되 넘어가는 글자는 ... 처리 */
+    .item-info { flex: 1; min-width: 0; padding-right: 4px; }
+    .item-title { font-weight: bold; font-size: 13px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+    .item-sub { font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #555; }
+    
+    /* 수량 조절 버튼 영역은 공간 압축 방지 (flex-shrink: 0) */
+    .qty-controls { display: flex; align-items: center; flex-shrink: 0; margin-right: 4px; }
+    .btn-qty { width: 28px; height: 28px; background: #adb5bd; color:#fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; line-height: 1; margin: 0 4px; }
+    .qty-text { width: 20px; text-align: center; font-weight: bold; font-size: 15px; }
+    .btn-row-del { border: none; background: none; color: #fa5252; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0 2px; margin-left: 2px; }
+    
+    /* 우측 가격 텍스트 영역도 압축 방지 */
+    .item-price { width: 65px; text-align: right; font-weight: bold; font-size: 13px; flex-shrink: 0; }
 
-    .cart-bottom { padding: 12px 14px; }
-    .row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 5px; }
-    .row.total { font-size: 22px; font-weight: bold; color: #2e7d32; border-top: 1px solid #ccc; padding-top: 8px; margin-top: 4px; }
+    .cart-bottom { padding: 10px; }
+    .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+    .row.total { font-size: 18px; font-weight: bold; color: #2e7d32; border-top: 1px solid #ccc; padding-top: 6px; margin-top: 2px; }
     body.theme-coup .row.total { color: #ff9800; border-color: #444; }
     
-    .action-grid { display: flex; justify-content: space-between; margin-top: 8px; }
-    .btn-action { width: 48%; height: 50px; border: none; border-radius: 6px; font-size: 17px; font-weight: bold; cursor: pointer; }
+    .action-grid { display: flex; justify-content: space-between; margin-top: 6px; }
+    .btn-action { width: 48%; height: 42px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
     .btn-card { background: #1971c2; color: #fff; }
     .btn-cash { background: #2f9e44; color: #fff; }
-    .btn-checkout-coupon { width: 100%; height: 52px; background: #ff9800; color: #fff; border: none; border-radius: 6px; font-size: 19px; font-weight: bold; cursor: pointer; }
+    .btn-checkout-coupon { width: 100%; height: 44px; background: #ff9800; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
 
     /* 모달 공통 */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 1000; }
-    .modal-box { background: #fff; color: #222; border-radius: 14px; padding: 22px; box-shadow: 0 8px 28px rgba(0,0,0,0.5); max-height: 94vh; overflow-y: auto; }
-
-    .opt-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
-    .opt-card-title { font-size: 16px; font-weight: 900; margin-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; }
-    .board-select-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #ced4da; }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
-    .form-group input, .form-group select { width: 100%; height: 42px; border: 1px solid #ccc; border-radius: 6px; padding: 0 10px; font-size: 15px; }
+    .modal-box { background: #fff; color: #222; border-radius: 12px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
+    
+    .opt-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    .opt-card-title { font-size: 15px; font-weight: 900; margin-bottom: 8px; color: #333; display: flex; justify-content: space-between; align-items: center; }
+    .board-select-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #ced4da; font-size: 14px; }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
+    .form-group input, .form-group select { width: 100%; height: 38px; border: 1px solid #ccc; border-radius: 6px; padding: 0 8px; font-size: 14px; }
 
     /* 슬러시 모달 */
-    .slush-box { width: 94%; max-width: 680px; padding: 26px; }
-    .slush-grid { display: flex; justify-content: space-between; margin: 20px 0; }
-    .btn-slush-card { width: 31%; height: 160px; border: none; border-radius: 14px; color: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; box-shadow: 0 6px 14px rgba(0,0,0,0.25); }
+    .slush-box { width: 92%; max-width: 600px; padding: 20px; }
+    .slush-grid { display: flex; justify-content: space-between; margin: 16px 0; }
+    .btn-slush-card { width: 31%; height: 130px; border: none; border-radius: 12px; color: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.25); }
     .btn-slush-card:active { transform: scale(0.97); }
     .slush-orange { background-color: #ff9800; }
     .slush-grape { background-color: #7b1fa2; }
     .slush-mix { background: linear-gradient(135deg, #ff9800 50%, #7b1fa2 50%); }
-    .slush-badge-count { position: absolute; top: 8px; right: 8px; background: #fff; color: #d32f2f; font-size: 20px; font-weight: 900; padding: 3px 12px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
-    .btn-slush-minus { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.7); width: 36px; height: 36px; border-radius: 50%; font-size: 22px; font-weight: 900; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 5; }
+    .slush-badge-count { position: absolute; top: 6px; right: 6px; background: #fff; color: #d32f2f; font-size: 18px; font-weight: 900; padding: 2px 10px; border-radius: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .btn-slush-minus { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.7); width: 32px; height: 32px; border-radius: 50%; font-size: 20px; font-weight: 900; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 5; }
     .btn-slush-minus:active { background: #d32f2f; }
 
     /* 현금 모달 */
-    .cash-box-lg { width: 94%; max-width: 580px; padding: 26px; }
-    .cash-display-box { background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 10px; padding: 16px; margin-bottom: 14px; text-align: center; }
-    .cash-suggest-grid { display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 16px; }
-    .btn-suggest { width: 48%; height: 60px; background: #e7f5ff; border: 2px solid #74c0fc; color: #1864ab; border-radius: 8px; font-weight: 900; font-size: 19px; cursor: pointer; margin-bottom: 8px; }
-    .cash-add-grid { display: flex; justify-content: space-between; margin-bottom: 16px; }
-    .btn-add-cash { width: 23%; height: 52px; background: #f1f3f5; border: 1px solid #ced4da; border-radius: 8px; font-weight: 900; font-size: 16px; cursor: pointer; color: #333; }
+    .cash-box-lg { width: 92%; max-width: 500px; padding: 20px; }
+    .cash-display-box { background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 8px; padding: 12px; margin-bottom: 12px; text-align: center; }
+    .cash-suggest-grid { display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 12px; }
+    .btn-suggest { width: 48%; height: 50px; background: #e7f5ff; border: 2px solid #74c0fc; color: #1864ab; border-radius: 8px; font-weight: 900; font-size: 17px; cursor: pointer; margin-bottom: 8px; }
+    .cash-add-grid { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .btn-add-cash { width: 23%; height: 46px; background: #f1f3f5; border: 1px solid #ced4da; border-radius: 8px; font-weight: 900; font-size: 14px; cursor: pointer; color: #333; }
   </style>
 </head>
 <body class="theme-reg">
 
   <header>
-    <button id="btnTabReg" class="tab-side-btn" onclick="setMode('REG')">일반 판매 (카드/현금)</button>
+    <button id="btnTabReg" class="tab-side-btn" onclick="setMode('REG')">일반 판매</button>
     <div class="header-center-box">
       <div class="header-event-text" onclick="changeEventName()">행사명: <span id="lblHeaderEventName">미지정</span></div>
-      <div class="header-center-clock" id="liveClock">2026. 10. 04 (일) 00:00:00</div>
+      <div class="header-center-clock" id="liveClock">00:00</div>
     </div>
     <div class="header-right-group">
       <button id="btnTabCoup" class="tab-side-btn" onclick="setMode('COUP')">★ 쿠폰 판매</button>
-      <button class="btn-action-top" style="background:#5c7cfa; color:#fff;" onclick="openPastEventsModal()">📅 과거 내역</button>
+      <button class="btn-action-top" style="background:#5c7cfa; color:#fff;" onclick="openPastEventsModal()">📅 과거</button>
       <button class="btn-action-top btn-opt-theme" onclick="openModeOptionModal()">⚙ 옵션</button>
-      <button class="btn-action-top" style="background:#1b5e20; color:#fff;" id="btnReceiptTop" onclick="showReceipt()">🧾 일반 매출 마감</button>
+      <button class="btn-action-top" style="background:#1b5e20; color:#fff;" id="btnReceiptTop" onclick="showReceipt()">🧾 마감</button>
     </div>
   </header>
 
   <div class="container">
+    <!-- 메뉴판 영역 -->
     <div class="menu-panel">
       <div class="current-board-info">
-        <span>현재 메뉴판: <span class="badge-board-name" id="lblCurrentBoardName">기본 음료</span></span>
-        <span id="editModeNotice" style="display:none; color:#ffd43b; font-weight:900;">✏ 메뉴 수정 모드 (메뉴 누르면 변경)</span>
+        <span>메뉴판: <span class="badge-board-name" id="lblCurrentBoardName">기본 음료</span></span>
+        <span id="editModeNotice" style="display:none; color:#ffd43b; font-weight:900;">✏ 수정 모드</span>
       </div>
       <div class="grid-container" id="mGrid"></div>
     </div>
 
+    <!-- 전표(장바구니) 영역 -->
     <div class="cart-panel">
       <div class="cart-nav-header">
         <button class="nav-arrow-btn" id="btnPrevOrder" onclick="navigateOrder(-1)">◀ 이전</button>
         <div class="status-text" id="orderStatusTitle">신규 주문</div>
         <div style="display:flex; align-items:center;">
           <button class="nav-arrow-btn" id="btnNextOrder" onclick="navigateOrder(1)" disabled>다음 ▶</button>
-          <button class="btn-new-order" onclick="resetToNewOrder()">새 주문</button>
+          <button class="btn-new-order" onclick="resetToNewOrder()">새주문</button>
         </div>
       </div>
       <div class="cart-list" id="cList"></div>
@@ -175,63 +197,62 @@
   <div class="modal-overlay" id="slushModal">
     <div class="modal-box slush-box" style="text-align:center;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 style="font-size:24px; font-weight:900;">🍧 슬러시 맛 선택 (터치: +1잔 / [-] 터치: 1잔 취소)</h2>
+        <h2 style="font-size:20px; font-weight:900;">🍧 슬러시 (+1잔 / [-] 취소)</h2>
         <button style="background:#fa5252; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="resetSlushCounts()">전체 초기화</button>
       </div>
       <div class="slush-grid">
-        <div class="btn-slush-card slush-orange" onclick="clickSlushFlavor('오렌지')"><div class="btn-slush-minus" id="minusSlush_오렌지" onclick="event.stopPropagation(); minusSlushFlavor('오렌지')">-</div><span class="slush-badge-count" id="badgeSlush_오렌지" style="display:none;">0잔</span><div style="font-size:32px;">🍊</div><div style="font-size:26px; font-weight:900; margin-top:6px;">오렌지</div></div>
-        <div class="btn-slush-card slush-grape" onclick="clickSlushFlavor('포도')"><div class="btn-slush-minus" id="minusSlush_포도" onclick="event.stopPropagation(); minusSlushFlavor('포도')">-</div><span class="slush-badge-count" id="badgeSlush_포도" style="display:none;">0잔</span><div style="font-size:32px;">🍇</div><div style="font-size:26px; font-weight:900; margin-top:6px;">포도</div></div>
-        <div class="btn-slush-card slush-mix" onclick="clickSlushFlavor('혼합')"><div class="btn-slush-minus" id="minusSlush_혼합" onclick="event.stopPropagation(); minusSlushFlavor('혼합')">-</div><span class="slush-badge-count" id="badgeSlush_혼합" style="display:none;">0잔</span><div style="font-size:32px;">🌓</div><div style="font-size:26px; font-weight:900; margin-top:6px;">혼합(반반)</div></div>
+        <div class="btn-slush-card slush-orange" onclick="clickSlushFlavor('오렌지')"><div class="btn-slush-minus" id="minusSlush_오렌지" onclick="event.stopPropagation(); minusSlushFlavor('오렌지')">-</div><span class="slush-badge-count" id="badgeSlush_오렌지" style="display:none;">0잔</span><div style="font-size:28px;">🍊</div><div style="font-size:20px; font-weight:900; margin-top:4px;">오렌지</div></div>
+        <div class="btn-slush-card slush-grape" onclick="clickSlushFlavor('포도')"><div class="btn-slush-minus" id="minusSlush_포도" onclick="event.stopPropagation(); minusSlushFlavor('포도')">-</div><span class="slush-badge-count" id="badgeSlush_포도" style="display:none;">0잔</span><div style="font-size:28px;">🍇</div><div style="font-size:20px; font-weight:900; margin-top:4px;">포도</div></div>
+        <div class="btn-slush-card slush-mix" onclick="clickSlushFlavor('혼합')"><div class="btn-slush-minus" id="minusSlush_혼합" onclick="event.stopPropagation(); minusSlushFlavor('혼합')">-</div><span class="slush-badge-count" id="badgeSlush_혼합" style="display:none;">0잔</span><div style="font-size:28px;">🌓</div><div style="font-size:20px; font-weight:900; margin-top:4px;">혼합(반반)</div></div>
       </div>
-      <div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:12px; font-size:18px; font-weight:bold; margin-bottom:16px;">
+      <div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:10px; font-size:16px; font-weight:bold; margin-bottom:12px;">
         선택 합계: <span style="color:#d32f2f;" id="lblSlushTotalSummary">0잔 선택됨</span>
       </div>
       <div style="display:flex; justify-content:space-between;">
-        <button id="btnCompleteSlush" style="width:65%; height:58px; background:#2e7d32; color:#fff; border:none; border-radius:10px; font-weight:900; font-size:22px; cursor:pointer;" onclick="finishSlushSelection()">선택 완료 (전표에 담기)</button>
-        <button style="width:32%; height:58px; background:#868e96; color:#fff; border:none; border-radius:10px; font-weight:bold; font-size:18px; cursor:pointer;" onclick="closeSlushModal()">취소</button>
+        <button id="btnCompleteSlush" style="width:65%; height:50px; background:#2e7d32; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:18px; cursor:pointer;" onclick="finishSlushSelection()">선택 완료 (전표에 담기)</button>
+        <button style="width:32%; height:50px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;" onclick="closeSlushModal()">취소</button>
       </div>
     </div>
   </div>
 
   <!-- 옵션 모달 -->
   <div class="modal-overlay" id="modeOptModal">
-    <div class="modal-box" style="width:92%; max-width:500px;">
-      <h3 style="font-size:20px; font-weight:900; margin-bottom:14px;" id="modalOptTitle">⚙ 옵션 설정</h3>
+    <div class="modal-box" style="width:92%; max-width:440px;">
+      <h3 style="font-size:18px; font-weight:900; margin-bottom:12px;" id="modalOptTitle">⚙ 옵션 설정</h3>
       <div class="opt-card" id="optCouponSection" style="display:none;">
         <div class="opt-card-title">🎟 이번 행사 쿠폰 기준금액</div>
-        <div style="display:flex;"><input type="number" id="inpBaseCouponPrice" style="flex:1; height:42px; border:1px solid #ccc; border-radius:6px; padding:0 10px; font-size:16px; font-weight:bold; margin-right:8px;"><button style="height:42px; padding:0 16px; background:#e65100; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="saveBaseCouponPrice()">적용</button></div>
+        <div style="display:flex;"><input type="number" id="inpBaseCouponPrice" style="flex:1; height:38px; border:1px solid #ccc; border-radius:6px; padding:0 8px; font-size:15px; font-weight:bold; margin-right:8px;"><button style="height:38px; padding:0 14px; background:#e65100; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="saveBaseCouponPrice()">적용</button></div>
       </div>
       <div class="opt-card">
-        <div class="opt-card-title"><span>📋 메뉴판 맞바꾸기</span><button style="background:#2e7d32; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="addNewMenuBoard()">+ 새 메뉴판</button></div>
+        <div class="opt-card-title"><span>📋 메뉴판 맞바꾸기</span><button style="background:#2e7d32; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="addNewMenuBoard()">+ 새 메뉴판</button></div>
         <div id="boardSwapList"></div>
       </div>
       <div class="opt-card">
         <div class="opt-card-title">✏ 메뉴 추가 및 수정</div>
-        <div style="display:flex; justify-content:space-between; margin-top:10px;">
-          <button style="width:48%; height:44px; background:#0288d1; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:15px; cursor:pointer;" onclick="addNewMenuItem()">+ 새 메뉴 추가</button>
-          <button id="btnToggleEditInModal" style="width:48%; height:44px; background:#ffd43b; color:#000; border:none; border-radius:6px; font-weight:bold; font-size:15px; cursor:pointer;" onclick="toggleEditModeFromModal()">✏ 기존 메뉴 수정 켜기</button>
+        <div style="display:flex; justify-content:space-between; margin-top:8px;">
+          <button style="width:48%; height:40px; background:#0288d1; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="addNewMenuItem()">+ 새 메뉴 추가</button>
+          <button id="btnToggleEditInModal" style="width:48%; height:40px; background:#ffd43b; color:#000; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="toggleEditModeFromModal()">✏ 기존 메뉴 수정 켜기</button>
         </div>
       </div>
-      <button style="width:100%; height:46px; background:#495057; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer; margin-top:6px;" onclick="closeModeOptionModal()">닫기</button>
+      <button style="width:100%; height:42px; background:#495057; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer; margin-top:4px;" onclick="closeModeOptionModal()">닫기</button>
     </div>
   </div>
 
   <!-- 메뉴 추가/수정 폼 -->
   <div class="modal-overlay" id="menuEditModal">
-    <div class="modal-box" style="width:90%; max-width:440px;">
-      <h3 style="margin-bottom:14px;" id="menuEditModalTitle">메뉴 옵션 수정</h3>
+    <div class="modal-box" style="width:90%; max-width:400px;">
+      <h3 style="margin-bottom:12px;" id="menuEditModalTitle">메뉴 옵션 수정</h3>
       <input type="hidden" id="editMenuIdx">
-      <div class="form-group"><label>메뉴 이름</label><input type="text" id="editMName" placeholder="예: 1.아메리카노(ice)"></div>
-      <div class="form-group"><label>판매 가격 (원)</label><input type="number" id="editMPrice" placeholder="예: 4000"></div>
+      <div class="form-group"><label>메뉴 이름</label><input type="text" id="editMName"></div>
+      <div class="form-group"><label>판매 가격 (원)</label><input type="number" id="editMPrice"></div>
       <div class="form-group"><label>버튼 모양</label><select id="editMShape"><option value="square">사각형 버튼</option><option value="circle">원형 버튼</option></select></div>
       <div class="form-group"><label>버튼 색상</label><select id="editMColor"><option value="#0288d1">파랑</option><option value="#d32f2f">빨강</option><option value="#689f38">초록</option><option value="#fbc02d">노랑</option><option value="#e91e63">분홍</option><option value="#f57c00">주황</option><option value="#7b1fa2">보라</option><option value="#455a64">회색</option></select></div>
       <div class="form-group"><label>사진 등록</label><input type="file" id="editMFile" accept="image/*" onchange="handleImageFile(event)"></div>
-      <div class="form-group" style="display:flex; align-items:center;"><input type="checkbox" id="editMIsSlush" style="width:20px; height:20px; margin-right:8px;"><label for="editMIsSlush" style="margin:0; font-size:14px; cursor:pointer;">슬러시 메뉴 지정 (맛 선택창 열림)</label></div>
-      
-      <div style="display:flex; justify-content:space-between; margin-top:16px;">
-        <button style="width:32%; height:44px; background:#2e7d32; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="saveEditedMenu()">저장</button>
-        <button id="btnDeleteMenu" style="width:32%; height:44px; background:#e03131; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="deleteSelectedMenu()">삭제</button>
-        <button style="width:32%; height:44px; background:#868e96; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="closeMenuEditModal()">취소</button>
+      <div class="form-group" style="display:flex; align-items:center;"><input type="checkbox" id="editMIsSlush" style="width:18px; height:18px; margin-right:6px;"><label for="editMIsSlush" style="margin:0; font-size:13px; cursor:pointer;">슬러시 메뉴 지정 (맛 선택창 열림)</label></div>
+      <div style="display:flex; justify-content:space-between; margin-top:14px;">
+        <button style="width:32%; height:40px; background:#2e7d32; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="saveEditedMenu()">저장</button>
+        <button id="btnDeleteMenu" style="width:32%; height:40px; background:#e03131; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="deleteSelectedMenu()">삭제</button>
+        <button style="width:32%; height:40px; background:#868e96; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="closeMenuEditModal()">취소</button>
       </div>
     </div>
   </div>
@@ -239,79 +260,79 @@
   <!-- 현금 모달 -->
   <div class="modal-overlay" id="cashModal">
     <div class="modal-box cash-box-lg">
-      <h2 style="font-size:24px; font-weight:900; margin-bottom:14px;">💵 현금 거스름돈 계산</h2>
-      <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-        <div class="cash-display-box" style="width:48%;"><div style="font-size:14px; color:#666;">받을 금액</div><div style="font-size:26px; font-weight:900; color:#d32f2f;" id="modalDueAmount">0원</div></div>
-        <div class="cash-display-box" style="width:48%; background:#e7f5ff; border-color:#74c0fc;"><div style="font-size:14px; color:#1864ab;">받은 금액</div><div style="font-size:26px; font-weight:900; color:#1971c2;" id="modalReceivedAmount">0원</div></div>
+      <h2 style="font-size:20px; font-weight:900; margin-bottom:12px;">💵 거스름돈 계산</h2>
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+        <div class="cash-display-box" style="width:48%;"><div style="font-size:13px; color:#666;">받을 금액</div><div style="font-size:22px; font-weight:900; color:#d32f2f;" id="modalDueAmount">0원</div></div>
+        <div class="cash-display-box" style="width:48%; background:#e7f5ff; border-color:#74c0fc;"><div style="font-size:13px; color:#1864ab;">받은 금액</div><div style="font-size:22px; font-weight:900; color:#1971c2;" id="modalReceivedAmount">0원</div></div>
       </div>
-      <div style="font-size:15px; font-weight:900; margin-bottom:8px; color:#333;">자주 내는 금액:</div><div class="cash-suggest-grid" id="suggestButtons"></div>
-      <div style="font-size:15px; font-weight:900; margin-bottom:8px; color:#333;">권종 더하기 (+):</div>
-      <div class="cash-add-grid"><button class="btn-add-cash" onclick="addReceivedCash(1000)">+1,000</button><button class="btn-add-cash" onclick="addReceivedCash(5000)">+5,000</button><button class="btn-add-cash" onclick="addReceivedCash(10000)">+10,000</button><button class="btn-add-cash" onclick="addReceivedCash(50000)">+50,000</button></div>
-      <div class="cash-display-box" style="background:#e8f5e9; border-color:#a5d6a7; margin-bottom:18px;"><div style="font-size:16px; color:#2e7d32; font-weight:bold;">거스름돈</div><div style="font-size:36px; font-weight:900; color:#1b5e20;" id="modalChangeAmount">0원</div></div>
+      <div style="font-size:14px; font-weight:900; margin-bottom:6px; color:#333;">자주 내는 금액:</div><div class="cash-suggest-grid" id="suggestButtons"></div>
+      <div style="font-size:14px; font-weight:900; margin-bottom:6px; color:#333;">권종 더하기 (+):</div>
+      <div class="cash-add-grid"><button class="btn-add-cash" onclick="addReceivedCash(1000)">+1천</button><button class="btn-add-cash" onclick="addReceivedCash(5000)">+5천</button><button class="btn-add-cash" onclick="addReceivedCash(10000)">+1만</button><button class="btn-add-cash" onclick="addReceivedCash(50000)">+5만</button></div>
+      <div class="cash-display-box" style="background:#e8f5e9; border-color:#a5d6a7; margin-bottom:14px;"><div style="font-size:15px; color:#2e7d32; font-weight:bold;">거스름돈</div><div style="font-size:28px; font-weight:900; color:#1b5e20;" id="modalChangeAmount">0원</div></div>
       <div style="display:flex; justify-content:space-between;">
-        <button style="width:48%; height:54px; background:#2e7d32; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:20px; cursor:pointer;" onclick="completeCashOrder()">결제 완료</button>
-        <button style="width:24%; height:54px; background:#fa5252; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;" onclick="resetReceivedCash()">초기화</button>
-        <button style="width:24%; height:54px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;" onclick="closeCashModal()">취소</button>
+        <button style="width:48%; height:48px; background:#2e7d32; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:18px; cursor:pointer;" onclick="completeCashOrder()">결제 완료</button>
+        <button style="width:24%; height:48px; background:#fa5252; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer;" onclick="resetReceivedCash()">초기화</button>
+        <button style="width:24%; height:48px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer;" onclick="closeCashModal()">취소</button>
       </div>
     </div>
   </div>
 
-  <!-- 과거 내역 조회 창 -->
+  <!-- 과거 내역 모달 -->
   <div class="modal-overlay" id="pastEventsModal">
-    <div class="modal-box" style="width:92%; max-width:600px; padding:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h2 style="font-size:22px; font-weight:900;">📅 저장된 과거 행사 내역</h2>
-        <button style="background:#495057; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-weight:bold; font-size:15px; cursor:pointer;" onclick="closePastEventsModal()">닫기</button>
+    <div class="modal-box" style="width:92%; max-width:500px; padding:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h2 style="font-size:18px; font-weight:900;">📅 과거 행사 내역</h2>
+        <button style="background:#495057; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="closePastEventsModal()">닫기</button>
       </div>
-      <div id="pastEventsList" style="max-height:65vh; overflow-y:auto; border-top:2px solid #222; padding-top:12px;"></div>
+      <div id="pastEventsList" style="max-height:60vh; overflow-y:auto; border-top:2px solid #222; padding-top:10px;"></div>
     </div>
   </div>
 
   <!-- 마감 영수증 모달 -->
   <div class="modal-overlay" id="rModal">
-    <div class="modal-box" style="font-family:monospace; width:92%; max-width:460px; padding:20px;">
+    <div class="modal-box" style="font-family:monospace; width:92%; max-width:440px; padding:16px;">
       <div style="text-align:center;">
-        <h2 style="font-size:22px; font-weight:900; margin-bottom:4px;" id="rPrintTitle">[ 마감 영수증 ]</h2>
-        <div style="font-size:16px; font-weight:900; color:#0288d1; margin:4px 0;" id="rPrintEventName">행사명: 미지정</div>
-        <div style="font-size:13px; color:#444;" id="rPrintDateTime">날짜</div>
+        <h2 style="font-size:20px; font-weight:900; margin-bottom:4px;" id="rPrintTitle">[ 마감 영수증 ]</h2>
+        <div style="font-size:15px; font-weight:900; color:#0288d1; margin:4px 0;" id="rPrintEventName">행사명: 미지정</div>
+        <div style="font-size:12px; color:#444;" id="rPrintDateTime">날짜</div>
       </div>
-      <hr style="border:none; border-top:2px dashed #222; margin:14px 0;">
+      <hr style="border:none; border-top:2px dashed #222; margin:12px 0;">
 
       <!-- 쿠폰 표 -->
-      <div id="rCouponSection" style="display:none; background:#fff3e0; border:1px solid #ffe0b2; border-radius:6px; padding:12px; margin-bottom:12px;">
-        <div style="font-size:15px; font-weight:900; color:#e65100; margin-bottom:8px;">🎟 쿠폰 행사 정산 (주최측 청구용)</div>
-        <table style="width:100%; font-size:13px; border-collapse:collapse;">
+      <div id="rCouponSection" style="display:none; background:#fff3e0; border:1px solid #ffe0b2; border-radius:6px; padding:10px; margin-bottom:10px;">
+        <div style="font-size:14px; font-weight:900; color:#e65100; margin-bottom:6px;">🎟 쿠폰 행사 정산 (청구용)</div>
+        <table style="width:100%; font-size:12px; border-collapse:collapse;">
           <thead><tr style="border-bottom:1px solid #e65100; color:#555;"><th style="text-align:left; padding:4px 0;">품목</th><th style="text-align:right;">단가</th><th style="text-align:right;">차액</th><th style="text-align:right;">총잔수</th><th style="text-align:right;">합계</th></tr></thead>
           <tbody id="rCouponItems"></tbody>
         </table>
-        <div id="rCouponEmptyMsg" style="display:none; text-align:center; padding:10px; color:#999; font-size:13px;">쿠폰 판매 내역이 없습니다.</div>
-        <div style="border-top:1px dashed #e65100; margin-top:10px; padding-top:8px; font-size:13px;">
-          <div class="row" style="margin-bottom:4px;"><span>• 쿠폰 총 회수:</span><b id="rTotQty">0장</b></div>
-          <div class="row" style="margin-bottom:4px;"><span>• 기본액 (<span id="rBasePriceLbl">4,000</span>원×수량):</span><span id="rTotBase">0원</span></div>
+        <div id="rCouponEmptyMsg" style="display:none; text-align:center; padding:8px; color:#999; font-size:12px;">쿠폰 판매 내역이 없습니다.</div>
+        <div style="border-top:1px dashed #e65100; margin-top:8px; padding-top:6px; font-size:12px;">
+          <div class="row" style="margin-bottom:2px;"><span>• 쿠폰 총 회수:</span><b id="rTotQty">0장</b></div>
+          <div class="row" style="margin-bottom:2px;"><span>• 기본액 (<span id="rBasePriceLbl">4,000</span>원×수량):</span><span id="rTotBase">0원</span></div>
           <div class="row" style="color:#d32f2f; margin-bottom:4px;"><span>• 사후 초과차액:</span><span id="rTotExtra">+0원</span></div>
-          <div class="row" style="font-size:18px; font-weight:900; color:#e65100; border-top:2px solid #e65100; padding-top:8px; margin-top:6px;"><span>▶ 청구 총합계:</span><span id="rGrandClaim">0원</span></div>
+          <div class="row" style="font-size:16px; font-weight:900; color:#e65100; border-top:2px solid #e65100; padding-top:6px; margin-top:4px;"><span>▶ 청구 총합계:</span><span id="rGrandClaim">0원</span></div>
         </div>
       </div>
 
       <!-- 일반 표 -->
-      <div id="rDirectSection" style="display:none; background:#e8f5e9; border:1px solid #c8e6c9; border-radius:6px; padding:12px; margin-bottom:12px;">
-        <div style="font-size:15px; font-weight:900; color:#1b5e20; margin-bottom:8px;">💳 일반 현장 매출 (자체 보관용)</div>
-        <table style="width:100%; font-size:13px; border-collapse:collapse;">
+      <div id="rDirectSection" style="display:none; background:#e8f5e9; border:1px solid #c8e6c9; border-radius:6px; padding:10px; margin-bottom:10px;">
+        <div style="font-size:14px; font-weight:900; color:#1b5e20; margin-bottom:6px;">💳 일반 현장 매출 (자체 보관용)</div>
+        <table style="width:100%; font-size:12px; border-collapse:collapse;">
           <thead><tr style="border-bottom:1px solid #1b5e20; color:#555;"><th style="text-align:left; padding:4px 0;">품목</th><th style="text-align:right;">단가</th><th style="text-align:right;">총잔수</th><th style="text-align:right;">합계액</th></tr></thead>
           <tbody id="rDirectItems"></tbody>
         </table>
-        <div id="rDirectEmptyMsg" style="display:none; text-align:center; padding:10px; color:#999; font-size:13px;">일반 판매 내역이 없습니다.</div>
-        <div style="border-top:1px dashed #1b5e20; margin-top:10px; padding-top:8px;">
-          <div class="row" style="font-size:13px; color:#555; margin-bottom:2px;"><span>• 카드 결제:</span><span id="rDirectCard">0원</span></div>
-          <div class="row" style="font-size:13px; color:#555; margin-bottom:6px;"><span>• 현금 결제:</span><span id="rDirectCash">0원</span></div>
-          <div class="row" style="font-size:18px; font-weight:900; color:#1b5e20; border-top:1px solid #c8e6c9; padding-top:6px;"><span>▶ 현장 총합계:</span><span id="rDirectPay">0원</span></div>
+        <div id="rDirectEmptyMsg" style="display:none; text-align:center; padding:8px; color:#999; font-size:12px;">일반 판매 내역이 없습니다.</div>
+        <div style="border-top:1px dashed #1b5e20; margin-top:8px; padding-top:6px;">
+          <div class="row" style="font-size:12px; color:#555; margin-bottom:2px;"><span>• 카드 결제:</span><span id="rDirectCard">0원</span></div>
+          <div class="row" style="font-size:12px; color:#555; margin-bottom:6px;"><span>• 현금 결제:</span><span id="rDirectCash">0원</span></div>
+          <div class="row" style="font-size:16px; font-weight:900; color:#1b5e20; border-top:1px solid #c8e6c9; padding-top:4px;"><span>▶ 현장 총합계:</span><span id="rDirectPay">0원</span></div>
         </div>
       </div>
       
-      <hr style="border:none; border-top:2px solid #222; margin:14px 0;">
-      <div class="row" style="font-size:20px; font-weight:900; color:#000;"><span>★ 당일 총 매출:</span><span id="rTotalAll">0원</span></div>
+      <hr style="border:none; border-top:2px solid #222; margin:12px 0;">
+      <div class="row" style="font-size:18px; font-weight:900; color:#000;"><span>★ 당일 총 매출:</span><span id="rTotalAll">0원</span></div>
       
-      <div style="display:flex; justify-content:space-between; margin-top:20px;" id="receiptActionArea"></div>
+      <div style="display:flex; justify-content:space-between; margin-top:16px;" id="receiptActionArea"></div>
     </div>
   </div>
 
@@ -356,7 +377,7 @@
 
     function updateClock() {
       const now = new Date(); const days = ['일', '월', '화', '수', '목', '금', '토'];
-      document.getElementById('liveClock').innerText = `${now.getFullYear()}. ${(now.getMonth()+1).toString().padStart(2,'0')}. ${now.getDate().toString().padStart(2,'0')} (${days[now.getDay()]})  ${now.toLocaleTimeString('ko-KR', { hour12: false })}`;
+      document.getElementById('liveClock').innerText = `${now.getFullYear()}. ${(now.getMonth()+1).toString().padStart(2,'0')}. ${now.getDate().toString().padStart(2,'0')} (${days[now.getDay()]}) ${now.toLocaleTimeString('ko-KR', { hour12: false })}`;
     }
     setInterval(updateClock, 1000); updateClock();
 
@@ -369,14 +390,14 @@
 
     function setMode(m) {
       mode = m; document.body.className = (m === 'REG') ? 'theme-reg' : 'theme-coup';
-      document.getElementById('btnReceiptTop').innerText = (m === 'REG') ? '🧾 일반 매출 마감' : '🧾 쿠폰 정산 마감';
+      document.getElementById('btnReceiptTop').innerText = (m === 'REG') ? '🧾 일반 마감' : '🧾 쿠폰 마감';
       document.getElementById('btnReceiptTop').style.background = (m === 'REG') ? '#1b5e20' : '#e65100';
       drawGrid();
     }
 
     function openModeOptionModal() {
       const isCoup = (mode === 'COUP');
-      document.getElementById('modalOptTitle').innerText = isCoup ? '⚙ 쿠폰 판매 전용 옵션' : '⚙ 일반 판매 옵션';
+      document.getElementById('modalOptTitle').innerText = isCoup ? '⚙ 쿠폰 옵션' : '⚙ 일반 옵션';
       document.getElementById('optCouponSection').style.display = isCoup ? 'block' : 'none';
       if(isCoup) document.getElementById('inpBaseCouponPrice').value = baseCouponVal;
       renderBoardSwapList(); updateEditToggleBtnText(); document.getElementById('modeOptModal').style.display = 'flex';
@@ -394,7 +415,7 @@
       const box = document.getElementById('boardSwapList'); box.innerHTML = '';
       menuBoards.forEach((board, idx) => {
         const isCurrent = (board.id === currentBoardId);
-        box.innerHTML += `<div class="board-select-row"><div><b>${board.name}</b> ${isCurrent ? '<span style="color:#2e7d32; font-weight:bold;">(현재)</span>' : ''}</div><div style="display:flex;"><button style="background:#0288d1; color:#fff; border:none; padding:5px 10px; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:4px;" onclick="swapToBoard('${board.id}')">교체</button>${menuBoards.length > 1 ? `<button style="background:#e03131; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="deleteBoard(${idx})">삭제</button>` : ''}</div></div>`;
+        box.innerHTML += `<div class="board-select-row"><div><b>${board.name}</b> ${isCurrent ? '<span style="color:#2e7d32; font-weight:bold;">(현재)</span>' : ''}</div><div style="display:flex;"><button style="background:#0288d1; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:4px;" onclick="swapToBoard('${board.id}')">교체</button>${menuBoards.length > 1 ? `<button style="background:#e03131; color:#fff; border:none; padding:5px 6px; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="deleteBoard(${idx})">삭제</button>` : ''}</div></div>`;
       });
     }
     function swapToBoard(boardId) { currentBoardId = boardId; renderBoardSwapList(); drawGrid(); closeModeOptionModal(); }
@@ -504,7 +525,7 @@
         else { badge.style.display = 'none'; minusBtn.style.display = 'none'; }
       }
       document.getElementById('lblSlushTotalSummary').innerText = `총 ${total}잔 선택됨`;
-      document.getElementById('btnCompleteSlush').innerText = total > 0 ? `총 ${total}잔 선택 완료` : `선택 완료`;
+      document.getElementById('btnCompleteSlush').innerText = total > 0 ? `총 ${total}잔 담기` : `선택 완료`;
     }
     
     function finishSlushSelection() {
@@ -529,6 +550,7 @@
       targetList.splice(idx, 1); renderCurrentCart();
     }
 
+    /* ★ 전표 항목(글자 짤림 방지) 렌더링 ★ */
     function renderCurrentCart() {
       const el = document.getElementById('cList'); el.innerHTML = '';
       let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
@@ -536,7 +558,20 @@
 
       targetList.forEach((it, idx) => {
         if(it.isC) { cCount += it.qty; exTotal += (it.ex * it.qty); } else { dir += (it.p * it.qty); }
-        el.innerHTML += `<div class="item-row"><div style="flex:1;"><div class="item-title"><span style="color:${it.isC ? '#ff9800' : '#2f9e44'};">[${it.isC ? '쿠폰' : '일반'}]</span> ${it.n}</div><div class="item-sub" style="color:${it.isC ? '#fa5252' : '#555'};">${it.isC ? '사후차액: +'+(it.ex*it.qty).toLocaleString()+'원' : '단가: '+it.p.toLocaleString()+'원'}</div></div><div class="qty-controls"><button class="btn-qty" onclick="changeQty(${idx}, -1)">-</button><span class="qty-text">${it.qty}</span><button class="btn-qty" onclick="changeQty(${idx}, 1)">+</button><button class="btn-row-del" onclick="removeItem(${idx})">✕</button></div><div style="width:70px; text-align:right; font-weight:bold;">${it.isC ? '0원' : (it.p*it.qty).toLocaleString()+'원'}</div></div>`;
+        el.innerHTML += `
+          <div class="item-row">
+            <div class="item-info">
+              <div class="item-title"><span style="color:${it.isC ? '#ff9800' : '#2f9e44'};">[${it.isC ? '쿠폰' : '일반'}]</span> ${it.n}</div>
+              <div class="item-sub" style="color:${it.isC ? '#fa5252' : '#555'};">${it.isC ? '사후차액: +'+(it.ex*it.qty).toLocaleString()+'원' : '단가: '+it.p.toLocaleString()+'원'}</div>
+            </div>
+            <div class="qty-controls">
+              <button class="btn-qty" onclick="changeQty(${idx}, -1)">-</button>
+              <span class="qty-text">${it.qty}</span>
+              <button class="btn-qty" onclick="changeQty(${idx}, 1)">+</button>
+              <button class="btn-row-del" onclick="removeItem(${idx})">✕</button>
+            </div>
+            <div class="item-price">${it.isC ? '0원' : (it.p*it.qty).toLocaleString()+'원'}</div>
+          </div>`;
       });
 
       currentDueAmount = dir;
@@ -608,13 +643,13 @@
 
     function openPastEventsModal() {
       const list = document.getElementById('pastEventsList'); list.innerHTML = '';
-      if (pastEvents.length === 0) list.innerHTML = '<div style="text-align:center; padding:20px; color:#666; font-size:15px;">저장된 과거 행사 내역이 없습니다.</div>';
+      if (pastEvents.length === 0) list.innerHTML = '<div style="text-align:center; padding:20px; color:#666; font-size:14px;">저장된 과거 행사 내역이 없습니다.</div>';
       else {
         [...pastEvents].reverse().forEach((ev, i) => {
           const actualIdx = pastEvents.length - 1 - i;
           let tSales = 0, tCoup = 0;
           ev.history.forEach(ord => ord.items.forEach(it => { if(it.isC) tCoup += it.qty; else tSales += (it.p * it.qty); }));
-          list.innerHTML += `<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:12px; margin-bottom:12px;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;"><div><div style="font-size:18px; font-weight:900; color:#0288d1;">${ev.eventName}</div><div style="font-size:13px; color:#555; margin-top:4px;">${ev.dateStr} ${ev.timeStr}</div></div><button style="background:#e03131; color:#fff; border:none; padding:6px 10px; border-radius:6px; font-size:13px; cursor:pointer; font-weight:bold;" onclick="deletePastEvent(${actualIdx})">삭제</button></div><div style="font-size:15px; font-weight:bold; color:#333; margin-bottom:10px;">현장매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span> / 쿠폰: <span style="color:#e65100">${tCoup}장</span></div><button style="width:100%; height:44px; background:#495057; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:16px; cursor:pointer;" onclick="viewPastReceipt(${actualIdx})">🧾 마감 영수증 보기</button></div>`;
+          list.innerHTML += `<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:10px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;"><div><div style="font-size:16px; font-weight:900; color:#0288d1;">${ev.eventName}</div><div style="font-size:12px; color:#555; margin-top:2px;">${ev.dateStr} ${ev.timeStr}</div></div><button style="background:#e03131; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="deletePastEvent(${actualIdx})">삭제</button></div><div style="font-size:13px; font-weight:bold; color:#333; margin-bottom:8px;">매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span> / 쿠폰: <span style="color:#e65100">${tCoup}장</span></div><button style="width:100%; height:38px; background:#495057; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="viewPastReceipt(${actualIdx})">🧾 마감 영수증 보기</button></div>`;
         });
       }
       document.getElementById('pastEventsModal').style.display = 'flex';
@@ -623,7 +658,6 @@
     function deletePastEvent(idx) { if(!confirm("이 과거 마감 기록을 완전히 삭제하시겠습니까?")) return; pastEvents.splice(idx, 1); localStorage.setItem('coffee_past_events', JSON.stringify(pastEvents)); openPastEventsModal(); }
     function viewPastReceipt(idx) { closePastEventsModal(); showReceipt(pastEvents[idx]); }
 
-    /* 모달 닫기 안되던 에러 완벽 차단 및 영수증 처리 로직 */
     function showReceipt(histData = null) {
       try {
         const isHist = (histData !== null);
@@ -700,21 +734,17 @@
 
         const actionArea = document.getElementById('receiptActionArea');
         if (isHist) {
-          actionArea.innerHTML = `<button style="width:65%; height:50px; background:#2e7d32; color:#fff; border:none; font-weight:900; font-size:18px; border-radius:6px; cursor:pointer;" onclick="window.print()">프린터로 인쇄하기</button><button style="width:32%; height:50px; background:#333; color:#fff; border:none; font-weight:bold; font-size:16px; border-radius:6px; cursor:pointer;" onclick="closeReceipt()">닫기</button>`;
+          actionArea.innerHTML = `<button style="width:65%; height:44px; background:#2e7d32; color:#fff; border:none; font-weight:900; font-size:16px; border-radius:6px; cursor:pointer;" onclick="window.print()">인쇄하기</button><button style="width:32%; height:44px; background:#333; color:#fff; border:none; font-weight:bold; font-size:15px; border-radius:6px; cursor:pointer;" onclick="closeReceipt()">닫기</button>`;
         } else {
-          actionArea.innerHTML = `<button style="width:38%; height:50px; background:#1971c2; color:#fff; border:none; font-weight:900; font-size:16px; border-radius:6px; cursor:pointer;" onclick="saveCurrentEvent()">💾 마감 (저장)</button><button style="width:30%; height:50px; background:#2e7d32; color:#fff; border:none; font-weight:900; font-size:17px; border-radius:6px; cursor:pointer;" onclick="window.print()">인쇄</button><button style="width:28%; height:50px; background:#333; color:#fff; border:none; font-weight:bold; font-size:16px; border-radius:6px; cursor:pointer;" onclick="closeReceipt()">닫기</button>`;
+          actionArea.innerHTML = `<button style="width:38%; height:44px; background:#1971c2; color:#fff; border:none; font-weight:900; font-size:14px; border-radius:6px; cursor:pointer;" onclick="saveCurrentEvent()">💾 마감 (저장)</button><button style="width:30%; height:44px; background:#2e7d32; color:#fff; border:none; font-weight:900; font-size:15px; border-radius:6px; cursor:pointer;" onclick="window.print()">인쇄</button><button style="width:28%; height:44px; background:#333; color:#fff; border:none; font-weight:bold; font-size:14px; border-radius:6px; cursor:pointer;" onclick="closeReceipt()">닫기</button>`;
         }
         document.getElementById('rModal').style.display = 'flex';
       } catch (err) {
         alert('영수증을 불러오는 중 오류가 발생했습니다.');
-        console.error(err);
       }
     }
     
-    /* 여기서 모달 창이 닫힙니다 */
-    function closeReceipt() { 
-      document.getElementById('rModal').style.display = 'none'; 
-    }
+    function closeReceipt() { document.getElementById('rModal').style.display = 'none'; }
 
     setMode('REG'); renderCurrentCart();
   </script>
