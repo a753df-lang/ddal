@@ -271,7 +271,7 @@
     </div>
   </div>
 
-  <!-- 메뉴 추가/수정 폼 (버그 수정 완료) -->
+  <!-- 메뉴 추가/수정 폼 -->
   <div class="modal-overlay" id="menuEditModal">
     <div class="modal-box" style="width:90%; max-width:400px;">
       <h3 style="margin-bottom:12px;" id="menuEditModalTitle">메뉴 옵션 수정</h3>
@@ -572,58 +572,6 @@
       document.getElementById('menuEditModal').style.display = 'flex';
     }
 
-    // ★ 기존 메뉴 수정 모달 버그 완벽 해결 (인덱스 값을 올바르게 가져와 폼에 채워넣음) ★
-    function openMenuEditModal(idx) {
-      document.getElementById('menuEditModalTitle').innerText = '기존 메뉴 수정';
-      const board = menuBoards.find(b => b.id === currentBoardId);
-      const it = board.items[idx];
-      document.getElementById('editMenuIdx').value = idx;
-      document.getElementById('editMName').value = it.n; 
-      document.getElementById('editMPrice').value = it.p;
-      document.getElementById('editMShape').value = it.shape || 'square'; 
-      document.getElementById('editMColor').value = it.c || '#0288d1';
-      document.getElementById('editMIsSlush').checked = !!it.isSlush; 
-      document.getElementById('editMFile').value = '';
-      tempUploadedImg = it.img || ""; 
-      document.getElementById('btnDeleteMenu').style.display = 'block';
-      document.getElementById('menuEditModal').style.display = 'flex';
-    }
-
-    function closeMenuEditModal() { document.getElementById('menuEditModal').style.display = 'none'; tempUploadedImg = ""; }
-    function handleImageFile(e) { const file = e.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(evt) { tempUploadedImg = evt.target.result; }; reader.readAsDataURL(file); }
-    
-    function saveEditedMenu() {
-      const currentBoard = menuBoards.find(b => b.id === currentBoardId);
-      const idx = parseInt(document.getElementById('editMenuIdx').value, 10);
-      const name = document.getElementById('editMName').value.trim(); 
-      const price = parseInt(document.getElementById('editMPrice').value, 10);
-      
-      if(!name || isNaN(price)) return alert('메뉴 이름과 올바른 가격을 입력하세요.');
-      
-      const newItem = { 
-        n: name, 
-        p: price, 
-        shape: document.getElementById('editMShape').value, 
-        c: document.getElementById('editMColor').value, 
-        isSlush: document.getElementById('editMIsSlush').checked, 
-        img: tempUploadedImg 
-      };
-      
-      if (idx === -1) {
-        currentBoard.items.push(newItem);
-      } else {
-        currentBoard.items[idx] = newItem;
-      }
-      saveBoardsData(); closeMenuEditModal(); drawGrid();
-    }
-    
-    function deleteSelectedMenu() {
-      if(!confirm("이 메뉴를 삭제하시겠습니까?")) return;
-      const idx = parseInt(document.getElementById('editMenuIdx').value, 10);
-      (menuBoards.find(b => b.id === currentBoardId)).items.splice(idx, 1);
-      saveBoardsData(); closeMenuEditModal(); drawGrid();
-    }
-
     function openSlushModal(it) { pendingSlushItem = it; resetSlushCounts(); document.getElementById('slushModal').style.display = 'flex'; }
     function closeSlushModal() { document.getElementById('slushModal').style.display = 'none'; pendingSlushItem = null; }
     function resetSlushCounts() { slushCounts = { "오렌지": 0, "포도": 0, "혼합": 0 }; updateSlushUI(); }
@@ -698,7 +646,6 @@
           <div class="item-row">
             <div class="item-info">
               <div class="item-title">${it.n}</div>
-              <!-- ★ 개별 목록 차액을 수량이 곱해진 총 차액(exTotal)으로 정확히 표기 ★ -->
               <div class="item-sub">${it.isC ? '단가차액: +'+(it.exTotal).toLocaleString()+'원' : '단가: '+it.p.toLocaleString()+'원'}</div>
             </div>
             <div class="qty-controls">
