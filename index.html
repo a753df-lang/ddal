@@ -13,22 +13,21 @@
     html, body { height: 100%; overflow: hidden; display: flex; flex-direction: column; transition: background-color 0.2s; }
     
     header { 
-      height: 72px; 
-      min-height: 72px; 
+      height: 64px; 
+      min-height: 64px; 
       display: flex; 
       align-items: center; 
       justify-content: space-between; 
-      padding: 22px 10px 4px 10px; 
+      padding: 16px 10px 4px 10px; 
       border-bottom: 2px solid rgba(0,0,0,0.15); 
     }
     
-    /* ★ [일반 판매] & [쿠폰 판매] 버튼 터치 크기 대폭 확대 ★ */
     .tab-side-btn { 
-      height: 44px; 
+      height: 42px; 
       padding: 0 16px; 
       border-radius: 8px; 
       font-weight: 900; 
-      font-size: 16px; 
+      font-size: 15px; 
       border: 2px solid transparent; 
       cursor: pointer; 
       display: flex; 
@@ -48,7 +47,7 @@
     .btn-coup-set { background: #e65100; color: #fff; border-radius: 4px; padding: 2px 5px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; }
 
     .header-right-group { display: flex; align-items: center; }
-    .btn-action-top { height: 38px; padding: 0 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 4px; white-space: nowrap; }
+    .btn-action-top { height: 36px; padding: 0 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 4px; white-space: nowrap; }
     .btn-action-top:active { transform: scale(0.96); }
 
     body.theme-reg { background-color: #ffffff; color: #222; }
@@ -74,15 +73,17 @@
     body.theme-coup .item-row { border-bottom: 1px dashed #444; color: #f1f1f1; }
     body.theme-coup .row { color: #bbb; }
 
-    .container { display: flex; flex: 1; height: calc(100% - 72px); overflow: hidden; }
-    .menu-panel { flex: 68; padding: 6px; display: flex; flex-direction: column; overflow: hidden; }
+    /* ★ 화면 전체 높이에 딱 맞게 꽉 채우도록 설정 ★ */
+    .container { display: flex; flex: 1; height: calc(100% - 64px); overflow: hidden; }
+    .menu-panel { flex: 68; padding: 4px; display: flex; flex-direction: column; overflow: hidden; }
     .cart-panel { flex: 32; min-width: 320px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
-    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 12px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; height: 22px; min-height: 22px; }
+    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; font-size: 11px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; height: 18px; min-height: 18px; }
     .badge-board-name { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
     body.theme-coup .badge-board-name { background: rgba(255,255,255,0.1); }
 
-    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); grid-gap: 6px; flex: 1; height: calc(100% - 26px); }
+    /* ★ 가로 5칸 × 세로 4칸이 남는 공간 없이 위아래로 꽉 차게 확장 ★ */
+    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); grid-gap: 4px; flex: 1; height: calc(100% - 20px); }
     
     .btn-item {
       width: 100%; height: 100%; border: none; color: #fff; display: flex; flex-direction: column;
@@ -91,7 +92,7 @@
       background-size: cover; background-position: center; overflow: hidden;
     }
     .btn-item:active { transform: scale(0.96); }
-    .btn-square { border-radius: 10px; }
+    .btn-square { border-radius: 8px; }
     .btn-circle { border-radius: 50%; }
     
     .m-title { 
@@ -108,8 +109,8 @@
       font-weight: 900; 
     }
     .m-price { font-size: 11px; opacity: 0.95; }
-    .badge { position: absolute; top: 3px; right: 3px; background: #d32f2f; color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 4px; font-weight: bold; z-index: 3; }
-    .edit-tag { position: absolute; top: 3px; left: 3px; background: #ffd43b; color: #000; font-size: 10px; font-weight: bold; padding: 2px 4px; border-radius: 3px; z-index: 3; }
+    .badge { position: absolute; top: 2px; right: 2px; background: #d32f2f; color: #fff; font-size: 9px; padding: 2px 4px; border-radius: 4px; font-weight: bold; z-index: 3; }
+    .edit-tag { position: absolute; top: 2px; left: 2px; background: #ffd43b; color: #000; font-size: 9px; font-weight: bold; padding: 2px 4px; border-radius: 3px; z-index: 3; }
 
     /* 전표 영역 */
     .cart-nav-header { padding: 6px 8px; display: flex; justify-content: space-between; align-items: center; }
@@ -590,7 +591,7 @@
       document.getElementById('editMIsSlush').checked = false; 
       document.getElementById('editMFile').value = '';
       tempUploadedImg = ''; 
-      document.getElementById('btnDeleteMenu').style.display = 'block';
+      document.getElementById('btnDeleteMenu').style.display = 'none';
       document.getElementById('menuEditModal').style.display = 'flex';
     }
 
@@ -628,7 +629,6 @@
       reader.readAsDataURL(file); 
     }
     
-    // ★ [저장] 버튼: 입력창의 값을 강제로 확실하게 가져와서 객체에 덮어씌움 ★
     function saveEditedMenu() {
       const currentBoard = menuBoards.find(b => b.id === currentBoardId);
       const idxStr = document.getElementById('editMenuIdx').value;
@@ -647,7 +647,6 @@
       const slushVal = document.getElementById('editMIsSlush').checked;
       
       if (isNaN(idx) || idx < 0) {
-        // 새 메뉴 추가인 경우
         currentBoard.items.push({ 
           n: nameInput, 
           p: priceInput, 
@@ -657,7 +656,6 @@
           img: tempUploadedImg 
         });
       } else {
-        // 기존 메뉴 수정인 경우 확실하게 갱신
         currentBoard.items[idx].n = nameInput;
         currentBoard.items[idx].p = priceInput;
         currentBoard.items[idx].shape = shapeVal;
