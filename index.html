@@ -13,6 +13,8 @@
     /* [수정] 아이패드에서 입력칸이 먹통되는 문제: 입력칸은 선택/입력 가능하게 */
     input, select, textarea { user-select: text; -webkit-user-select: text; -webkit-touch-callout: default; }
     html, body { height: 100%; overflow: hidden; display: flex; flex-direction: column; transition: background-color 0.2s; }
+    /* [수정] 화면 자동 맞춤: 기준 화면(가로 1024×768)을 기기 크기에 맞게 비례 확대/축소 (크기는 스크립트가 설정) */
+    #app { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; transform-origin: 0 0; display: flex; flex-direction: column; overflow: hidden; }
     
     header { 
       height: 72px; 
@@ -75,7 +77,10 @@
     .badge-board-name { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
     body.theme-coup .badge-board-name { background: rgba(255,255,255,0.1); }
 
-    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); grid-gap: 6px; flex: 1; height: calc(100% - 26px); }
+    /* [수정] 항상 가로 5칸 × 세로 4줄 크기로 화면을 채우고, 21번째 메뉴부터는 아래로 밀어서(스크롤) 보기 */
+    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: calc((100% - 18px) / 4); grid-gap: 6px; flex: 1; height: calc(100% - 26px); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
+    .grid-container .btn-item { touch-action: pan-y; }
+    .menu-more-hint { color: #e03131; font-weight: 900; }
     
     .btn-item {
       width: 100%; height: 100%; border: none; color: #fff; display: flex; flex-direction: column;
@@ -145,8 +150,9 @@
     .btn-cash { background: #2f9e44; color: #fff; }
     .btn-checkout-coupon { width: 100%; height: 46px; background: #ff9800; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
 
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 1000; }
-    .modal-box { background: #fff; color: #222; border-radius: 12px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
+    /* [수정] 팝업도 #app 기준으로 (화면 자동 맞춤과 함께 확대/축소) */
+    .modal-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-box { background: #fff; color: #222; border-radius: 12px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: calc(var(--dvh, 1vh) * 90); overflow-y: auto; }
     
     .opt-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
     .opt-card-title { font-size: 14px; font-weight: 900; margin-bottom: 6px; color: #333; display: flex; justify-content: space-between; align-items: center; }
@@ -182,6 +188,7 @@
     /* [수정] 인쇄 시 영수증만 출력 */
     @media print {
       html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
+      #app { position: static !important; transform: none !important; width: auto !important; height: auto !important; overflow: visible !important; }
       body * { visibility: hidden !important; }
       #rModal, #rModal * { visibility: visible !important; }
       #rModal { position: absolute !important; top: 0; left: 0; width: 100%; height: auto; display: block !important; background: none !important; }
@@ -191,6 +198,8 @@
   </style>
 </head>
 <body class="theme-reg">
+  <!-- [수정] 화면 자동 맞춤: 전체 화면을 #app 안에 넣고 기기 크기에 맞게 비례 확대/축소 -->
+  <div id="app">
 
   <header>
     <button id="btnTabReg" class="tab-side-btn" onclick="setMode('REG')">일반 판매</button>
@@ -215,7 +224,7 @@
   <div class="container">
     <div class="menu-panel">
       <div class="current-board-info">
-        <span>메뉴판: <span class="badge-board-name" id="lblCurrentBoardName">기본 음료</span></span>
+        <span>메뉴판: <span class="badge-board-name" id="lblCurrentBoardName">기본 음료</span> <span class="menu-more-hint" id="lblMenuMore"></span></span>
         <span id="editModeNotice" style="display:none; color:#ffd43b; font-weight:900;">✏ 수정 모드</span>
       </div>
       <div class="grid-container" id="mGrid"></div>
@@ -361,7 +370,7 @@
         <h2 style="font-size:18px; font-weight:900;">📅 과거 행사 내역</h2>
         <button style="background:#495057; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="closePastEventsModal()">닫기</button>
       </div>
-      <div id="pastEventsList" style="max-height:60vh; overflow-y:auto; border-top:2px solid #222; padding-top:10px;"></div>
+      <div id="pastEventsList" style="max-height:calc(var(--dvh, 1vh) * 60); overflow-y:auto; border-top:2px solid #222; padding-top:10px;"></div>
     </div>
   </div>
 
@@ -413,6 +422,8 @@
       <div style="display:flex; justify-content:space-between; margin-top:16px;" id="receiptActionArea"></div>
     </div>
   </div>
+
+  </div><!-- /#app -->
 
   <script>
     // [수정] 저장/불러오기 안전 처리 (저장 실패 시 경고)
@@ -671,8 +682,10 @@
       const g = document.getElementById('mGrid'); g.innerHTML = '';
       const currentBoard = getCurrentBoard();
       document.getElementById('lblCurrentBoardName').innerText = currentBoard.name;
-      // [수정] 메뉴가 20개를 넘으면 줄 수를 늘려 모두 보이게
-      g.style.gridTemplateRows = `repeat(${Math.max(4, Math.ceil(currentBoard.items.length / 5))}, 1fr)`;
+      // [수정] 칸 크기는 항상 5×4 고정, 20개를 넘으면 아래로 밀어서 보기 안내
+      g.scrollTop = 0;
+      const more = currentBoard.items.length - 20;
+      document.getElementById('lblMenuMore').innerText = more > 0 ? `▼ 아래로 밀면 메뉴 ${more}개 더 있음` : '';
 
       currentBoard.items.forEach((it, idx) => {
         const b = document.createElement('button');
@@ -834,9 +847,11 @@
         else btnArea.innerHTML = `<div class="action-grid"><button class="btn-action btn-card" onclick="completeOrder('CARD')">카드 결제</button><button class="btn-action btn-cash" onclick="openCashModal()">현금 결제</button></div>`;
       } else {
         const ord = orderHistory[currentViewingIndex];
-        titleEl.innerHTML = `<span style="color:#1971c2;">#${ord.seq} [${ord.time}]</span>` + (ord.cancelled ? ` <span style="color:#e03131; font-weight:900;">주문취소</span>` : '');
+        titleEl.innerHTML = `<span style="color:#1971c2;">#${ord.seq} [${String(ord.time || '').replace(/:\d{2}$/, '')}]</span>` + (ord.cancelled ? ` <span style="color:#e03131; font-weight:900;">취소</span>` : '');
         if (ord.cancelled) {
           document.getElementById('vTotal').innerText = '주문취소';
+          document.getElementById('vDirect').innerText = '취소';
+          document.getElementById('vCoup').innerText = '취소';
           btnArea.innerHTML = `<button class="btn-checkout-coupon" style="background:#868e96;" onclick="restoreOrder()">↩ 취소 철회 (주문 되살리기)</button>`;
         } else {
           btnArea.innerHTML = `<div class="action-grid"><button class="btn-action" style="width:64%; background:#1971c2; color:#fff;" onclick="saveEditedOrder()">✓ 변경 내용 저장</button><button class="btn-action" style="width:33%; background:#e03131; color:#fff;" onclick="cancelOrder()">🚫 주문 취소</button></div>`;
@@ -1193,8 +1208,10 @@
       else return alert('수정할 메뉴를 찾을 수 없습니다.');
 
       if (!saveBoardsData()) { menuBoards = JSON.parse(backup); return; } // 저장 실패 시 원상복구
+      const g = document.getElementById('mGrid'); const keepScroll = g.scrollTop;
       closeMenuEditModal();
       drawGrid();
+      g.scrollTop = (isNaN(idx) || idx < 0) ? g.scrollHeight : keepScroll; // 새 메뉴면 맨 아래로, 수정이면 보던 위치 유지
     }
 
     function deleteSelectedMenu() {
@@ -1227,6 +1244,29 @@
       };
       reader.readAsDataURL(file);
     }
+
+    // ===== [수정] 화면 자동 맞춤 (10~13인치, 아이패드/갤럭시탭, 가로/세로) =====
+    // 기준 화면 1024×768(세로일 때 768×1024)에 맞춰 만든 화면을, 기기 화면에 꽉 차도록 비례 확대/축소
+    const BASE_W = 1024, BASE_H = 768;
+    function fitScreen(force) {
+      const ae = document.activeElement;
+      if (!force && ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return; // 키보드가 올라올 때는 화면 크기 유지
+      const W = window.innerWidth, H = window.innerHeight;
+      if (!W || !H) return;
+      const portrait = H > W;
+      const bw = portrait ? BASE_H : BASE_W, bh = portrait ? BASE_W : BASE_H;
+      let s = Math.min(W / bw, H / bh);
+      s = Math.max(0.6, Math.min(s, 2.5));
+      const app = document.getElementById('app');
+      app.style.width = (W / s) + 'px';
+      app.style.height = (H / s) + 'px';
+      app.style.transform = `scale(${s})`;
+      document.documentElement.style.setProperty('--dvh', (H / s / 100) + 'px');
+    }
+    window.addEventListener('resize', () => fitScreen());
+    window.addEventListener('orientationchange', () => setTimeout(() => fitScreen(true), 300));
+    document.addEventListener('focusout', () => setTimeout(() => fitScreen(), 300));
+    fitScreen(true);
 
     setMode('REG'); renderCurrentCart(); updateCouponUI();
 
