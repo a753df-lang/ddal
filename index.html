@@ -271,7 +271,7 @@
     </div>
   </div>
 
-  <!-- 메뉴 추가/수정 폼 (저장 및 취소 버튼 정상 작동 연동 완료) -->
+  <!-- 메뉴 추가/수정 폼 -->
   <div class="modal-overlay" id="menuEditModal">
     <div class="modal-box" style="width:90%; max-width:400px;">
       <h3 style="margin-bottom:12px;" id="menuEditModalTitle">메뉴 옵션 수정</h3>
@@ -576,11 +576,11 @@
       document.getElementById('editMIsSlush').checked = false; 
       document.getElementById('editMFile').value = '';
       tempUploadedImg = ''; 
-      document.getElementById('btnDeleteMenu').style.display = 'none';
+      document.getElementById('btnDeleteMenu').style.display = 'block'; // 삭제 대신 추가이므로 내부적으로 처리
       document.getElementById('menuEditModal').style.display = 'flex';
     }
 
-    // ★ [기존 메뉴 수정] 클릭 시 모달창 열고 값 셋팅 + 확실하게 보이도록 수정 ★
+    // ★ [기존 메뉴 수정] 클릭 시 모달창 열고 값 셋팅 ★
     function openMenuEditModal(idx) {
       const board = menuBoards.find(b => b.id === currentBoardId);
       if (!board || !board.items[idx]) return;
@@ -597,11 +597,10 @@
       tempUploadedImg = it.img || "";
       document.getElementById('btnDeleteMenu').style.display = 'block';
       
-      // 모달창이 확실히 화면에 뜨도록 플렉스 지정
       document.getElementById('menuEditModal').style.display = 'flex';
     }
 
-    // ★ [취소] 및 [저장] 시 모달창 확실히 닫히도록 수정 ★
+    // ★ [취소] 및 [저장] 시 모달창 닫기 연동 ★
     function closeMenuEditModal() { 
       document.getElementById('menuEditModal').style.display = 'none'; 
       tempUploadedImg = ""; 
@@ -617,6 +616,7 @@
       reader.readAsDataURL(file); 
     }
     
+    // ★ [저장] 버튼 클릭 시 입력된 이름과 가격을 확실하게 반영하고 모달 닫기 ★
     function saveEditedMenu() {
       const currentBoard = menuBoards.find(b => b.id === currentBoardId);
       const idx = parseInt(document.getElementById('editMenuIdx').value, 10);
@@ -644,10 +644,11 @@
       }
       
       saveBoardsData(); 
-      closeMenuEditModal(); // 저장 후 창 닫기 실행
+      closeMenuEditModal(); 
       drawGrid();
     }
     
+    // ★ [삭제] 버튼 클릭 시 해당 메뉴 삭제 후 모달 닫기 ★
     function deleteSelectedMenu() {
       if(!confirm("이 메뉴를 삭제하시겠습니까?")) return;
       const idx = parseInt(document.getElementById('editMenuIdx').value, 10);
@@ -655,7 +656,7 @@
       if (currentBoard && idx >= 0) {
         currentBoard.items.splice(idx, 1);
         saveBoardsData(); 
-        closeMenuEditModal(); // 삭제 후 창 닫기 실행
+        closeMenuEditModal(); 
         drawGrid();
       }
     }
