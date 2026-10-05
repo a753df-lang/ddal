@@ -6,6 +6,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="커피트럭 포스">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#2e7d32">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3003/3003984.png">
   <title>커피트럭 포스</title>
   <style>
@@ -70,8 +72,8 @@
     body.theme-coup .modal-box .row { color: #333; } /* [수정] 영수증·팝업은 흰 바탕이므로 진한 글씨 */
 
     .container { display: flex; flex: 1; height: calc(100% - 72px); overflow: hidden; }
-    .menu-panel { flex: 68; padding: 6px; display: flex; flex-direction: column; overflow: hidden; }
-    .cart-panel { flex: 32; min-width: 320px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+    .menu-panel { flex: 65; padding: 6px; display: flex; flex-direction: column; overflow: hidden; }
+    .cart-panel { flex: 35; min-width: 340px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
     .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 12px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; height: 22px; min-height: 22px; }
     .badge-board-name { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
@@ -117,30 +119,30 @@
     .btn-new-order { background: #00897b; color: #fff; border: none; border-radius: 6px; padding: 6px 8px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
 
     .cart-list { flex: 1; overflow-y: auto; padding: 4px 8px; }
-    .item-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px dashed #ccc; width: 100%; }
+    .item-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px dashed #ccc; width: 100%; }
     
     .item-info { flex: 1.3; min-width: 0; padding-right: 4px; }
-    .item-title { font-weight: 900; font-size: 13px; color: #000 !important; line-height: 1.15; white-space: normal; word-break: keep-all; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; width: 100%; }
+    .item-title { font-weight: 900; font-size: 15px; color: #000 !important; line-height: 1.15; white-space: normal; word-break: keep-all; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; width: 100%; }
     body.theme-coup .item-title { color: #fff !important; }
     
-    .item-sub { font-size: 10px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #555; font-weight: bold; }
+    .item-sub { font-size: 12px; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #555; font-weight: bold; }
     body.theme-coup .item-sub { color: #aaa; }
     
     .qty-controls { display: flex; align-items: center; flex-shrink: 0; margin-right: 4px; }
-    .btn-qty { width: 26px; height: 26px; background: #adb5bd; color:#fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; line-height: 1; margin: 0 2px; }
-    .qty-text { width: 20px; text-align: center; font-weight: bold; font-size: 14px; }
+    .btn-qty { width: 32px; height: 32px; background: #adb5bd; color:#fff; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 19px; line-height: 1; margin: 0 2px; }
+    .qty-text { min-width: 24px; padding: 0 2px; text-align: center; font-weight: 900; font-size: 18px; }
     
-    .item-price { width: 60px; text-align: right; font-weight: 900; font-size: 13px; flex-shrink: 0; margin-right: 4px; color: #000; }
+    .item-price { min-width: 64px; white-space: nowrap; text-align: right; font-weight: 900; font-size: 16px; flex-shrink: 0; margin-right: 4px; color: #000; }
     body.theme-coup .item-price { color: #fff; }
     
-    .btn-row-del { border: none; background: none; color: #fa5252; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0 2px; }
+    .btn-row-del { border: none; background: none; color: #fa5252; font-size: 22px; font-weight: bold; cursor: pointer; padding: 0 2px; }
 
     .cart-bottom { padding: 10px; }
     .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
     
     .row.total-qty { font-size: 15px; font-weight: bold; color: #1971c2; border-top: 1px solid #ddd; padding-top: 6px; margin-top: 2px; }
     
-    .row.total { font-size: 18px; font-weight: bold; color: #2e7d32; border-top: 2px solid #ccc; padding-top: 8px; margin-top: 4px; align-items: center; }
+    .row.total { font-size: 18px; font-weight: bold; color: #000; border-top: 2px solid #ccc; padding-top: 8px; margin-top: 4px; align-items: center; }
     .row.total span:last-child { font-size: 26px; font-weight: 900; }
     body.theme-coup .row.total { color: #ff9800; border-color: #444; }
     
@@ -185,6 +187,19 @@
     #rDirectItems tr:nth-child(odd) td { background: #f6fbf6; }
     #rDirectItems tr:nth-child(even) td { background: #dcefdc; }
 
+    /* [추가] 서버 백업 상태 배지 / 통합 영수증 */
+    .sync-badge { font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 10px; cursor: pointer; background: #e9ecef; color: #495057; white-space: nowrap; }
+    .sync-badge.ok { background: #d3f9d8; color: #2b8a3e; }
+    .sync-badge.wait { background: #fff3bf; color: #e67700; }
+    .sync-badge.bad { background: #ffe3e3; color: #c92a2a; }
+    .int-sec { border-radius: 6px; padding: 10px; margin-top: 10px; }
+    .int-sec table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .int-sec td, .int-sec th { padding: 4px 3px; }
+    .int-reg { background: #e8f5e9; border: 1px solid #c8e6c9; }
+    .int-coup { background: #fff3e0; border: 1px solid #ffe0b2; }
+    .int-reg tbody tr:nth-child(even) td { background: #dcefdc; }
+    .int-coup tbody tr:nth-child(even) td { background: #ffe8cc; }
+
     /* [수정] 인쇄 시 영수증만 출력 */
     @media print {
       html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
@@ -225,7 +240,10 @@
     <div class="menu-panel">
       <div class="current-board-info">
         <span>메뉴판: <span class="badge-board-name" id="lblCurrentBoardName">기본 음료</span> <span class="menu-more-hint" id="lblMenuMore"></span></span>
-        <span id="editModeNotice" style="display:none; color:#ffd43b; font-weight:900;">✏ 수정 모드</span>
+        <span style="display:flex; align-items:center; gap:8px;">
+          <span id="editModeNotice" style="display:none; color:#ffd43b; font-weight:900;">✏ 수정 모드</span>
+          <span id="syncBadge" class="sync-badge" onclick="openCloudPanel()">☁ 연결 준비 중</span>
+        </span>
       </div>
       <div class="grid-container" id="mGrid"></div>
     </div>
@@ -294,6 +312,12 @@
         </div>
       </div>
       
+      <div class="opt-card" id="cloudCard" style="border-color:#74c0fc; background:#f1f8ff;">
+        <div class="opt-card-title" style="color:#1864ab;">☁ 서버 백업 · 기기번호</div>
+        <div id="cloudInfo" style="font-size:12px; color:#333; line-height:1.5; margin-bottom:8px;"></div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;" id="cloudButtons"></div>
+      </div>
+
       <div class="opt-card" style="border-color:#fa5252; background:#fff5f5;">
         <div class="opt-card-title" style="color:#e03131;">🚨 당일 내역 리셋</div>
         <p style="font-size:12px; color:#666; margin-bottom:8px; line-height:1.3;">지금 보고 있는 판매(일반 또는 쿠폰)의 오늘 주문 내역만 0건으로 리셋합니다.<br>(다른 쪽 판매·메뉴판·과거 내역은 유지되고, 쿠폰은 회수한 수를 잔여에 되돌립니다)</p>
@@ -370,6 +394,7 @@
         <h2 style="font-size:18px; font-weight:900;">📅 과거 행사 내역</h2>
         <button style="background:#495057; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="closePastEventsModal()">닫기</button>
       </div>
+      <button style="width:100%; height:42px; background:#1864ab; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:15px; cursor:pointer; margin-bottom:10px;" onclick="openIntegrated()">🌐 전체 기기 통합 영수증 (서버)</button>
       <div id="pastEventsList" style="max-height:calc(var(--dvh, 1vh) * 60); overflow-y:auto; border-top:2px solid #222; padding-top:10px;"></div>
     </div>
   </div>
@@ -420,6 +445,61 @@
       <div class="row" style="font-size:18px; font-weight:900; color:#000;"><span id="rTotalLabel">★ 총액:</span><span id="rTotalAll">0원</span></div>
       
       <div style="display:flex; justify-content:space-between; margin-top:16px;" id="receiptActionArea"></div>
+    </div>
+  </div>
+
+  <!-- [추가] 서버 백업 로그인 -->
+  <div class="modal-overlay" id="loginModal" style="z-index:1200;">
+    <div class="modal-box" style="width:92%; max-width:420px;">
+      <h3 style="font-size:19px; font-weight:900; margin-bottom:6px;">☁ 서버 백업 로그인</h3>
+      <p style="font-size:12px; color:#555; margin-bottom:10px; line-height:1.4;">Firebase에 만들어 둔 포스용 이메일·비밀번호로 로그인하세요.<br>한 번 로그인하면 이 기기에서는 계속 유지됩니다.</p>
+      <div class="form-group"><label>이메일</label><input type="email" id="loginEmail" autocomplete="username"></div>
+      <div class="form-group"><label>비밀번호</label><input type="password" id="loginPw" autocomplete="current-password"></div>
+      <div id="loginMsg" style="font-size:12px; color:#d32f2f; min-height:16px; margin-bottom:6px;"></div>
+      <div style="display:flex; gap:8px;">
+        <button style="flex:2; height:44px; background:#1864ab; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:16px; cursor:pointer;" onclick="doLogin()">로그인</button>
+        <button style="flex:1; height:44px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="skipLogin()">나중에</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- [추가] 기기번호 등록 -->
+  <div class="modal-overlay" id="deviceModal" style="z-index:1200;">
+    <div class="modal-box" style="width:92%; max-width:440px;">
+      <h3 style="font-size:19px; font-weight:900; margin-bottom:6px;">🏷 이 기기의 번호 정하기</h3>
+      <p style="font-size:12px; color:#555; margin-bottom:10px; line-height:1.5;">판매하는 기기마다 다른 번호를 정해주세요 (예: <b>A</b>, <b>B</b>, <b>C</b>).<br>주문번호가 <b>A-1, A-2…</b>처럼 기기별로 매겨지고, 서버에 기기별로 백업됩니다.<br><b>고장 난 기기를 대신하는 경우</b>에는 그 기기의 번호를 그대로 입력하면 백업된 기록이 복원됩니다.</p>
+      <div class="form-group"><label>기기 번호 (영문 대문자·숫자 1~3자)</label><input type="text" id="deviceCodeInput" maxlength="3" style="text-transform:uppercase; font-size:20px; font-weight:900; height:46px;"></div>
+      <div id="deviceMsg" style="font-size:12px; color:#d32f2f; min-height:16px; margin-bottom:6px;"></div>
+      <button style="width:100%; height:46px; background:#2e7d32; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:16px; cursor:pointer; margin-bottom:8px;" onclick="submitDeviceCode()">이 번호로 판매 기기 등록</button>
+      <div style="display:flex; gap:8px;">
+        <button style="flex:1; height:40px; background:#5c7cfa; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;" onclick="useViewerMode()">📱 보기 전용 (판매 안 함)</button>
+        <button style="flex:1; height:40px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;" onclick="closeDeviceModal()">나중에</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- [추가] 전체 기기 통합 영수증 -->
+  <div class="modal-overlay" id="intModal" style="z-index:1150;">
+    <div class="modal-box" style="font-family:monospace; width:94%; max-width:520px; padding:16px;">
+      <div style="text-align:center;">
+        <h2 style="font-size:20px; font-weight:900; margin-bottom:6px;" id="intTitle">[ 통합 영수증 ]</h2>
+        <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:6px;">
+          <input type="date" id="intDate" style="height:36px; border:1px solid #ccc; border-radius:6px; padding:0 8px; font-size:14px;" onchange="renderIntegrated()">
+          <button style="height:36px; padding:0 12px; background:#1864ab; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="renderIntegrated()">새로고침</button>
+        </div>
+      </div>
+      <div id="intBody" style="font-size:13px;"></div>
+      <button style="width:100%; height:44px; background:#333; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer; margin-top:12px;" onclick="closeIntegrated()">닫기</button>
+    </div>
+  </div>
+
+  <!-- [추가] 기기번호가 다른 기기로 옮겨졌을 때 잠금 -->
+  <div class="modal-overlay" id="lockOverlay" style="z-index:1300; background:rgba(0,0,0,0.9);">
+    <div class="modal-box" style="width:92%; max-width:460px; text-align:center;">
+      <div style="font-size:40px;">⛔</div>
+      <h3 style="font-size:19px; font-weight:900; margin:6px 0;" id="lockTitle">이 기기에서는 판매할 수 없습니다</h3>
+      <p style="font-size:13px; color:#444; line-height:1.5; margin-bottom:12px;" id="lockText"></p>
+      <button style="width:100%; height:44px; background:#e03131; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:14px; cursor:pointer;" onclick="resetLockedDevice()">이 기기 판매기록 지우고 새 번호로 시작</button>
     </div>
   </div>
 
@@ -498,6 +578,7 @@
       ledgers[k] = Object.assign(emptyLedger(), ledgers[k], { cart: [], view: -1, snap: null });
       // 품목이 빈 채 저장된 주문은 취소건으로 정리
       ledgers[k].history.forEach(o => { if (!o.cancelled && (!o.items || !o.items.length)) { o.items = o.items || []; o.cancelled = true; } });
+      ledgers[k].history.forEach((o, i) => { if (!o.id) o.id = Date.now() - 100000 - i * 7 - (k === 'COUP' ? 3 : 0); }); // [추가] 서버 백업용 주문 고유번호
       if (!Number.isInteger(ledgers[k].seq) || ledgers[k].seq < 1) ledgers[k].seq = ledgers[k].history.reduce((m, o) => Math.max(m, o.seq || 0), 0) + 1;
     });
 
@@ -544,10 +625,12 @@
       stashLedger();
       const data = { REG: { history: ledgers.REG.history, seq: ledgers.REG.seq }, COUP: { history: ledgers.COUP.history, seq: ledgers.COUP.seq } };
       if (safeSet(LEDGER_KEY, JSON.stringify(data))) { localStorage.removeItem('coffee_order_history'); localStorage.removeItem('coffee_order_seq'); }
+      if (typeof Sync !== 'undefined') syncChanged(); // [추가] 서버 백업
     }
 
     // [수정] 잔여 쿠폰 증감 (delta가 +면 되돌림, -면 차감)
     function adjustRemCoupons(delta) {
+      if (typeof Sync !== 'undefined' && cloudCouponActive()) { recomputeCloudCoupons(); return; } // [추가] 모든 기기 공유 잔여
       if (remCoupons === null || !delta) return;
       remCoupons += delta;
       safeSet('coffee_rem_coup', String(remCoupons));
@@ -596,13 +679,18 @@
       if (cnt === null) return;
       const v = Number(cnt.trim());
       if (cnt.trim() === "" || !Number.isInteger(v) || v < 0) return alert('0 이상의 정수로 입력하세요.');
+      if (cloudOn()) { // [추가] 서버 공유: 모든 기기가 같은 잔여 쿠폰을 씀
+        Sync.couponCfg = { start: v, startAt: Date.now() };
+        enqueue('config/coupon', Sync.couponCfg); recomputeCloudCoupons(); syncSave(); flushOutbox(); return;
+      }
       remCoupons = v;
       safeSet('coffee_rem_coup', String(remCoupons));
       updateCouponUI();
     }
 
     function resetCouponCount() {
-      if(!confirm("잔여 쿠폰 갯수를 초기화(삭제) 하시겠습니까?")) return;
+      if(!confirm("잔여 쿠폰 갯수를 초기화(삭제) 하시겠습니까?" + (cloudOn() ? "\n(모든 기기의 잔여 쿠폰이 함께 초기화됩니다)" : ""))) return;
+      if (cloudOn()) { Sync.couponCfg = { start: null, startAt: 0 }; enqueue('config/coupon', Sync.couponCfg); syncSave(); flushOutbox(); }
       remCoupons = null; 
       localStorage.removeItem('coffee_rem_coup'); 
       updateCouponUI();
@@ -613,7 +701,7 @@
       document.getElementById('modalOptTitle').innerText = isCoup ? '⚙ 쿠폰 옵션' : '⚙ 일반 옵션';
       document.getElementById('optCouponSection').style.display = isCoup ? 'block' : 'none';
       if(isCoup) document.getElementById('inpBaseCouponPrice').value = baseCouponVal;
-      renderBoardSwapList(); updateEditToggleBtnText(); document.getElementById('modeOptModal').style.display = 'flex';
+      renderBoardSwapList(); updateEditToggleBtnText(); renderCloudCard(); document.getElementById('modeOptModal').style.display = 'flex';
     }
     function closeModeOptionModal() { document.getElementById('modeOptModal').style.display = 'none'; }
     
@@ -667,7 +755,11 @@
       if (wasCurrent) { currentBoardId = menuBoards[0].id; safeSet('coffee_current_board', currentBoardId); }
       saveBoardsData(); renderBoardSwapList(); drawGrid();
     }
-    function saveBoardsData() { return safeSet('coffee_menu_boards', JSON.stringify(menuBoards)); }
+    function saveBoardsData() {
+      const ok = safeSet('coffee_menu_boards', JSON.stringify(menuBoards));
+      if (ok && typeof Sync !== 'undefined') syncMenuSaved(); // [추가] 모든 기기 메뉴판 공유
+      return ok;
+    }
 
     function toggleEditModeFromModal() {
       isEditMode = !isEditMode; updateEditToggleBtnText();
@@ -842,12 +934,12 @@
 
       const btnArea = document.getElementById('paymentBtnArea'); const titleEl = document.getElementById('orderStatusTitle');
       if(currentViewingIndex === -1) {
-        titleEl.innerHTML = `현재 주문 <span style="color:#e03131; font-weight:900;">#${orderSeq}</span>`;
+        titleEl.innerHTML = `현재 주문 <span style="color:#e03131; font-weight:900;">${ordNo(orderSeq)}</span>`;
         if(dir === 0 && cCount > 0) btnArea.innerHTML = `<button class="btn-checkout-coupon" onclick="completeOrder('COUPON')">쿠폰 완료 (0원)</button>`;
         else btnArea.innerHTML = `<div class="action-grid"><button class="btn-action btn-card" onclick="completeOrder('CARD')">카드 결제</button><button class="btn-action btn-cash" onclick="openCashModal()">현금 결제</button></div>`;
       } else {
         const ord = orderHistory[currentViewingIndex];
-        titleEl.innerHTML = `<span style="color:#1971c2;">#${ord.seq} [${String(ord.time || '').replace(/:\d{2}$/, '')}]</span>` + (ord.cancelled ? ` <span style="color:#e03131; font-weight:900;">취소</span>` : '');
+        titleEl.innerHTML = `<span style="color:#1971c2;">${ordNo(ord.seq)} [${String(ord.time || '').replace(/:\d{2}$/, '')}]</span>` + (ord.cancelled ? ` <span style="color:#e03131; font-weight:900;">취소</span>` : '');
         if (ord.cancelled) {
           document.getElementById('vTotal').innerText = '주문취소';
           document.getElementById('vDirect').innerText = '취소';
@@ -926,7 +1018,7 @@
       const ord = orderHistory[idx];
       if (!ord) { currentViewingIndex = -1; editSnapshot = null; renderCurrentCart(); return; }
       if (ord.cancelled) return;
-      if(ord.items.length === 0) { leavePastOrder(); alert(`주문 #${ord.seq} 은(는) 품목이 없어 '주문취소'로 처리되었습니다.`); }
+      if(ord.items.length === 0) { leavePastOrder(); alert(`주문 ${ordNo(ord.seq)} 은(는) 품목이 없어 '주문취소'로 처리되었습니다.`); }
       else {
         // [수정] 쿠폰 주문에 일반(유료) 메뉴가 추가되면 결제수단을 지정받음
         const dir = ord.items.reduce((s, it) => s + (it.isC ? 0 : it.p * it.qty), 0);
@@ -935,7 +1027,7 @@
         } else if (dir === 0) {
           ord.payType = 'COUPON';
         }
-        alert(`주문 #${ord.seq} 저장됨.`);
+        alert(`주문 ${ordNo(ord.seq)} 저장됨.`);
       }
       // [수정] 저장 후 다음 번호 주문으로 이동 (가장 최근 주문이면 그대로). 현재 주문은 '새주문'으로 돌아감
       enterPastOrder(Math.max(0, idx - 1));
@@ -947,7 +1039,7 @@
       const idx = currentViewingIndex;
       const o = orderHistory[idx];
       if (!o || o.cancelled) return;
-      if (!confirm(`주문 #${o.seq} 을(를) 취소하시겠습니까?\n\n번호는 그대로 남고 전표에 '주문취소'로 표시됩니다.\n금액·잔수·쿠폰 합계에서는 빠집니다.`)) return;
+      if (!confirm(`주문 ${ordNo(o.seq)} 을(를) 취소하시겠습니까?\n\n번호는 그대로 남고 전표에 '주문취소'로 표시됩니다.\n금액·잔수·쿠폰 합계에서는 빠집니다.`)) return;
       if (o.items.length === 0) {
         o.items = editSnapshot || [];  // 이미 품목을 지운 상태면 원래 품목을 기록으로 (쿠폰은 지울 때 이미 되돌려짐)
       } else {
@@ -963,7 +1055,7 @@
       if (!o || !o.cancelled) return;
       let coup = 0; o.items.forEach(it => { if (it.isC) coup += it.qty; });
       if (coup > 0 && remCoupons !== null && remCoupons - coup < 0 && !confirm(`잔여 쿠폰(${remCoupons}장)보다 되살릴 쿠폰(${coup}장)이 많습니다. 계속할까요?`)) return;
-      if (!confirm(`주문 #${o.seq} 취소를 철회하고 다시 합계에 포함하시겠습니까?`)) return;
+      if (!confirm(`주문 ${ordNo(o.seq)} 취소를 철회하고 다시 합계에 포함하시겠습니까?`)) return;
       adjustRemCoupons(-coup);
       o.cancelled = false; delete o.cancelTime;
       enterPastOrder(currentViewingIndex);
@@ -1003,8 +1095,11 @@
       const dateText = `${now.getFullYear()}년 ${(now.getMonth()+1).toString().padStart(2,'0')}월 ${now.getDate().toString().padStart(2,'0')}일 (${days[now.getDay()]})`;
       const timeText = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} 마감`;
       const evData = { id: Date.now(), kind: wantC ? 'COUP' : 'REG', dateStr: dateText, timeStr: timeText, eventName: eventName, baseCouponVal: baseCouponVal, history: picked };
+      if (devCode()) evData.device = devCode();         // [추가] 어느 기기의 마감인지
+      evData.dateKey = padDate(now);                    // [추가] 통합 영수증 날짜 검색용
       pastEvents.push(evData);
       if (!safeSet('coffee_past_events', JSON.stringify(pastEvents))) { pastEvents.pop(); return; } // 저장 실패 시 당일 내역 보존
+      syncOnClose(evData, kind, picked);                 // [추가] 서버에 마감 기록 백업
       // 저장한 종류의 품목을 장부에서 제거, 비게 된 주문은 삭제
       orderHistory.forEach(o => { o.items = o.items.filter(it => !!it.isC !== wantC); });
       orderHistory = orderHistory.filter(o => o.items.length > 0);
@@ -1029,13 +1124,13 @@
           const summary = ev.kind === 'COUP' ? `쿠폰: <span style="color:#e65100">${tCoup}장</span> / 청구: <span style="color:#e65100">${tClaim.toLocaleString()}원</span>`
                         : ev.kind === 'REG' ? `매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span>`
                         : `매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span> / 쿠폰: <span style="color:#e65100">${tCoup}장</span>`;
-          list.innerHTML += `<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:10px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;"><div><div style="font-size:16px; font-weight:900; color:#0288d1;">${kindBadge}${ev.eventName}</div><div style="font-size:12px; color:#555; margin-top:2px;">${ev.dateStr} ${ev.timeStr}</div></div><button style="background:#e03131; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="deletePastEvent(${actualIdx})">삭제</button></div><div style="font-size:13px; font-weight:bold; color:#333; margin-bottom:8px;">${summary}</div><button style="width:100%; height:38px; background:#495057; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="viewPastReceipt(${actualIdx})">🧾 마감 영수증 보기</button></div>`;
+          list.innerHTML += `<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:10px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;"><div><div style="font-size:16px; font-weight:900; color:#0288d1;">${kindBadge}${ev.device ? `<span style="background:#495057; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:6px;">${ev.device}</span>` : ''}${ev.eventName}</div><div style="font-size:12px; color:#555; margin-top:2px;">${ev.dateStr} ${ev.timeStr}</div></div><button style="background:#e03131; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="deletePastEvent(${actualIdx})">삭제</button></div><div style="font-size:13px; font-weight:bold; color:#333; margin-bottom:8px;">${summary}</div><button style="width:100%; height:38px; background:#495057; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="viewPastReceipt(${actualIdx})">🧾 마감 영수증 보기</button></div>`;
         });
       }
       document.getElementById('pastEventsModal').style.display = 'flex';
     }
     function closePastEventsModal() { document.getElementById('pastEventsModal').style.display = 'none'; }
-    function deletePastEvent(idx) { if(!confirm("이 과거 마감 기록을 완전히 삭제하시겠습니까?")) return; pastEvents.splice(idx, 1); safeSet('coffee_past_events', JSON.stringify(pastEvents)); openPastEventsModal(); }
+    function deletePastEvent(idx) { if(!confirm("이 과거 마감 기록을 이 기기에서 삭제하시겠습니까?" + (cloudRead() ? "\n(서버에 백업된 기록은 남아 있어 통합 영수증에는 계속 나옵니다)" : ""))) return; pastEvents.splice(idx, 1); safeSet('coffee_past_events', JSON.stringify(pastEvents)); openPastEventsModal(); }
     function viewPastReceipt(idx) { closePastEventsModal(); showReceipt(pastEvents[idx]); }
 
     function showReceipt(histData = null) {
@@ -1073,8 +1168,9 @@
         const activeCnt = kindOrders.filter(o => !o.cancelled).length;
         const cancelCnt = kindOrders.length - activeCnt;
         const seqs = kindOrders.map(o => o.seq).filter(s => typeof s === 'number');
+        const pfx = isHist ? (histData.device ? histData.device + '-' : '#') : (devCode() ? devCode() + '-' : '#'); // [추가] 기기번호
         const orderCountText = kindOrders.length === 0 ? '0건'
-          : `${activeCnt}건` + (seqs.length || cancelCnt ? ` (${seqs.length ? `#${Math.min(...seqs)} ~ #${Math.max(...seqs)}` : ''}${seqs.length && cancelCnt ? ', ' : ''}${cancelCnt ? `취소 ${cancelCnt}건` : ''})` : '');
+          : `${activeCnt}건` + (seqs.length || cancelCnt ? ` (${seqs.length ? `${pfx}${Math.min(...seqs)} ~ ${pfx}${Math.max(...seqs)}` : ''}${seqs.length && cancelCnt ? ', ' : ''}${cancelCnt ? `취소 ${cancelCnt}건` : ''})` : '');
         document.getElementById(isCoupMode ? 'rCoupOrders' : 'rDirectOrders').innerText = orderCountText;
 
         targetHistory.forEach(order => {
@@ -1184,6 +1280,7 @@
     function closeMenuEditModal() {
       document.getElementById('menuEditModal').style.display = 'none';
       tempUploadedImg = '';
+      if (Sync.pendingMenu) { const d = Sync.pendingMenu; Sync.pendingMenu = null; if ((d.updatedAt || 0) > Sync.menuTs) applyRemoteMenu(d); } // [추가] 수정 중 받은 다른 기기 메뉴판 반영
     }
 
     function saveEditedMenu() {
@@ -1245,6 +1342,437 @@
       reader.readAsDataURL(file);
     }
 
+    // =====================================================================
+    // [추가] 서버 백업 · 여러 기기 동시 판매 (Firebase)
+    //  - 계산·장부는 지금처럼 이 기기(localStorage)가 기준. 바뀐 주문만 서버로 보냄(덮어쓰기라 중복 합산 없음)
+    //  - 오프라인이면 '보낼 목록(outbox)'에 쌓아두고 연결되면 자동 전송 (앱을 껐다 켜도 유지)
+    //  - 서버 연결 코드(PosCloud)는 아래 별도 <script type="module">에서 붙음. 없으면 지금처럼 이 기기만으로 동작
+    // =====================================================================
+    const Sync = {
+      backend: null, uid: null, email: null, failed: false,
+      device: loadJSON('coffee_device', null),                 // { code, instanceId }
+      viewer: localStorage.getItem('coffee_viewer') === '1',  // 보기 전용 기기(핸드폰 등)
+      st: Object.assign({ hash: {}, outbox: {}, init: false, cuH: '' }, loadJSON('coffee_sync', {})),
+      inflight: {}, timer: null, couponCfg: null, couponUse: {}, locked: false, lastErr: '',
+      menuTs: Number(localStorage.getItem('coffee_menu_ts')) || 0, pendingMenu: null, unsub: [], lastSeenAt: 0
+    };
+    function syncSave() { try { localStorage.setItem('coffee_sync', JSON.stringify(Sync.st)); } catch (e) { Sync.lastErr = '기기 저장공간 부족'; } }
+    function devCode() { return Sync.device ? Sync.device.code : ''; }
+    function ordNo(seq) { return Sync.device ? `${Sync.device.code}-${seq}` : `#${seq}`; }
+    function cloudRead() { return !!(Sync.backend && Sync.uid); }
+    function cloudOn() { return !!(cloudRead() && Sync.device && !Sync.locked && !Sync.viewer); }
+    function padDate(d) { const t = (d instanceof Date) ? d : new Date(d); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; }
+    function normDate(s) { const m = String(s || '').match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); return m ? `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}` : ''; }
+
+    function orderDocOf(kind, o) {
+      return JSON.parse(JSON.stringify({
+        key: `${devCode()}_${kind}_${o.seq}_${o.id}`, device: devCode(), kind, id: o.id, seq: o.seq,
+        date: o.date || '', time: o.time || '', payType: o.payType || '', cancelled: !!o.cancelled, cancelTime: o.cancelTime || '',
+        items: o.items, closed: false, voided: false
+      }));
+    }
+    function enqueue(path, data, opt = {}) {
+      const h = opt.h || JSON.stringify(data);
+      const cur = Sync.st.outbox[path];
+      if (cur && cur.h === h) return;
+      Sync.st.outbox[path] = { data, h, patch: !!opt.patch };
+    }
+
+    // 장부가 바뀔 때마다 호출 (saveSalesData에서)
+    function syncChanged() {
+      if (!cloudOn()) return;
+      recomputeCloudCoupons();
+      clearTimeout(Sync.timer);
+      Sync.timer = setTimeout(syncScan, 300);
+    }
+    function syncScan() {
+      if (!cloudOn()) return;
+      stashLedger();
+      const local = {};
+      ['REG', 'COUP'].forEach(k => ledgers[k].history.forEach(o => { const d = orderDocOf(k, o); local['orders/' + d.key] = d; }));
+      // 1) 새로 생기거나 바뀐 주문 → 보낼 목록
+      for (const p in local) {
+        const h = JSON.stringify(local[p]);
+        if (Sync.st.hash[p] !== h) enqueue(p, local[p], { h });
+        else if (Sync.st.outbox[p] && !Sync.st.outbox[p].patch) delete Sync.st.outbox[p]; // 되돌려져서 서버와 같아진 경우
+      }
+      // 2) 서버에 올라갔는데 마감이 아닌 이유로 이 기기에서 사라진 주문(당일 초기화) → 무효 표시
+      for (const p in Sync.st.hash) {
+        if (p.startsWith('orders/') && !local[p] && !Sync.st.outbox[p]) Sync.st.outbox[p] = { data: { voided: true }, h: 'voided', patch: true };
+      }
+      // 3) 보낼 목록에 남아 있는 '아직 안 보낸 주문'인데 로컬에서 사라졌으면(서버에 없던 주문) 그냥 버림
+      for (const p in Sync.st.outbox) {
+        const e = Sync.st.outbox[p];
+        if (p.startsWith('orders/') && !e.patch && !local[p] && !Sync.st.hash[p]) delete Sync.st.outbox[p];
+      }
+      syncSave();
+      flushOutbox();
+    }
+    function flushOutbox() {
+      if (!cloudOn()) { updateSyncBadge(); return; }
+      for (const p in Sync.st.outbox) {
+        const e = Sync.st.outbox[p];
+        if (Sync.inflight[p] === e.h) continue;
+        Sync.inflight[p] = e.h;
+        Sync.backend.set(p, e.data, true).then(() => {
+          if (Sync.inflight[p] === e.h) delete Sync.inflight[p];
+          if (p.startsWith('orders/')) { if (e.patch) delete Sync.st.hash[p]; else Sync.st.hash[p] = e.h; }
+          if (p.startsWith('couponUse/')) Sync.st.cuH = e.h;
+          const cur = Sync.st.outbox[p];
+          if (cur && cur.h === e.h) delete Sync.st.outbox[p];
+          Sync.st.lastAck = Date.now(); Sync.lastErr = '';
+          syncSave(); updateSyncBadge();
+          if (Date.now() - Sync.lastSeenAt > 60000) {   // 통합 영수증에 '마지막 동기화' 표시용
+            Sync.lastSeenAt = Date.now();
+            Sync.backend.set('devices/' + devCode(), { lastSeen: Date.now() }, true).catch(() => {});
+          }
+        }).catch(err => {
+          if (Sync.inflight[p] === e.h) delete Sync.inflight[p];
+          Sync.lastErr = (err && (err.code || err.message)) || String(err);
+          updateSyncBadge();
+          setTimeout(flushOutbox, 15000); // 잠시 후 다시 시도
+        });
+      }
+      updateSyncBadge();
+    }
+    function pendingCount() { return Object.keys(Sync.st.outbox).length; }
+
+    // 마감 저장 시: 마감 기록 + 해당 주문들을 '마감됨'으로 서버에 남김
+    function syncOnClose(ev, kind, orders) {
+      if (!cloudOn()) return;
+      orders.forEach(o => { const d = orderDocOf(kind, o); d.closed = `${devCode()}_${kind}_${ev.id}`; enqueue('orders/' + d.key, d, { patch: true }); });
+      enqueue(`events/${devCode()}_${kind}_${ev.id}`, ev);
+      syncSave();
+      flushOutbox(); // 마감 기록은 바로 전송
+    }
+
+    // ----- 잔여 쿠폰 (모든 기기 공유) : 시작 수량 − 모든 기기의 회수 합계 -----
+    function cloudCouponActive() { return cloudOn() && Sync.couponCfg && typeof Sync.couponCfg.start === 'number'; }
+    function ownCouponUsed(startAt) {
+      let u = 0;
+      const add = o => { if (o.cancelled || (o.id || 0) < startAt) return; (o.items || []).forEach(it => { if (it.isC) u += it.qty; }); };
+      ledgers.COUP.history.forEach(add);
+      pastEvents.forEach(ev => { if (ev.kind === 'REG') return; if (ev.device && ev.device !== devCode()) return; (ev.history || []).forEach(add); });
+      return u;
+    }
+    function recomputeCloudCoupons() {
+      if (!cloudCouponActive()) return false;
+      stashLedger();
+      const sa = Sync.couponCfg.startAt || 0;
+      const mine = ownCouponUsed(sa);
+      let others = 0;
+      for (const d in Sync.couponUse) { if (d === devCode()) continue; const u = Sync.couponUse[d]; if (u && u.startAt === sa) others += (u.used || 0); }
+      remCoupons = Sync.couponCfg.start - mine - others;
+      try { localStorage.setItem('coffee_rem_coup', String(remCoupons)); } catch (e) {}
+      const data = { device: devCode(), used: mine, startAt: sa };
+      const h = JSON.stringify(data);
+      const srvMine = Sync.couponUse[devCode()];
+      const srvStale = srvMine && (srvMine.used !== mine || srvMine.startAt !== sa) && !Sync.st.outbox['couponUse/' + devCode()];
+      if (Sync.st.cuH !== h || srvStale) { if (srvStale) Sync.st.cuH = ''; enqueue('couponUse/' + devCode(), data, { h }); } // 서버 값이 틀어져 있으면 다시 보냄(자가 복구)
+      updateCouponUI();
+      return true;
+    }
+
+    // ----- 메뉴판 공유 -----
+    function syncMenuSaved() {
+      if (!cloudOn()) return;
+      const json = JSON.stringify(menuBoards);
+      if (json.length > 900000) { alert('메뉴 사진 용량이 커서 메뉴판은 서버에 백업되지 않습니다.\n(판매기록 백업은 정상입니다) 사진을 줄여주세요.'); return; }
+      Sync.menuTs = Date.now(); localStorage.setItem('coffee_menu_ts', String(Sync.menuTs));
+      enqueue('config/menu', { boards: menuBoards, updatedAt: Sync.menuTs, by: devCode() });
+      syncSave(); flushOutbox();
+    }
+    function applyRemoteMenu(data) {
+      if (!data || !Array.isArray(data.boards) || !data.boards.length) return;
+      if (document.getElementById('menuEditModal').style.display === 'flex') { Sync.pendingMenu = data; return; }
+      menuBoards = data.boards;
+      try { localStorage.setItem('coffee_menu_boards', JSON.stringify(menuBoards)); } catch (e) {}
+      Sync.menuTs = data.updatedAt; localStorage.setItem('coffee_menu_ts', String(Sync.menuTs));
+      if (!menuBoards.some(b => b.id === currentBoardId)) currentBoardId = menuBoards[0].id;
+      drawGrid();
+    }
+
+    // ----- 서버 연결 시작/중지 -----
+    function attachCloud(backend) {
+      if (Sync.backend) return;
+      Sync.backend = backend;
+      backend.onUser(user => {
+        Sync.uid = user ? user.uid : null; Sync.email = user ? user.email : null;
+        stopCloud();
+        if (user) {
+          document.getElementById('loginModal').style.display = 'none';
+          if (Sync.viewer) { updateSyncBadge(); return; }
+          if (!Sync.device) openDeviceModal(); else startCloud();
+        } else if (localStorage.getItem('coffee_login_skip') !== '1') openLoginModal();
+        updateSyncBadge();
+      });
+    }
+    function stopCloud() { Sync.unsub.forEach(f => { try { f(); } catch (e) {} }); Sync.unsub = []; Sync.couponCfg = null; Sync.couponUse = {}; }
+    function startCloud() {
+      if (!cloudRead() || !Sync.device) return;
+      stopCloud();
+      const B = Sync.backend, code = devCode();
+      Sync.unsub.push(B.listen('devices/' + code, d => {
+        if (d && d.instanceId && d.instanceId !== Sync.device.instanceId) lockDevice();
+      }));
+      Sync.unsub.push(B.listen('config/menu', d => {
+        if (!d) { if (cloudOn()) syncMenuSaved(); return; }            // 서버에 메뉴판이 없으면 이 기기 메뉴판을 올림
+        if ((d.updatedAt || 0) > Sync.menuTs) applyRemoteMenu(d);
+      }));
+      Sync.unsub.push(B.listen('config/coupon', d => { Sync.couponCfg = d; if (!recomputeCloudCoupons()) updateCouponUI(); syncSave(); flushOutbox(); }));
+      Sync.unsub.push(B.listenCol('couponUse', list => {
+        Sync.couponUse = {}; list.forEach(u => { if (u && u.device) Sync.couponUse[u.device] = u; });
+        recomputeCloudCoupons(); syncSave(); flushOutbox();
+      }));
+      if (!Sync.st.init) {   // 처음 연결: 이 기기의 기존 마감 기록도 서버에 백업
+        pastEvents.forEach(ev => {
+          if (ev.device && ev.device !== code) return;
+          const kinds = ev.kind ? [ev.kind] : ['REG', 'COUP'];
+          kinds.forEach(k => {
+            const hist = ev.kind ? ev.history : ev.history.map(o => ({ ...o, items: o.items.filter(it => !!it.isC === (k === 'COUP')) })).filter(o => o.items.length);
+            if (!hist.length) return;
+            enqueue(`events/${code}_${k}_${ev.id}`, JSON.parse(JSON.stringify({ ...ev, kind: k, history: hist, device: code, dateKey: ev.dateKey || padDate(ev.id) })));
+          });
+        });
+        Sync.st.init = true; syncSave();
+      }
+      syncScan();
+    }
+
+    // ----- 로그인 / 기기번호 -----
+    function openLoginModal() { document.getElementById('loginMsg').innerText = ''; document.getElementById('loginModal').style.display = 'flex'; }
+    function skipLogin() { localStorage.setItem('coffee_login_skip', '1'); document.getElementById('loginModal').style.display = 'none'; updateSyncBadge(); }
+    async function doLogin() {
+      const email = document.getElementById('loginEmail').value.trim(), pw = document.getElementById('loginPw').value;
+      const msg = document.getElementById('loginMsg');
+      if (!Sync.backend) { msg.innerText = '서버 연결 준비가 안 됐습니다. 인터넷 연결 후 다시 시도하세요.'; return; }
+      if (!email || !pw) { msg.innerText = '이메일과 비밀번호를 입력하세요.'; return; }
+      msg.innerText = '로그인 중...';
+      try { await Sync.backend.signIn(email, pw); localStorage.removeItem('coffee_login_skip'); document.getElementById('loginPw').value = ''; }
+      catch (e) {
+        const c = (e && e.code) || '';
+        msg.innerText = /network/.test(c) ? '인터넷 연결이 필요합니다.' : /invalid|wrong|not-found|credential/.test(c) ? '이메일 또는 비밀번호가 맞지 않습니다.' : /too-many/.test(c) ? '시도가 너무 많습니다. 잠시 후 다시 해주세요.' : ('로그인 실패: ' + c);
+      }
+    }
+    async function doLogout() {
+      if (pendingCount() > 0 && !confirm(`아직 서버에 안 올라간 기록이 ${pendingCount()}건 있습니다.\n로그아웃해도 이 기기에는 남아 있고, 다시 로그인하면 올라갑니다. 계속할까요?`)) return;
+      if (!confirm('로그아웃하시겠습니까?')) return;
+      await Sync.backend.signOut();
+      closeModeOptionModal();
+    }
+    function openDeviceModal() {
+      document.getElementById('deviceMsg').innerText = '';
+      document.getElementById('deviceCodeInput').value = '';
+      document.getElementById('deviceModal').style.display = 'flex';
+    }
+    function closeDeviceModal() { document.getElementById('deviceModal').style.display = 'none'; updateSyncBadge(); }
+    function useViewerMode() {
+      if (!confirm('이 기기를 보기 전용으로 쓰시겠습니까?\n(통합 영수증만 보고, 이 기기의 판매는 서버에 백업되지 않습니다)')) return;
+      Sync.viewer = true; localStorage.setItem('coffee_viewer', '1'); closeDeviceModal();
+    }
+    function newInstanceId() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
+    async function submitDeviceCode(force) {
+      const msg = document.getElementById('deviceMsg');
+      const code = document.getElementById('deviceCodeInput').value.trim().toUpperCase();
+      if (!/^[A-Z0-9]{1,3}$/.test(code)) { msg.innerText = '영문 대문자·숫자 1~3자로 입력하세요 (예: A).'; return; }
+      if (!cloudRead()) { msg.innerText = '먼저 로그인이 필요합니다.'; return; }
+      const inst = (Sync.device && Sync.device.instanceId) || localStorage.getItem('coffee_instance') || newInstanceId();
+      localStorage.setItem('coffee_instance', inst);
+      msg.innerText = '서버 확인 중...';
+      let r;
+      try { r = await Sync.backend.claimDevice(code, inst, !!force); }
+      catch (e) { msg.innerText = '서버 연결 실패 — 기기번호 등록은 인터넷이 연결된 상태에서 해주세요.'; return; }
+      if (r.taken) {
+        if (confirm(`'${code}'번은 이미 다른 기기가 쓰고 있습니다.\n\n그 기기가 고장·분실되어 이 기기로 '옮기는' 경우에만 [확인]을 누르세요.\n· 서버에 백업된 ${code}번의 판매기록·마감기록을 이 기기로 복원합니다\n· 이전 기기에서는 더 이상 판매할 수 없게 막힙니다\n\n새 기기를 추가하는 거라면 [취소]를 누르고 다른 번호(예: B)를 쓰세요.`)) return submitDeviceCode(true);
+        msg.innerText = '다른 번호를 입력하세요.'; return;
+      }
+      Sync.device = { code, instanceId: inst };
+      Sync.viewer = false; localStorage.removeItem('coffee_viewer');
+      Sync.st = { hash: {}, outbox: {}, init: false, cuH: '' };   // 기기번호가 바뀌면 동기화 기록 새로 시작
+      safeSet('coffee_device', JSON.stringify(Sync.device)); syncSave();
+      if (r.existed) {
+        msg.innerText = '백업된 기록 복원 중...';
+        try { await restoreFromServer(code); } catch (e) { msg.innerText = '복원 실패: ' + ((e && e.code) || e) + ' — 인터넷 연결 확인 후 옵션에서 다시 시도하세요.'; return; }
+      }
+      document.getElementById('deviceModal').style.display = 'none';
+      renderCurrentCart();
+      startCloud();
+      alert(r.existed ? `'${code}'번 기기로 복원·연결되었습니다.` : `이 기기는 '${code}'번으로 등록되었습니다.\n주문번호가 ${code}-1, ${code}-2… 로 매겨집니다.`);
+    }
+    // 고장 난 기기 대신: 서버의 미마감 주문 + 마감 기록을 이 기기로 가져옴
+    async function restoreFromServer(code) {
+      const B = Sync.backend;
+      const [os, es] = await Promise.all([B.query('orders', [['device', '==', code], ['closed', '==', false]]), B.query('events', [['device', '==', code]])]);
+      stashLedger();
+      ['REG', 'COUP'].forEach(k => {
+        const have = new Set(ledgers[k].history.map(o => String(o.id)));
+        os.docs.filter(d => d.kind === k && !d.voided && !have.has(String(d.id))).forEach(d => {
+          ledgers[k].history.push({ id: d.id, seq: d.seq, date: d.date, time: d.time, payType: d.payType, items: d.items, ...(d.cancelled ? { cancelled: true, cancelTime: d.cancelTime } : {}) });
+        });
+        ledgers[k].history.sort((a, b) => b.seq - a.seq);
+        ledgers[k].seq = Math.max(ledgers[k].seq, ledgers[k].history.reduce((m, o) => Math.max(m, o.seq || 0), 0) + 1);
+        ledgers[k].history.forEach(o => { const d = orderDocOf(k, o); Sync.st.hash['orders/' + d.key] = JSON.stringify(d); });
+      });
+      const haveEv = new Set(pastEvents.map(e => String(e.id) + '_' + (e.kind || '')));
+      es.docs.forEach(e => { if (!haveEv.has(String(e.id) + '_' + (e.kind || ''))) pastEvents.push(e); });
+      pastEvents.sort((a, b) => a.id - b.id);
+      safeSet('coffee_past_events', JSON.stringify(pastEvents));
+      Sync.st.init = true; syncSave();
+      loadLedger(mode); currentViewingIndex = -1; editSnapshot = null;
+      saveSalesData();
+    }
+    function lockDevice() {
+      if (Sync.locked) return;
+      Sync.locked = true;
+      document.getElementById('lockText').innerHTML = `이 기기의 번호 <b>${devCode()}</b>가 다른 기기로 옮겨졌습니다.<br>같은 번호로 두 기기가 판매하면 기록이 섞이므로 이 기기에서는 판매를 막았습니다.` +
+        (pendingCount() ? `<br><br><b style="color:#d32f2f">⚠ 이 기기에만 있고 서버에 못 올라간 기록이 ${pendingCount()}건 있습니다.</b>` : '');
+      document.getElementById('lockOverlay').style.display = 'flex';
+      updateSyncBadge();
+    }
+    function resetLockedDevice() {
+      if (!confirm('이 기기의 판매 장부(일반·쿠폰)를 지우고 새 기기번호로 다시 시작합니다.\n(서버에 백업된 기록은 남아 있습니다) 계속할까요?')) return;
+      if (!confirm('정말 지우시겠습니까?')) return;
+      ledgers = { REG: emptyLedger(), COUP: emptyLedger() }; loadLedger(mode);
+      Sync.device = null; localStorage.removeItem('coffee_device');
+      Sync.st = { hash: {}, outbox: {}, init: true, cuH: '' }; syncSave();
+      Sync.locked = false; stopCloud();
+      document.getElementById('lockOverlay').style.display = 'none';
+      saveSalesData(); renderCurrentCart();
+      openDeviceModal();
+    }
+
+    // ----- 상태 표시 / 옵션 화면 -----
+    function updateSyncBadge() {
+      const b = document.getElementById('syncBadge'); if (!b) return;
+      let t, c = '';
+      const n = pendingCount();
+      if (Sync.locked) { t = '⛔ 기기번호 이동됨'; c = 'bad'; }
+      else if (!Sync.backend) { t = Sync.failed ? '☁ 서버 연결 안 됨(이 기기에만 저장)' : '☁ 연결 준비 중'; c = Sync.failed ? 'wait' : ''; }
+      else if (!Sync.uid) { t = '☁ 로그인 안 됨 — 백업 꺼짐'; c = 'bad'; }
+      else if (Sync.viewer) { t = '📱 보기 전용'; c = ''; }
+      else if (!Sync.device) { t = '☁ 기기번호 등록 필요'; c = 'bad'; }
+      else if (n > 0) { t = `☁ ${devCode()} · 올릴 기록 ${n}건${navigator.onLine === false ? ' (오프라인)' : ''}`; c = 'wait'; }
+      else { const a = Sync.st.lastAck ? new Date(Sync.st.lastAck) : null; t = `☁ ${devCode()} · 백업 완료${a ? ' ' + a.getHours().toString().padStart(2,'0') + ':' + a.getMinutes().toString().padStart(2,'0') : ''}`; c = 'ok'; }
+      b.innerText = t; b.className = 'sync-badge ' + c;
+      if (document.getElementById('modeOptModal').style.display === 'flex') renderCloudCard();
+    }
+    function renderCloudCard() {
+      const info = document.getElementById('cloudInfo'), btns = document.getElementById('cloudButtons');
+      const B = (label, fn, color) => `<button style="flex:1; min-width:110px; height:38px; background:${color}; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:13px; cursor:pointer;" onclick="${fn}">${label}</button>`;
+      let lines = [];
+      if (!Sync.backend) lines.push(Sync.failed ? '서버 연결 기능을 불러오지 못했습니다 (인터넷 연결 후 앱을 다시 열어주세요). 판매기록은 이 기기에 저장되고 있습니다.' : '서버 연결 준비 중...');
+      else if (!Sync.uid) lines.push('<b style="color:#c92a2a">로그인 안 됨</b> — 판매기록이 서버에 백업되지 않습니다.');
+      else {
+        lines.push(`계정: <b>${Sync.email || ''}</b>`);
+        if (Sync.viewer) lines.push('이 기기: <b>보기 전용</b> (판매 기록 백업 안 함)');
+        else if (Sync.device) lines.push(`이 기기 번호: <b>${devCode()}</b> (주문번호 ${devCode()}-1, ${devCode()}-2 …)`);
+        else lines.push('<b style="color:#c92a2a">기기번호 미등록</b>');
+        if (Sync.device && !Sync.viewer) lines.push(pendingCount() ? `<b style="color:#e67700">서버에 올릴 기록 ${pendingCount()}건 대기 중</b> — 와이파이에 연결되면 자동으로 올라갑니다.` : `모든 기록이 서버에 백업됨${Sync.st.lastAck ? ' (' + new Date(Sync.st.lastAck).toLocaleString('ko-KR') + ')' : ''}`);
+        if (Sync.lastErr) lines.push(`<span style="color:#c92a2a">최근 오류: ${Sync.lastErr}</span>`);
+      }
+      info.innerHTML = lines.join('<br>');
+      let h = '';
+      if (Sync.backend && !Sync.uid) h += B('로그인', 'closeModeOptionModal(); openLoginModal()', '#1864ab');
+      if (cloudRead() && (!Sync.device || Sync.viewer)) h += B('판매 기기로 등록', 'closeModeOptionModal(); openDeviceModal()', '#2e7d32');
+      if (cloudOn()) h += B('지금 서버로 보내기', 'syncScan(); renderCloudCard()', '#2e7d32');
+      if (cloudRead()) h += B('🌐 통합 영수증', 'closeModeOptionModal(); openIntegrated()', '#1864ab');
+      if (cloudRead()) h += B('로그아웃', 'doLogout()', '#868e96');
+      btns.innerHTML = h;
+    }
+    function openCloudPanel() { openModeOptionModal(); setTimeout(() => { const c = document.getElementById('cloudCard'); if (c) c.scrollIntoView({ block: 'center' }); }, 50); }
+
+    // ----- 전체 기기 통합 영수증 (서버에 모인 마감 기록 합계, 어느 기기에서든 보기) -----
+    function openIntegrated() {
+      if (!cloudRead()) return alert('통합 영수증은 서버 백업에 로그인한 뒤 볼 수 있습니다.\n(⚙ 옵션 → 서버 백업)');
+      closePastEventsModal();
+      const inp = document.getElementById('intDate'); if (!inp.value) inp.value = padDate(new Date());
+      document.getElementById('intModal').style.display = 'flex';
+      renderIntegrated();
+    }
+    function closeIntegrated() { document.getElementById('intModal').style.display = 'none'; }
+    function aggregateIntegrated(kind, events, openOrders, devices, date) {
+      // 순수 계산 함수 (검증용으로 분리) — 마감된 기록만 합산, 미마감은 경고로 따로
+      const isC = kind === 'COUP';
+      const per = {}, items = {};
+      const dev = d => (per[d] = per[d] || { device: d, n: 0, cancel: 0, seqs: [], card: 0, cash: 0, other: 0, total: 0, qty: 0, base: 0, extra: 0, claim: 0, openN: 0, openAmt: 0 });
+      events.filter(e => e.kind === kind && normDate(e.dateKey) === date).forEach(e => {
+        const P = dev(e.device || '?');
+        (e.history || []).forEach(o => {
+          if (!o.items.some(it => !!it.isC === isC)) return;
+          if (typeof o.seq === 'number') P.seqs.push(o.seq);
+          if (o.cancelled) { P.cancel++; return; }
+          P.n++;
+          o.items.forEach(it => {
+            if (!!it.isC !== isC) return;
+            if (isC) {
+              const b = getBase(it, e.baseCouponVal), ex = getEx(it, b), lb = b * it.qty, le = ex * it.qty;
+              P.qty += it.qty; P.base += lb; P.extra += le; P.claim += lb + le;
+              const k = `${it.n}|${it.p}|${b}`; items[k] = items[k] || { n: it.n, p: it.p, b, ex, qty: 0 }; items[k].qty += it.qty;
+            } else {
+              const v = it.p * it.qty; P.total += v;
+              if (o.payType === 'CARD') P.card += v; else if (o.payType === 'CASH') P.cash += v; else P.other += v;
+              const k = `${it.n}|${it.p}`; items[k] = items[k] || { n: it.n, p: it.p, qty: 0 }; items[k].qty += it.qty;
+            }
+          });
+        });
+      });
+      openOrders.filter(o => o.kind === kind && !o.voided && !o.cancelled && normDate(o.date) === date).forEach(o => {
+        const P = dev(o.device || '?'); P.openN++;
+        o.items.forEach(it => { if (!!it.isC !== isC) return; P.openAmt += isC ? (getBase(it, baseCouponVal) + getEx(it, getBase(it, baseCouponVal))) * it.qty : it.p * it.qty; });
+      });
+      (devices || []).forEach(d => { if (d.code) dev(d.code).lastSeen = d.lastSeen || 0; });
+      const list = Object.values(per).sort((a, b) => a.device.localeCompare(b.device));
+      const sum = f => list.reduce((s, p) => s + p[f], 0);
+      return { list, items: Object.values(items), tot: { n: sum('n'), cancel: sum('cancel'), card: sum('card'), cash: sum('cash'), other: sum('other'), total: sum('total'), qty: sum('qty'), base: sum('base'), extra: sum('extra'), claim: sum('claim'), openN: sum('openN') } };
+    }
+    async function renderIntegrated() {
+      const body = document.getElementById('intBody');
+      const date = document.getElementById('intDate').value || padDate(new Date());
+      const kind = mode, isC = kind === 'COUP';
+      document.getElementById('intTitle').innerText = isC ? '[ 쿠폰 통합 정산 (전체 기기) ]' : '[ 일반 통합 매출 (전체 기기) ]';
+      body.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">서버에서 불러오는 중...</div>';
+      let ev, op, dv;
+      try {
+        [ev, op, dv] = await Promise.all([
+          Sync.backend.query('events', [['dateKey', '==', date]]),
+          Sync.backend.query('orders', [['closed', '==', false]]),
+          Sync.backend.query('devices', [])
+        ]);
+      } catch (e) { body.innerHTML = `<div style="color:#c92a2a; padding:12px;">불러오기 실패: ${(e && e.code) || e}</div>`; return; }
+      const R = aggregateIntegrated(kind, ev.docs, op.docs, dv.docs, date);
+      const won = v => v.toLocaleString() + '원';
+      const fmtT = t => t ? new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+      let h = `<div style="text-align:center; font-size:12px; color:#555;">${eventName}${(ev.fromCache || op.fromCache) ? ' · <b style="color:#e67700">오프라인: 마지막으로 받은 데이터 기준</b>' : ''}</div>`;
+      const cls = isC ? 'int-sec int-coup' : 'int-sec int-reg';
+      // 기기별
+      h += `<div class="${cls}"><div style="font-weight:900; margin-bottom:6px;">기기별 (${date})</div><table><thead><tr style="border-bottom:1px solid #999; color:#555;"><th style="text-align:left;">기기</th><th style="text-align:right;">주문</th>` +
+        (isC ? `<th style="text-align:right;">회수</th><th style="text-align:right;">청구액</th>` : `<th style="text-align:right;">카드</th><th style="text-align:right;">현금</th><th style="text-align:right;">합계</th>`) + `</tr></thead><tbody>`;
+      R.list.forEach(p => {
+        const rng = p.seqs.length ? ` (${p.device}-${Math.min(...p.seqs)}~${p.device}-${Math.max(...p.seqs)}${p.cancel ? ', 취소 ' + p.cancel : ''})` : '';
+        h += `<tr><td><b>${p.device}</b><div style="font-size:10px; color:#666;">동기화 ${fmtT(p.lastSeen)}</div></td><td style="text-align:right;">${p.n}건<div style="font-size:10px; color:#666;">${rng}</div></td>` +
+          (isC ? `<td style="text-align:right;">${p.qty}장</td><td style="text-align:right; font-weight:bold;">${won(p.claim)}</td>` : `<td style="text-align:right;">${won(p.card)}</td><td style="text-align:right;">${won(p.cash)}${p.other ? `<div style="font-size:10px; color:#c92a2a;">미지정 ${won(p.other)}</div>` : ''}</td><td style="text-align:right; font-weight:bold;">${won(p.total)}</td>`) + `</tr>`;
+      });
+      if (!R.list.length) h += `<tr><td colspan="5" style="text-align:center; color:#999; padding:10px;">이 날짜의 기록이 없습니다.</td></tr>`;
+      h += `</tbody></table></div>`;
+      // 미마감 경고
+      const opens = R.list.filter(p => p.openN > 0);
+      if (opens.length) h += `<div style="margin-top:8px; padding:8px; background:#fff5f5; border:1px solid #ffc9c9; border-radius:6px; color:#c92a2a; font-size:12px;">⚠ 아직 마감 안 된 주문이 있습니다 (합계에 미포함):<br>` + opens.map(p => `· ${p.device}기기: ${p.openN}건 ${won(p.openAmt)}`).join('<br>') + `<br>해당 기기에서 마감 후 [새로고침]을 누르세요.</div>`;
+      // 품목 합계
+      h += `<div class="${cls}"><div style="font-weight:900; margin-bottom:6px;">품목 합계 (전체 기기)</div><table><thead><tr style="border-bottom:1px solid #999; color:#555;"><th style="text-align:left;">품목</th><th style="text-align:right;">단가</th><th style="text-align:right;">잔수</th><th style="text-align:right;">${isC ? '청구액' : '합계'}</th></tr></thead><tbody>` +
+        R.items.map(it => `<tr><td>${it.n}</td><td style="text-align:right;">${it.p.toLocaleString()}</td><td style="text-align:right;">${it.qty}잔</td><td style="text-align:right; font-weight:bold;">${won(isC ? (it.b + it.ex) * it.qty : it.p * it.qty)}</td></tr>`).join('') + `</tbody></table></div>`;
+      // 총계
+      h += `<div style="border-top:2px solid #222; margin-top:12px; padding-top:8px;">` +
+        (isC ? `<div class="row"><span>• 주문 ${R.tot.n}건${R.tot.cancel ? ' (취소 ' + R.tot.cancel + '건)' : ''} / 쿠폰 회수</span><b>${R.tot.qty}장</b></div><div class="row"><span>• 기본액</span><span>${won(R.tot.base)}</span></div><div class="row"><span>• 사후 초과차액</span><span>+${won(R.tot.extra)}</span></div><div class="row" style="font-size:18px; font-weight:900; color:#e65100;"><span>★ 쿠폰 청구 총액</span><span id="intGrand">${won(R.tot.claim)}</span></div>`
+              : `<div class="row"><span>• 주문 ${R.tot.n}건${R.tot.cancel ? ' (취소 ' + R.tot.cancel + '건)' : ''}</span><span></span></div><div class="row"><span>• 카드</span><span>${won(R.tot.card)}</span></div><div class="row"><span>• 현금</span><span>${won(R.tot.cash)}</span></div>${R.tot.other ? `<div class="row" style="color:#c92a2a;"><span>• 결제수단 미지정</span><span>${won(R.tot.other)}</span></div>` : ''}<div class="row" style="font-size:18px; font-weight:900;"><span>★ 일반 판매 총매출</span><span id="intGrand">${won(R.tot.total)}</span></div>`) + `</div>`;
+      body.innerHTML = h;
+    }
+
+    window.addEventListener('poscloud-ready', () => attachCloud(window.PosCloud));
+    window.addEventListener('poscloud-failed', () => { Sync.failed = true; updateSyncBadge(); });
+    window.addEventListener('online', () => { flushOutbox(); updateSyncBadge(); });
+    window.addEventListener('offline', updateSyncBadge);
+
+
     // ===== [수정] 화면 자동 맞춤 (10~13인치, 아이패드/갤럭시탭, 가로/세로) =====
     // 기준 화면 1024×768(세로일 때 768×1024)에 맞춰 만든 화면을, 기기 화면에 꽉 차도록 비례 확대/축소
     const BASE_W = 1024, BASE_H = 768;
@@ -1269,10 +1797,77 @@
     fitScreen(true);
 
     setMode('REG'); renderCurrentCart(); updateCouponUI();
+    updateSyncBadge();
+    if (window.PosCloud) attachCloud(window.PosCloud); // [추가] 서버 연결 모듈이 먼저 준비된 경우
 
     // [수정] 이전 날짜에 마감하지 않은 판매 내역이 남아 있으면 알림
     if (['REG', 'COUP'].some(k => ledgers[k].history.some(o => o.date && o.date !== todayKey()))) {
       setTimeout(() => alert('⚠ 이전 날짜에 마감하지 않은 판매 내역이 남아 있습니다.\n[🧾 마감]에서 먼저 마감 저장해주세요.'), 300);
+    }
+  </script>
+  <!-- [추가] 서버 연결 모듈 (Firebase). 인터넷이 없어서 못 불러와도 포스는 이 기기만으로 정상 동작 -->
+  <script type="module">
+    const V = '12.19.0', CDN = `https://www.gstatic.com/firebasejs/${V}/`;
+    const firebaseConfig = {
+      apiKey: "AIzaSyDvQSO3L58N_jk88TArVi6ELE5MPwstF_o",
+      authDomain: "coffee-pos-26941.firebaseapp.com",
+      projectId: "coffee-pos-26941",
+      storageBucket: "coffee-pos-26941.firebasestorage.app",
+      messagingSenderId: "529440424627",
+      appId: "1:529440424627:web:287f19125d5eb0f9e7a6c6"
+    };
+    try {
+      const { initializeApp } = await import(CDN + 'firebase-app.js');
+      const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } = await import(CDN + 'firebase-auth.js');
+      const F = await import(CDN + 'firebase-firestore.js');
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      let db;
+      try { db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentSingleTabManager() }) }); }
+      catch (e) { db = F.getFirestore(app); } // 오프라인 저장소를 못 쓰는 환경이면 기본값
+      let uid = null;
+      const path = p => `users/${uid}/${p}`;
+      const clean = o => JSON.parse(JSON.stringify(o));
+      window.PosCloud = {
+        onUser(cb) { return onAuthStateChanged(auth, u => { uid = u ? u.uid : null; cb(u ? { uid: u.uid, email: u.email } : null); }); },
+        signIn: (e, pw) => signInWithEmailAndPassword(auth, e, pw),
+        signOut: () => signOut(auth),
+        set: (p, d, merge = true) => F.setDoc(F.doc(db, path(p)), clean(d), { merge }),
+        async query(col, conds) {
+          const q = F.query(F.collection(db, path(col)), ...conds.map(c => F.where(c[0], c[1], c[2])));
+          let snap;
+          try { snap = await F.getDocsFromServer(q); } catch (e) { snap = await F.getDocs(q); } // 오프라인이면 기기에 저장된 마지막 데이터
+          return { docs: snap.docs.map(d => d.data()), fromCache: snap.metadata.fromCache };
+        },
+        listen(p, cb) { return F.onSnapshot(F.doc(db, path(p)), s => cb(s.exists() ? s.data() : null), e => console.warn('listen', p, e)); },
+        listenCol(col, cb) { return F.onSnapshot(F.collection(db, path(col)), s => cb(s.docs.map(d => d.data())), e => console.warn('listenCol', col, e)); },
+        claimDevice(code, inst, force) {
+          return F.runTransaction(db, async tx => {
+            const ref = F.doc(db, path('devices/' + code));
+            const s = await tx.get(ref);
+            const now = Date.now();
+            if (s.exists()) {
+              const d = s.data();
+              if (d.instanceId === inst) { tx.set(ref, { lastSeen: now }, { merge: true }); return { ok: true, existed: true }; }
+              if (!force) return { ok: false, taken: true };
+              tx.set(ref, { code, instanceId: inst, claimedAt: now, lastSeen: now }, { merge: true });
+              return { ok: true, existed: true, tookOver: true };
+            }
+            tx.set(ref, { code, instanceId: inst, claimedAt: now, lastSeen: now });
+            return { ok: true, existed: false };
+          });
+        }
+      };
+      window.dispatchEvent(new Event('poscloud-ready'));
+    } catch (e) {
+      console.warn('PosCloud load failed', e);
+      window.dispatchEvent(new Event('poscloud-failed'));
+    }
+  </script>
+  <script>
+    // [추가] 오프라인 실행: 인터넷 없이도 앱이 열리도록 서비스 워커 등록 (GitHub 주소에서만 동작)
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      navigator.serviceWorker.register('./sw.js').catch(e => console.warn('sw', e));
     }
   </script>
 </body>
