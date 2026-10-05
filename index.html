@@ -10,51 +10,44 @@
   <title>커피트럭 포스</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: manipulation; font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; }
+    /* [수정] 아이패드에서 입력칸이 먹통되는 문제: 입력칸은 선택/입력 가능하게 */
+    input, select, textarea { user-select: text; -webkit-user-select: text; -webkit-touch-callout: default; }
     html, body { height: 100%; overflow: hidden; display: flex; flex-direction: column; transition: background-color 0.2s; }
     
     header { 
-      height: 64px; 
-      min-height: 64px; 
+      height: 72px; 
+      min-height: 72px; 
       display: flex; 
       align-items: center; 
       justify-content: space-between; 
-      padding: 16px 10px 4px 10px; 
+      padding: 22px 6px 4px 6px; 
       border-bottom: 2px solid rgba(0,0,0,0.15); 
     }
     
-    .tab-side-btn { 
-      height: 42px; 
-      padding: 0 16px; 
-      border-radius: 8px; 
-      font-weight: 900; 
-      font-size: 15px; 
-      border: 2px solid transparent; 
-      cursor: pointer; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      box-shadow: 0 3px 6px rgba(0,0,0,0.2); 
-      white-space: nowrap; 
-    }
+    /* [수정] 판매 탭 버튼: 헤더 높이를 꽉 채우는 큰 버튼 */
+    .tab-side-btn { height: 44px; min-width: 100px; padding: 0 12px; border-radius: 8px; font-weight: 900; font-size: 16px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.15); white-space: nowrap; }
     .tab-side-btn:active { transform: scale(0.96); }
     
-    .header-center-box { display: flex; align-items: center; }
-    .header-event-text { font-size: 14px; font-weight: 900; color: #0288d1; cursor: pointer; margin-right: 6px; white-space: nowrap; }
-    .header-center-clock { font-size: 12px; font-weight: 900; letter-spacing: 0.5px; white-space: nowrap; }
+    .header-center-box { display: flex; align-items: center; justify-content: center; flex: 1; min-width: 0; margin: 0 6px; }
+    .header-center-box > * { flex-shrink: 0; }
+    .header-center-box > .header-event-text { flex-shrink: 1; min-width: 40px; }
+    .tab-side-btn, .header-right-group { flex-shrink: 0; }
+    .header-event-text { font-size: 14px; font-weight: 900; color: #0288d1; cursor: pointer; margin-right: 8px; white-space: nowrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+    .header-center-clock { font-size: 18px; font-weight: 900; letter-spacing: 0.5px; white-space: nowrap; }
     
     .coupon-counter { display: none; align-items: center; margin-left: 8px; background: #ffe0b2; color: #e65100; padding: 3px 6px; border-radius: 6px; font-weight: 900; font-size: 12px; white-space: nowrap; }
     .coupon-counter span { margin: 0 3px; font-size: 14px; }
     .btn-coup-set { background: #e65100; color: #fff; border-radius: 4px; padding: 2px 5px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; }
 
     .header-right-group { display: flex; align-items: center; }
-    .btn-action-top { height: 36px; padding: 0 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 4px; white-space: nowrap; }
+    .btn-action-top { height: 36px; padding: 0 6px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 4px; white-space: nowrap; }
     .btn-action-top:active { transform: scale(0.96); }
 
     body.theme-reg { background-color: #ffffff; color: #222; }
     body.theme-reg header { background-color: #e9ecef; border-color: #ced4da; }
     body.theme-reg .header-center-clock { color: #1b5e20; }
     body.theme-reg #btnTabReg { background-color: #2e7d32; color: #fff; border-color: #1b5e20; }
-    body.theme-reg #btnTabCoup { background-color: #dee2e6; color: #666; }
+    body.theme-reg #btnTabCoup { background-color: #ff9800; color: #fff; opacity: 0.5; }
     body.theme-reg .menu-panel { background-color: #f1f3f5; }
     body.theme-reg .cart-panel { background-color: #ffffff; border-left: 2px solid #dee2e6; }
     body.theme-reg .cart-nav-header { background-color: #e9ecef; border-bottom: 1px solid #ced4da; }
@@ -64,7 +57,7 @@
     body.theme-coup { background-color: #1e1e1e; color: #f1f1f1; }
     body.theme-coup header { background-color: #111111; border-color: #333; }
     body.theme-coup .header-center-clock { color: #ffb74d; }
-    body.theme-coup #btnTabReg { background-color: #2c2c2c; color: #888; }
+    body.theme-coup #btnTabReg { background-color: #2e7d32; color: #fff; opacity: 0.5; }
     body.theme-coup #btnTabCoup { background-color: #ff9800; color: #fff; border-color: #f57c00; }
     body.theme-coup .menu-panel { background-color: #181818; }
     body.theme-coup .cart-panel { background-color: #242424; border-left: 2px solid #333; }
@@ -72,18 +65,17 @@
     body.theme-coup .cart-bottom { background-color: #1c1c1c; border-top: 2px solid #333; }
     body.theme-coup .item-row { border-bottom: 1px dashed #444; color: #f1f1f1; }
     body.theme-coup .row { color: #bbb; }
+    body.theme-coup .modal-box .row { color: #333; } /* [수정] 영수증·팝업은 흰 바탕이므로 진한 글씨 */
 
-    /* ★ 화면 전체 높이에 딱 맞게 꽉 채우도록 설정 ★ */
-    .container { display: flex; flex: 1; height: calc(100% - 64px); overflow: hidden; }
-    .menu-panel { flex: 68; padding: 4px; display: flex; flex-direction: column; overflow: hidden; }
+    .container { display: flex; flex: 1; height: calc(100% - 72px); overflow: hidden; }
+    .menu-panel { flex: 68; padding: 6px; display: flex; flex-direction: column; overflow: hidden; }
     .cart-panel { flex: 32; min-width: 320px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 
-    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; font-size: 11px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; height: 18px; min-height: 18px; }
+    .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 12px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; height: 22px; min-height: 22px; }
     .badge-board-name { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
     body.theme-coup .badge-board-name { background: rgba(255,255,255,0.1); }
 
-    /* ★ 가로 5칸 × 세로 4칸이 남는 공간 없이 위아래로 꽉 차게 확장 ★ */
-    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); grid-gap: 4px; flex: 1; height: calc(100% - 20px); }
+    .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); grid-gap: 6px; flex: 1; height: calc(100% - 26px); }
     
     .btn-item {
       width: 100%; height: 100%; border: none; color: #fff; display: flex; flex-direction: column;
@@ -92,7 +84,7 @@
       background-size: cover; background-position: center; overflow: hidden;
     }
     .btn-item:active { transform: scale(0.96); }
-    .btn-square { border-radius: 8px; }
+    .btn-square { border-radius: 10px; }
     .btn-circle { border-radius: 50%; }
     
     .m-title { 
@@ -109,8 +101,8 @@
       font-weight: 900; 
     }
     .m-price { font-size: 11px; opacity: 0.95; }
-    .badge { position: absolute; top: 2px; right: 2px; background: #d32f2f; color: #fff; font-size: 9px; padding: 2px 4px; border-radius: 4px; font-weight: bold; z-index: 3; }
-    .edit-tag { position: absolute; top: 2px; left: 2px; background: #ffd43b; color: #000; font-size: 9px; font-weight: bold; padding: 2px 4px; border-radius: 3px; z-index: 3; }
+    .badge { position: absolute; top: 3px; right: 3px; background: #d32f2f; color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 4px; font-weight: bold; z-index: 3; }
+    .edit-tag { position: absolute; top: 3px; left: 3px; background: #ffd43b; color: #000; font-size: 10px; font-weight: bold; padding: 2px 4px; border-radius: 3px; z-index: 3; }
 
     /* 전표 영역 */
     .cart-nav-header { padding: 6px 8px; display: flex; justify-content: space-between; align-items: center; }
@@ -179,6 +171,23 @@
     .btn-suggest { width: 48%; height: 54px; background: #e7f5ff; border: 2px solid #74c0fc; color: #1864ab; border-radius: 8px; font-weight: 900; font-size: 18px; cursor: pointer; margin-bottom: 8px; }
     .cash-add-grid { display: flex; justify-content: space-between; margin-bottom: 12px; gap: 6px; }
     .btn-add-cash { flex: 1; height: 50px; background: #f1f3f5; border: 1px solid #ced4da; border-radius: 8px; font-weight: 900; font-size: 15px; cursor: pointer; color: #333; }
+
+    /* [수정] 마감 영수증 품목 줄을 옅은 색으로 번갈아 구분 (인쇄에도 색 유지) */
+    #rModal table td { padding: 5px 4px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    #rCouponItems tr:nth-child(odd) td { background: #fffaf3; }
+    #rCouponItems tr:nth-child(even) td { background: #ffe8cc; }
+    #rDirectItems tr:nth-child(odd) td { background: #f6fbf6; }
+    #rDirectItems tr:nth-child(even) td { background: #dcefdc; }
+
+    /* [수정] 인쇄 시 영수증만 출력 */
+    @media print {
+      html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
+      body * { visibility: hidden !important; }
+      #rModal, #rModal * { visibility: visible !important; }
+      #rModal { position: absolute !important; top: 0; left: 0; width: 100%; height: auto; display: block !important; background: none !important; }
+      #rModal .modal-box { box-shadow: none !important; max-height: none !important; overflow: visible !important; width: 100% !important; max-width: none !important; }
+      #receiptActionArea { display: none !important; }
+    }
   </style>
 </head>
 <body class="theme-reg">
@@ -278,7 +287,7 @@
       
       <div class="opt-card" style="border-color:#fa5252; background:#fff5f5;">
         <div class="opt-card-title" style="color:#e03131;">🚨 당일 내역 리셋</div>
-        <p style="font-size:12px; color:#666; margin-bottom:8px; line-height:1.3;">오늘 받은 주문 내역만 0건으로 리셋합니다.<br>(메뉴판과 과거 내역은 유지됩니다)</p>
+        <p style="font-size:12px; color:#666; margin-bottom:8px; line-height:1.3;">지금 보고 있는 판매(일반 또는 쿠폰)의 오늘 주문 내역만 0건으로 리셋합니다.<br>(다른 쪽 판매·메뉴판·과거 내역은 유지되고, 쿠폰은 회수한 수를 잔여에 되돌립니다)</p>
         <button style="width:100%; height:40px; background:#fa5252; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="resetTodaySales()">⚠ 당일 판매내역 초기화</button>
       </div>
 
@@ -369,11 +378,12 @@
       <div id="rCouponSection" style="display:none; background:#fff3e0; border:1px solid #ffe0b2; border-radius:6px; padding:10px; margin-bottom:10px;">
         <div style="font-size:14px; font-weight:900; color:#e65100; margin-bottom:6px;">🎟 쿠폰 행사 정산 (청구용)</div>
         <table style="width:100%; font-size:12px; border-collapse:collapse;">
-          <thead><tr style="border-bottom:1px solid #e65100; color:#555;"><th style="text-align:left; padding:4px 0;">품목</th><th style="text-align:right;">단가</th><th style="text-align:right;">차액</th><th style="text-align:right;">총잔수</th><th style="text-align:right;">합계</th></tr></thead>
+          <thead><tr style="border-bottom:1px solid #e65100; color:#555;"><th style="text-align:left; padding:4px 0;">품목</th><th style="text-align:right;">단가</th><th style="text-align:right;">차액</th><th style="text-align:right;">총잔수</th><th style="text-align:right;">청구액</th></tr></thead>
           <tbody id="rCouponItems"></tbody>
         </table>
         <div id="rCouponEmptyMsg" style="display:none; text-align:center; padding:8px; color:#999; font-size:12px;">쿠폰 내역이 없습니다.</div>
         <div style="border-top:1px dashed #e65100; margin-top:8px; padding-top:6px; font-size:12px;">
+          <div class="row" style="margin-bottom:2px;"><span>• 주문 건수:</span><b id="rCoupOrders">0건</b></div>
           <div class="row" style="margin-bottom:2px;"><span>• 쿠폰 총 회수:</span><b id="rTotQty">0장</b></div>
           <div class="row" style="margin-bottom:2px;"><span>• 기본액 (<span id="rBasePriceLbl">4,000</span>원×수량):</span><span id="rTotBase">0원</span></div>
           <div class="row" style="color:#d32f2f; margin-bottom:4px;"><span>• 사후 초과차액:</span><span id="rTotExtra">+0원</span></div>
@@ -389,27 +399,43 @@
         </table>
         <div id="rDirectEmptyMsg" style="display:none; text-align:center; padding:8px; color:#999; font-size:12px;">일반 판매 내역이 없습니다.</div>
         <div style="border-top:1px dashed #1b5e20; margin-top:8px; padding-top:6px;">
+          <div class="row" style="font-size:12px; color:#555; margin-bottom:2px;"><span>• 주문 건수:</span><b id="rDirectOrders">0건</b></div>
           <div class="row" style="font-size:12px; color:#555; margin-bottom:2px;"><span>• 카드 결제:</span><span id="rDirectCard">0원</span></div>
           <div class="row" style="font-size:12px; color:#555; margin-bottom:6px;"><span>• 현금 결제:</span><span id="rDirectCash">0원</span></div>
+          <div class="row" id="rowDirectOther" style="display:none; font-size:12px; color:#d32f2f; margin-bottom:6px;"><span>• 결제수단 미지정:</span><span id="rDirectOther">0원</span></div>
           <div class="row" style="font-size:16px; font-weight:900; color:#1b5e20; border-top:1px solid #c8e6c9; padding-top:4px;"><span>▶ 현장 총합계:</span><span id="rDirectPay">0원</span></div>
         </div>
       </div>
       
       <hr style="border:none; border-top:2px solid #222; margin:12px 0;">
-      <div class="row" style="font-size:18px; font-weight:900; color:#000;"><span>★ 당일 총 매출:</span><span id="rTotalAll">0원</span></div>
+      <div class="row" style="font-size:18px; font-weight:900; color:#000;"><span id="rTotalLabel">★ 총액:</span><span id="rTotalAll">0원</span></div>
       
       <div style="display:flex; justify-content:space-between; margin-top:16px;" id="receiptActionArea"></div>
     </div>
   </div>
 
   <script>
+    // [수정] 저장/불러오기 안전 처리 (저장 실패 시 경고)
+    function safeSet(key, val) {
+      try { localStorage.setItem(key, val); return true; }
+      catch (e) { alert('⚠ 기기 저장에 실패했습니다 (' + key + ').\n저장 공간이 부족할 수 있습니다. 메뉴 사진을 줄이거나 과거 내역을 정리해주세요.'); return false; }
+    }
+    function loadJSON(key, def) {
+      try { const v = JSON.parse(localStorage.getItem(key)); return (v === null || v === undefined) ? def : v; }
+      catch (e) { return def; }
+    }
+    function todayKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+    // 쿠폰 품목의 기준금액 (예전 데이터에 base가 없으면 행사 기준금액 사용)
+    function getBase(it, fallback) { return (typeof it.base === 'number') ? it.base : fallback; }
+    function getEx(it, base) { return (typeof it.ex === 'number') ? it.ex : Math.max(0, it.p - base); }
+
     let baseCouponVal = parseInt(localStorage.getItem('coffee_base_coupon')) || 4000;
     let eventName = localStorage.getItem('coffee_event_name') || "이름을 터치해서 입력하세요";
-    let pastEvents = JSON.parse(localStorage.getItem('coffee_past_events')) || [];
+    let pastEvents = loadJSON('coffee_past_events', []);
     let remCoupons = parseInt(localStorage.getItem('coffee_rem_coup')); 
     if(isNaN(remCoupons)) remCoupons = null;
 
-    let menuBoards = JSON.parse(localStorage.getItem('coffee_menu_boards')) || [
+    let menuBoards = loadJSON('coffee_menu_boards', null) || [
       { id: "default", name: "기본 음료", items: [
           { n:"1.아메리카노(ice)", p:4000, c:"#0288d1", shape:"square", img:"", isSlush:false },
           { n:"2.카페라떼(ice)", p:4500, c:"#0288d1", shape:"square", img:"", isSlush:false },
@@ -434,18 +460,92 @@
       ]}
     ];
 
-    let currentBoardId = "default";
+    // [수정] 현재 메뉴판 기억
+    let currentBoardId = localStorage.getItem('coffee_current_board') || "default";
+    if (!menuBoards.some(b => b.id === currentBoardId)) currentBoardId = menuBoards[0].id;
+
     let mode = 'REG';
     let isEditMode = false;
-    let newCart = [], orderHistory = [];
-    let currentViewingIndex = -1, orderSeq = 1;
-    let currentDueAmount = 0, currentReceivedAmount = 0;
+    // [수정] 일반 판매 / 쿠폰 판매 장부 완전 분리
+    //  각 장부가 자기 장바구니·주문내역·주문번호(#1부터)·과거주문 보기 위치를 따로 가짐
+    //  아래 전역변수(newCart, orderHistory, orderSeq, currentViewingIndex, editSnapshot)는 '현재 모드의 장부'를 가리킴
+    const LEDGER_KEY = 'coffee_ledgers';
+    function emptyLedger() { return { history: [], seq: 1, cart: [], view: -1, snap: null }; }
+    let ledgers = loadJSON(LEDGER_KEY, null);
+    if (!ledgers || !ledgers.REG || !ledgers.COUP) {
+      // 이전 버전(한 장부에 섞여 있던 내역)을 일반/쿠폰으로 나눠서 옮김
+      ledgers = { REG: emptyLedger(), COUP: emptyLedger() };
+      loadJSON('coffee_order_history', []).forEach(o => {
+        ['REG', 'COUP'].forEach(k => {
+          const its = (o.items || []).filter(it => !!it.isC === (k === 'COUP'));
+          if (its.length) ledgers[k].history.push({ ...o, items: its, payType: k === 'COUP' ? 'COUPON' : o.payType });
+        });
+      });
+      ['REG', 'COUP'].forEach(k => { const h = ledgers[k].history; h.forEach((o, i) => { o.seq = h.length - i; }); ledgers[k].seq = h.length + 1; });
+    }
+    ['REG', 'COUP'].forEach(k => {
+      ledgers[k] = Object.assign(emptyLedger(), ledgers[k], { cart: [], view: -1, snap: null });
+      // 품목이 빈 채 저장된 주문은 취소건으로 정리
+      ledgers[k].history.forEach(o => { if (!o.cancelled && (!o.items || !o.items.length)) { o.items = o.items || []; o.cancelled = true; } });
+      if (!Number.isInteger(ledgers[k].seq) || ledgers[k].seq < 1) ledgers[k].seq = ledgers[k].history.reduce((m, o) => Math.max(m, o.seq || 0), 0) + 1;
+    });
+
+    let newCart = ledgers.REG.cart;
+    let orderHistory = ledgers.REG.history;
+    let orderSeq = ledgers.REG.seq;
+    let currentViewingIndex = -1;
+    let receiptKind = 'REG'; // 지금 열려 있는 마감 영수증 종류
+    let editSnapshot = null; // 과거 주문을 열었을 때의 원래 품목 (전부 지우면 이 내용으로 '주문취소' 기록)
+
+    function stashLedger() { // 현재 모드 장부에 전역 상태 보관
+      const L = ledgers[mode];
+      L.history = orderHistory; L.seq = orderSeq; L.cart = newCart; L.view = currentViewingIndex; L.snap = editSnapshot;
+    }
+    function loadLedger(m) { // 해당 모드 장부를 전역 상태로 불러옴
+      const L = ledgers[m];
+      orderHistory = L.history; orderSeq = L.seq; newCart = L.cart; currentViewingIndex = L.view; editSnapshot = L.snap;
+    }
+
+    function nowTimeText() { return new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+    // [수정] 과거 주문 열기/떠나기
+    function enterPastOrder(idx) {
+      currentViewingIndex = idx;
+      editSnapshot = (idx >= 0 && orderHistory[idx]) ? JSON.parse(JSON.stringify(orderHistory[idx].items)) : null;
+    }
+    function leavePastOrder() {
+      if (currentViewingIndex === -1) return;
+      const o = orderHistory[currentViewingIndex];
+      // 품목을 전부 지운 채 떠나면 번호를 지우지 않고 '주문취소'로 남김 (원래 품목은 기록용)
+      if (o && !o.cancelled && o.items.length === 0) { o.items = editSnapshot || []; o.cancelled = true; o.cancelTime = nowTimeText(); }
+    }
+    function isViewingCancelled() {
+      return currentViewingIndex !== -1 && orderHistory[currentViewingIndex] && orderHistory[currentViewingIndex].cancelled;
+    }
+    function blockIfCancelled() {
+      if (isViewingCancelled()) { alert('취소된 주문은 수정할 수 없습니다.\n[↩ 취소 철회]를 먼저 누르세요.'); return true; }
+      return false;
+    }
+    let currentDueAmount = 0, currentReceivedAmount = 0, cashIsDefault = true;
     let tempUploadedImg = "", pendingSlushItem = null;
     let slushCounts = { "오렌지": 0, "포도": 0, "혼합": 0 };
 
+    function saveSalesData() {
+      stashLedger();
+      const data = { REG: { history: ledgers.REG.history, seq: ledgers.REG.seq }, COUP: { history: ledgers.COUP.history, seq: ledgers.COUP.seq } };
+      if (safeSet(LEDGER_KEY, JSON.stringify(data))) { localStorage.removeItem('coffee_order_history'); localStorage.removeItem('coffee_order_seq'); }
+    }
+
+    // [수정] 잔여 쿠폰 증감 (delta가 +면 되돌림, -면 차감)
+    function adjustRemCoupons(delta) {
+      if (remCoupons === null || !delta) return;
+      remCoupons += delta;
+      safeSet('coffee_rem_coup', String(remCoupons));
+      updateCouponUI();
+    }
+
     function updateClock() {
       const now = new Date(); const days = ['일', '월', '화', '수', '목', '금', '토'];
-      document.getElementById('liveClock').innerText = `${now.getFullYear()}. ${(now.getMonth()+1).toString().padStart(2,'0')}. ${now.getDate().toString().padStart(2,'0')} (${days[now.getDay()]}) ${now.toLocaleTimeString('ko-KR', { hour12: false })}`;
+      document.getElementById('liveClock').innerText = `${now.getFullYear()}. ${(now.getMonth()+1).toString().padStart(2,'0')}. ${now.getDate().toString().padStart(2,'0')} (${days[now.getDay()]}) ${[now.getHours(), now.getMinutes(), now.getSeconds()].map(v => v.toString().padStart(2,'0')).join(':')}`;
     }
     setInterval(updateClock, 1000); updateClock();
 
@@ -454,11 +554,13 @@
     
     function changeEventName() {
       const input = prompt("행사 이름을 입력하세요 (영수증 출력용):", eventName === "이름을 터치해서 입력하세요" ? "" : eventName);
-      if (input !== null) { eventName = input.trim() || "이름을 터치해서 입력하세요"; localStorage.setItem('coffee_event_name', eventName); updateEventNameUI(); }
+      if (input !== null) { eventName = input.trim() || "이름을 터치해서 입력하세요"; safeSet('coffee_event_name', eventName); updateEventNameUI(); }
     }
 
     function setMode(m) {
-      mode = m; document.body.className = (m === 'REG') ? 'theme-reg' : 'theme-coup';
+      // [수정] 모드를 바꾸면 그 모드의 장부(장바구니·주문번호·내역)로 전환
+      if (m !== mode) { stashLedger(); mode = m; loadLedger(m); }
+      document.body.className = (m === 'REG') ? 'theme-reg' : 'theme-coup';
       document.getElementById('btnReceiptTop').innerText = (m === 'REG') ? '🧾 일반 마감' : '🧾 쿠폰 마감';
       document.getElementById('btnReceiptTop').style.background = (m === 'REG') ? '#1b5e20' : '#e65100';
       updateCouponUI();
@@ -470,7 +572,9 @@
       const box = document.getElementById('couponCounterBox');
       if(mode === 'COUP') {
         box.style.display = 'flex';
-        document.getElementById('lblCouponRem').innerText = (remCoupons !== null) ? remCoupons : "미설정";
+        const lbl = document.getElementById('lblCouponRem');
+        lbl.innerText = (remCoupons !== null) ? remCoupons : "미설정";
+        lbl.style.color = (remCoupons !== null && remCoupons < 0) ? '#d32f2f' : '';
       } else {
         box.style.display = 'none';
       }
@@ -478,11 +582,12 @@
 
     function setCouponStart() {
       const cnt = prompt("시작할 잔여 쿠폰 갯수를 입력하세요:");
-      if(cnt !== null && cnt.trim() !== "" && !isNaN(cnt)) {
-        remCoupons = parseInt(cnt, 10);
-        localStorage.setItem('coffee_rem_coup', remCoupons);
-        updateCouponUI();
-      }
+      if (cnt === null) return;
+      const v = Number(cnt.trim());
+      if (cnt.trim() === "" || !Number.isInteger(v) || v < 0) return alert('0 이상의 정수로 입력하세요.');
+      remCoupons = v;
+      safeSet('coffee_rem_coup', String(remCoupons));
+      updateCouponUI();
     }
 
     function resetCouponCount() {
@@ -502,15 +607,21 @@
     function closeModeOptionModal() { document.getElementById('modeOptModal').style.display = 'none'; }
     
     function resetTodaySales() {
-      if(confirm("🚨 경고 (1/2)\n\n현재까지 받은 [당일 판매 내역]을 모두 지우시겠습니까? (메뉴판과 과거 내역은 유지됩니다)")) {
-        if(confirm("🚨 경고 (2/2)\n\n정말로 당일 판매 내역을 0원(초기화)으로 만드시겠습니까?")) {
+      // [수정] 현재 모드(일반 또는 쿠폰)의 장부만 초기화
+      const lbl = (mode === 'COUP') ? '쿠폰 판매' : '일반 판매';
+      if(confirm(`🚨 경고 (1/2)\n\n[${lbl}]의 당일 판매 내역을 모두 지우시겠습니까?\n(다른 쪽 판매 내역, 메뉴판, 과거 내역은 유지됩니다)`)) {
+        if(confirm(`🚨 경고 (2/2)\n\n정말로 [${lbl}] 당일 판매 내역을 0원(초기화)으로 만드시겠습니까?` + (mode === 'COUP' ? '\n오늘 회수한 쿠폰 수는 잔여 쿠폰에 되돌려집니다.' : ''))) {
+          // [수정] 지워지는 주문에서 회수했던 쿠폰을 잔여에 되돌림
+          let usedCoup = 0;
+          orderHistory.forEach(o => { if (!o.cancelled) o.items.forEach(it => { if (it.isC) usedCoup += it.qty; }); });
+          adjustRemCoupons(usedCoup);
           orderHistory = []; 
           orderSeq = 1; 
-          newCart = []; 
-          currentViewingIndex = -1; 
+          newCart = [];
+          currentViewingIndex = -1; editSnapshot = null;
           renderCurrentCart();
           closeModeOptionModal();
-          alert("당일 판매 내역이 초기화되었습니다.");
+          alert(`[${lbl}] 당일 판매 내역이 초기화되었습니다.`);
         }
       }
     }
@@ -518,9 +629,11 @@
     function saveBaseCouponPrice() {
       const val = parseInt(document.getElementById('inpBaseCouponPrice').value, 10);
       if(isNaN(val) || val <= 0) return alert('올바른 금액을 입력하세요.');
-      baseCouponVal = val; localStorage.setItem('coffee_base_coupon', baseCouponVal);
-      alert(`쿠폰 단가가 ${val.toLocaleString()}원으로 변경됨.`); drawGrid(); renderCurrentCart(); closeModeOptionModal();
+      baseCouponVal = val; safeSet('coffee_base_coupon', String(baseCouponVal));
+      alert(`쿠폰 단가가 ${val.toLocaleString()}원으로 변경됨.\n(이미 판매된 쿠폰 잔은 판매 당시 기준금액으로 정산됩니다)`); drawGrid(); renderCurrentCart(); closeModeOptionModal();
     }
+
+    function getCurrentBoard() { return menuBoards.find(b => b.id === currentBoardId) || menuBoards[0]; }
 
     function renderBoardSwapList() {
       const box = document.getElementById('boardSwapList'); box.innerHTML = '';
@@ -529,7 +642,7 @@
         box.innerHTML += `<div class="board-select-row"><div><b>${board.name}</b> ${isCurrent ? '<span style="color:#2e7d32; font-weight:bold;">(현재)</span>' : ''}</div><div style="display:flex;"><button style="background:#0288d1; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:4px;" onclick="swapToBoard('${board.id}')">교체</button>${menuBoards.length > 1 ? `<button style="background:#e03131; color:#fff; border:none; padding:5px 6px; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="deleteBoard(${idx})">삭제</button>` : ''}</div></div>`;
       });
     }
-    function swapToBoard(boardId) { currentBoardId = boardId; renderBoardSwapList(); drawGrid(); closeModeOptionModal(); }
+    function swapToBoard(boardId) { currentBoardId = boardId; safeSet('coffee_current_board', currentBoardId); renderBoardSwapList(); drawGrid(); closeModeOptionModal(); }
     function addNewMenuBoard() {
       const name = prompt("새 메뉴판 이름:"); if (!name) return;
       menuBoards.push({ id: "board_" + Date.now(), name: name, items: JSON.parse(JSON.stringify(menuBoards[0].items)) });
@@ -537,10 +650,13 @@
     }
     function deleteBoard(idx) {
       if(!confirm("이 메뉴판을 삭제하시겠습니까?")) return;
-      if(menuBoards[idx].id === currentBoardId) currentBoardId = menuBoards[0].id;
-      menuBoards.splice(idx, 1); saveBoardsData(); renderBoardSwapList(); drawGrid();
+      // [수정] 현재 메뉴판을 지우면 남은 첫 메뉴판으로 전환
+      const wasCurrent = (menuBoards[idx].id === currentBoardId);
+      menuBoards.splice(idx, 1);
+      if (wasCurrent) { currentBoardId = menuBoards[0].id; safeSet('coffee_current_board', currentBoardId); }
+      saveBoardsData(); renderBoardSwapList(); drawGrid();
     }
-    function saveBoardsData() { localStorage.setItem('coffee_menu_boards', JSON.stringify(menuBoards)); }
+    function saveBoardsData() { return safeSet('coffee_menu_boards', JSON.stringify(menuBoards)); }
 
     function toggleEditModeFromModal() {
       isEditMode = !isEditMode; updateEditToggleBtnText();
@@ -553,8 +669,10 @@
 
     function drawGrid() {
       const g = document.getElementById('mGrid'); g.innerHTML = '';
-      const currentBoard = menuBoards.find(b => b.id === currentBoardId) || menuBoards[0];
+      const currentBoard = getCurrentBoard();
       document.getElementById('lblCurrentBoardName').innerText = currentBoard.name;
+      // [수정] 메뉴가 20개를 넘으면 줄 수를 늘려 모두 보이게
+      g.style.gridTemplateRows = `repeat(${Math.max(4, Math.ceil(currentBoard.items.length / 5))}, 1fr)`;
 
       currentBoard.items.forEach((it, idx) => {
         const b = document.createElement('button');
@@ -566,16 +684,12 @@
         const isSlushMenu = (it.isSlush === true || it.n.includes("슬러시"));
 
         b.onclick = () => {
-          if (isEditMode) {
-            openMenuEditModal(idx);
-          } else if (isSlushMenu) {
-            openSlushModal(it);
-          } else {
-            addToCurrentCart(it.n, it.p, 1);
-          }
+          if (isEditMode) openMenuEditModal(idx);
+          else if (isSlushMenu) openSlushModal(it);
+          else addToCurrentCart(it.n, it.p, 1);
         };
         let editBadge = isEditMode ? `<span class="edit-tag">수정</span>` : '';
-        b.innerHTML = `${editBadge} <div class="m-title">${it.n}</div> <div class="m-price">${it.p.toLocaleString()}원</div>`;
+        b.innerHTML = `${editBadge} <div class="m-title">${it.n}</div> <div class="m-price">${Number(it.p).toLocaleString()}원</div>`;
         g.appendChild(b);
       });
     }
@@ -584,103 +698,11 @@
       closeModeOptionModal();
       document.getElementById('menuEditModalTitle').innerText = '새 메뉴 추가';
       document.getElementById('editMenuIdx').value = -1;
-      document.getElementById('editMName').value = ''; 
-      document.getElementById('editMPrice').value = '';
-      document.getElementById('editMShape').value = 'square'; 
-      document.getElementById('editMColor').value = '#0288d1';
-      document.getElementById('editMIsSlush').checked = false; 
-      document.getElementById('editMFile').value = '';
-      tempUploadedImg = ''; 
-      document.getElementById('btnDeleteMenu').style.display = 'none';
+      document.getElementById('editMName').value = ''; document.getElementById('editMPrice').value = '';
+      document.getElementById('editMShape').value = 'square'; document.getElementById('editMColor').value = '#0288d1';
+      document.getElementById('editMIsSlush').checked = false; document.getElementById('editMFile').value = '';
+      tempUploadedImg = ''; document.getElementById('btnDeleteMenu').style.display = 'none';
       document.getElementById('menuEditModal').style.display = 'flex';
-    }
-
-    function openMenuEditModal(idx) {
-      const board = menuBoards.find(b => b.id === currentBoardId);
-      if (!board || !board.items[idx]) return;
-      const it = board.items[idx];
-
-      document.getElementById('menuEditModalTitle').innerText = '기존 메뉴 수정';
-      document.getElementById('editMenuIdx').value = idx;
-      document.getElementById('editMName').value = it.n || '';
-      document.getElementById('editMPrice').value = it.p || 0;
-      document.getElementById('editMShape').value = it.shape || 'square';
-      document.getElementById('editMColor').value = it.c || '#0288d1';
-      document.getElementById('editMIsSlush').checked = !!it.isSlush;
-      document.getElementById('editMFile').value = '';
-      tempUploadedImg = it.img || "";
-      document.getElementById('btnDeleteMenu').style.display = 'block';
-      
-      document.getElementById('menuEditModal').style.display = 'flex';
-    }
-
-    function closeMenuEditModal() { 
-      document.getElementById('menuEditModal').style.display = 'none'; 
-      tempUploadedImg = ""; 
-    }
-
-    function handleImageFile(e) { 
-      const file = e.target.files[0]; 
-      if(!file) return; 
-      const reader = new FileReader(); 
-      reader.onload = function(evt) { 
-        tempUploadedImg = evt.target.result; 
-      }; 
-      reader.readAsDataURL(file); 
-    }
-    
-    function saveEditedMenu() {
-      const currentBoard = menuBoards.find(b => b.id === currentBoardId);
-      const idxStr = document.getElementById('editMenuIdx').value;
-      const idx = parseInt(idxStr, 10);
-      
-      const nameInput = document.getElementById('editMName').value.trim(); 
-      const priceInput = parseInt(document.getElementById('editMPrice').value, 10);
-      
-      if(!nameInput || isNaN(priceInput)) {
-        alert('메뉴 이름과 올바른 가격을 입력하세요.');
-        return;
-      }
-      
-      const shapeVal = document.getElementById('editMShape').value;
-      const colorVal = document.getElementById('editMColor').value;
-      const slushVal = document.getElementById('editMIsSlush').checked;
-      
-      if (isNaN(idx) || idx < 0) {
-        currentBoard.items.push({ 
-          n: nameInput, 
-          p: priceInput, 
-          shape: shapeVal, 
-          c: colorVal, 
-          isSlush: slushVal, 
-          img: tempUploadedImg 
-        });
-      } else {
-        currentBoard.items[idx].n = nameInput;
-        currentBoard.items[idx].p = priceInput;
-        currentBoard.items[idx].shape = shapeVal;
-        currentBoard.items[idx].c = colorVal;
-        currentBoard.items[idx].isSlush = slushVal;
-        if(tempUploadedImg) {
-          currentBoard.items[idx].img = tempUploadedImg;
-        }
-      }
-      
-      saveBoardsData(); 
-      closeMenuEditModal(); 
-      drawGrid();
-    }
-    
-    function deleteSelectedMenu() {
-      if(!confirm("이 메뉴를 삭제하시겠습니까?")) return;
-      const idx = parseInt(document.getElementById('editMenuIdx').value, 10);
-      const currentBoard = menuBoards.find(b => b.id === currentBoardId);
-      if (currentBoard && idx >= 0) {
-        currentBoard.items.splice(idx, 1);
-        saveBoardsData(); 
-        closeMenuEditModal(); 
-        drawGrid();
-      }
     }
 
     function openSlushModal(it) { pendingSlushItem = it; resetSlushCounts(); document.getElementById('slushModal').style.display = 'flex'; }
@@ -708,40 +730,58 @@
     }
 
     function addToCurrentCart(name, price, qtyToAdd = 1) {
-      const isC = (mode === 'COUP'); 
-      const extraPerCup = isC ? Math.max(0, price - baseCouponVal) : 0;
-      let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
-      const existing = targetList.find(it => it.n === name && it.isC === isC);
+      if (blockIfCancelled()) return;
+      const isC = (mode === 'COUP');
+      // [수정] 판매 시점의 쿠폰 기준금액을 품목에 함께 저장 (나중에 기준금액을 바꿔도 정산이 틀어지지 않음)
+      const base = isC ? baseCouponVal : 0;
+      const extraPerCup = isC ? Math.max(0, price - base) : 0;
+      const viewingPast = (currentViewingIndex !== -1);
+      let targetList = viewingPast ? orderHistory[currentViewingIndex].items : newCart;
+      // [수정] 이름뿐 아니라 가격·기준금액까지 같을 때만 합침
+      const existing = targetList.find(it => it.n === name && it.isC === isC && it.p === price && (!isC || getBase(it, base) === base));
       
       if(existing) {
         existing.qty += qtyToAdd;
         existing.exTotal = existing.ex * existing.qty;
       } else {
-        targetList.push({ n: name, p: price, isC: isC, ex: extraPerCup, exTotal: extraPerCup * qtyToAdd, qty: qtyToAdd });
+        targetList.push({ n: name, p: price, isC: isC, base: base, ex: extraPerCup, exTotal: extraPerCup * qtyToAdd, qty: qtyToAdd });
       }
+      // [수정] 이미 완료된 주문에 쿠폰 잔을 추가하면 잔여 쿠폰도 차감
+      if (isC && viewingPast) adjustRemCoupons(-qtyToAdd);
       renderCurrentCart();
     }
     
     function changeQty(idx, delta) {
+      if (blockIfCancelled()) return;
       let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
-      targetList[idx].qty += delta; 
-      if(targetList[idx].qty <= 0) {
+      const it = targetList[idx]; if (!it) return;
+      const applied = (it.qty + delta <= 0) ? -it.qty : delta;
+      it.qty += applied; 
+      if(it.qty <= 0) {
         targetList.splice(idx, 1);
       } else {
-        targetList[idx].exTotal = targetList[idx].ex * targetList[idx].qty;
+        it.exTotal = it.ex * it.qty;
       }
+      // [수정] 완료된 주문의 쿠폰 수량 변경 → 잔여 쿠폰에 반영
+      if (it.isC && currentViewingIndex !== -1) adjustRemCoupons(-applied);
       renderCurrentCart();
     }
     
     function removeItem(idx) {
+      if (blockIfCancelled()) return;
       let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
-      targetList.splice(idx, 1); renderCurrentCart();
+      const it = targetList[idx]; if (!it) return;
+      targetList.splice(idx, 1);
+      if (it.isC && currentViewingIndex !== -1) adjustRemCoupons(it.qty);
+      renderCurrentCart();
     }
 
     function renderCurrentCart() {
       const el = document.getElementById('cList'); el.innerHTML = '';
       let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
       let dir = 0, cCount = 0, totalQtyCount = 0, exTotal = 0;
+      const cancelledView = isViewingCancelled();
+      if (cancelledView) el.innerHTML = `<div style="margin:6px 0; padding:8px; background:#ffe3e3; color:#c92a2a; border-radius:6px; font-weight:900; text-align:center;">🚫 취소된 주문 (${orderHistory[currentViewingIndex].cancelTime || ''})<br><span style="font-size:11px; font-weight:bold;">금액·잔수 합계에서 제외됩니다</span></div>`;
 
       targetList.forEach((it, idx) => {
         totalQtyCount += it.qty;
@@ -753,6 +793,15 @@
           dir += (it.p * it.qty); 
         }
         
+        if (cancelledView) {
+          el.innerHTML += `
+          <div class="item-row" style="opacity:0.55; text-decoration:line-through;">
+            <div class="item-info"><div class="item-title">${it.n}</div><div class="item-sub">${it.isC ? '쿠폰' : '단가: '+it.p.toLocaleString()+'원'}</div></div>
+            <span class="qty-text" style="margin-right:8px;">${it.qty}</span>
+            <div class="item-price">${it.isC ? '0원' : (it.p*it.qty).toLocaleString()+'원'}</div>
+          </div>`;
+          return;
+        }
         el.innerHTML += `
           <div class="item-row">
             <div class="item-info">
@@ -780,20 +829,29 @@
 
       const btnArea = document.getElementById('paymentBtnArea'); const titleEl = document.getElementById('orderStatusTitle');
       if(currentViewingIndex === -1) {
-        titleEl.innerHTML = `현재 주문`;
+        titleEl.innerHTML = `현재 주문 <span style="color:#e03131; font-weight:900;">#${orderSeq}</span>`;
         if(dir === 0 && cCount > 0) btnArea.innerHTML = `<button class="btn-checkout-coupon" onclick="completeOrder('COUPON')">쿠폰 완료 (0원)</button>`;
         else btnArea.innerHTML = `<div class="action-grid"><button class="btn-action btn-card" onclick="completeOrder('CARD')">카드 결제</button><button class="btn-action btn-cash" onclick="openCashModal()">현금 결제</button></div>`;
       } else {
-        const ord = orderHistory[currentViewingIndex]; titleEl.innerHTML = `<span style="color:#1971c2;">#${ord.seq} [${ord.time}]</span>`;
-        btnArea.innerHTML = `<button class="btn-checkout-coupon" style="background:#1971c2;" onclick="saveEditedOrder()">✓ 변경 내용 저장</button>`;
+        const ord = orderHistory[currentViewingIndex];
+        titleEl.innerHTML = `<span style="color:#1971c2;">#${ord.seq} [${ord.time}]</span>` + (ord.cancelled ? ` <span style="color:#e03131; font-weight:900;">주문취소</span>` : '');
+        if (ord.cancelled) {
+          document.getElementById('vTotal').innerText = '주문취소';
+          btnArea.innerHTML = `<button class="btn-checkout-coupon" style="background:#868e96;" onclick="restoreOrder()">↩ 취소 철회 (주문 되살리기)</button>`;
+        } else {
+          btnArea.innerHTML = `<div class="action-grid"><button class="btn-action" style="width:64%; background:#1971c2; color:#fff;" onclick="saveEditedOrder()">✓ 변경 내용 저장</button><button class="btn-action" style="width:33%; background:#e03131; color:#fff;" onclick="cancelOrder()">🚫 주문 취소</button></div>`;
+        }
       }
       document.getElementById('btnPrevOrder').disabled = (currentViewingIndex >= orderHistory.length - 1);
-      document.getElementById('btnNextOrder').disabled = (currentViewingIndex <= -1);
+      // [수정] '다음 ▶'은 과거 주문 사이에서만 이동 (현재 주문으로는 '새주문' 버튼으로만 돌아감)
+      document.getElementById('btnNextOrder').disabled = (currentViewingIndex <= 0);
+      saveSalesData();
     }
 
     function openCashModal() {
       if(currentDueAmount <= 0) return;
-      currentReceivedAmount = currentDueAmount; document.getElementById('modalDueAmount').innerText = currentDueAmount.toLocaleString() + '원';
+      currentReceivedAmount = currentDueAmount; cashIsDefault = true;
+      document.getElementById('modalDueAmount').innerText = currentDueAmount.toLocaleString() + '원';
       generateCashSuggestions(); updateCashModalDisplay(); document.getElementById('cashModal').style.display = 'flex';
     }
     
@@ -807,15 +865,23 @@
       
       Array.from(set).sort((a,b)=>a-b).forEach(val => {
         const btn = document.createElement('button'); btn.className = 'btn-suggest'; btn.innerText = val.toLocaleString() + '원';
-        btn.onclick = () => { currentReceivedAmount = val; updateCashModalDisplay(); }; sBox.appendChild(btn);
+        btn.onclick = () => { currentReceivedAmount = val; cashIsDefault = false; updateCashModalDisplay(); }; sBox.appendChild(btn);
       });
     }
     
-    function addReceivedCash(amt) { if(currentReceivedAmount === currentDueAmount) currentReceivedAmount = amt; else currentReceivedAmount += amt; updateCashModalDisplay(); }
-    function resetReceivedCash() { currentReceivedAmount = 0; updateCashModalDisplay(); }
+    // [수정] 첫 번째 권종 버튼만 '교체', 그 이후는 항상 '더하기'
+    function addReceivedCash(amt) {
+      if (cashIsDefault) { currentReceivedAmount = amt; cashIsDefault = false; }
+      else currentReceivedAmount += amt;
+      updateCashModalDisplay();
+    }
+    function resetReceivedCash() { currentReceivedAmount = 0; cashIsDefault = false; updateCashModalDisplay(); }
     function updateCashModalDisplay() {
       document.getElementById('modalReceivedAmount').innerText = currentReceivedAmount.toLocaleString() + '원';
-      document.getElementById('modalChangeAmount').innerText = Math.max(0, currentReceivedAmount - currentDueAmount).toLocaleString() + '원';
+      const diff = currentReceivedAmount - currentDueAmount;
+      const chg = document.getElementById('modalChangeAmount');
+      chg.innerText = (diff >= 0) ? diff.toLocaleString() + '원' : `부족 ${(-diff).toLocaleString()}원`;
+      chg.style.color = (diff >= 0) ? '#1b5e20' : '#d32f2f';
     }
     function closeCashModal() { document.getElementById('cashModal').style.display = 'none'; }
     
@@ -823,44 +889,113 @@
 
     function completeOrder(payType) {
       if(!newCart.length) return; const now = new Date();
-      
-      if(payType === 'COUPON' && remCoupons !== null) {
-        let coupUsed = 0;
-        newCart.forEach(it => { if(it.isC) coupUsed += it.qty; });
-        remCoupons -= coupUsed;
-        localStorage.setItem('coffee_rem_coup', remCoupons);
-        updateCouponUI();
-      }
 
-      orderHistory.unshift({ id: Date.now(), seq: orderSeq++, time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }), payType: payType, items: JSON.parse(JSON.stringify(newCart)) });
+      // [수정] 결제 방식과 상관없이 쿠폰 잔이 있으면 잔여 쿠폰 차감
+      let coupUsed = 0;
+      newCart.forEach(it => { if(it.isC) coupUsed += it.qty; });
+      if (coupUsed > 0 && remCoupons !== null && remCoupons - coupUsed < 0) {
+        if (!confirm(`잔여 쿠폰(${remCoupons}장)보다 회수 수량(${coupUsed}장)이 많습니다.\n그래도 완료하시겠습니까?`)) return;
+      }
+      const dir = newCart.reduce((s, it) => s + (it.isC ? 0 : it.p * it.qty), 0);
+      if (dir === 0) payType = 'COUPON';
+      adjustRemCoupons(-coupUsed);
+
+      orderHistory.unshift({ id: Date.now(), seq: orderSeq++, date: todayKey(), time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }), payType: payType, items: JSON.parse(JSON.stringify(newCart)) });
       newCart = []; 
       currentViewingIndex = -1; 
       renderCurrentCart();
     }
 
     function saveEditedOrder() {
-      if(orderHistory[currentViewingIndex].items.length === 0) { orderHistory.splice(currentViewingIndex, 1); alert("주문이 취소됨."); } else alert(`주문 #${orderHistory[currentViewingIndex].seq} 저장됨.`); resetToNewOrder();
-    }
-    function navigateOrder(dir) {
-      if(!orderHistory.length) return alert("과거 주문 없음.");
-      currentViewingIndex = Math.max(-1, Math.min(currentViewingIndex - dir, orderHistory.length - 1)); renderCurrentCart();
-    }
-    function resetToNewOrder() { 
-      currentViewingIndex = -1; 
-      newCart = []; 
-      renderCurrentCart(); 
+      const idx = currentViewingIndex;
+      const ord = orderHistory[idx];
+      if (!ord) { currentViewingIndex = -1; editSnapshot = null; renderCurrentCart(); return; }
+      if (ord.cancelled) return;
+      if(ord.items.length === 0) { leavePastOrder(); alert(`주문 #${ord.seq} 은(는) 품목이 없어 '주문취소'로 처리되었습니다.`); }
+      else {
+        // [수정] 쿠폰 주문에 일반(유료) 메뉴가 추가되면 결제수단을 지정받음
+        const dir = ord.items.reduce((s, it) => s + (it.isC ? 0 : it.p * it.qty), 0);
+        if (dir > 0 && ord.payType !== 'CARD' && ord.payType !== 'CASH') {
+          ord.payType = confirm(`이 주문에 일반 결제액 ${dir.toLocaleString()}원이 있습니다.\n결제수단을 선택하세요.\n\n[확인] = 카드 / [취소] = 현금`) ? 'CARD' : 'CASH';
+        } else if (dir === 0) {
+          ord.payType = 'COUPON';
+        }
+        alert(`주문 #${ord.seq} 저장됨.`);
+      }
+      // [수정] 저장 후 다음 번호 주문으로 이동 (가장 최근 주문이면 그대로). 현재 주문은 '새주문'으로 돌아감
+      enterPastOrder(Math.max(0, idx - 1));
+      renderCurrentCart();
     }
 
-    function saveCurrentEvent() {
-      if (orderHistory.length === 0) return alert("저장할 판매 내역이 없습니다.");
-      if (!confirm("현재 내역을 마감하고 과거 기록으로 영구 저장하시겠습니까?\n저장 후 현재 판매 장부는 0원으로 초기화됩니다.")) return;
+    // [수정] 주문 취소: 번호는 그대로 두고 '주문취소'로 표시, 모든 합계에서 제외
+    function cancelOrder() {
+      const idx = currentViewingIndex;
+      const o = orderHistory[idx];
+      if (!o || o.cancelled) return;
+      if (!confirm(`주문 #${o.seq} 을(를) 취소하시겠습니까?\n\n번호는 그대로 남고 전표에 '주문취소'로 표시됩니다.\n금액·잔수·쿠폰 합계에서는 빠집니다.`)) return;
+      if (o.items.length === 0) {
+        o.items = editSnapshot || [];  // 이미 품목을 지운 상태면 원래 품목을 기록으로 (쿠폰은 지울 때 이미 되돌려짐)
+      } else {
+        let coup = 0; o.items.forEach(it => { if (it.isC) coup += it.qty; });
+        adjustRemCoupons(coup);        // 취소한 쿠폰 잔은 잔여에 되돌림
+      }
+      o.cancelled = true; o.cancelTime = nowTimeText();
+      enterPastOrder(Math.max(0, idx - 1));
+      renderCurrentCart();
+    }
+    function restoreOrder() {
+      const o = orderHistory[currentViewingIndex];
+      if (!o || !o.cancelled) return;
+      let coup = 0; o.items.forEach(it => { if (it.isC) coup += it.qty; });
+      if (coup > 0 && remCoupons !== null && remCoupons - coup < 0 && !confirm(`잔여 쿠폰(${remCoupons}장)보다 되살릴 쿠폰(${coup}장)이 많습니다. 계속할까요?`)) return;
+      if (!confirm(`주문 #${o.seq} 취소를 철회하고 다시 합계에 포함하시겠습니까?`)) return;
+      adjustRemCoupons(-coup);
+      o.cancelled = false; delete o.cancelTime;
+      enterPastOrder(currentViewingIndex);
+      renderCurrentCart();
+    }
+
+    function navigateOrder(dir) {
+      if(!orderHistory.length) return alert("과거 주문 없음.");
+      // [수정] 과거 주문 사이에서만 이동 (다음 ▶으로 현재 주문에 돌아가지 않음)
+      const next = Math.max(0, Math.min(currentViewingIndex - dir, orderHistory.length - 1));
+      if (next === currentViewingIndex) return;
+      leavePastOrder();
+      enterPastOrder(next);
+      renderCurrentCart();
+    }
+    function resetToNewOrder() {
+      // 과거 주문을 보는 중이면 작성 중이던 새 주문으로 복귀, 현재 주문 화면이면 비우기
+      if (currentViewingIndex !== -1) { leavePastOrder(); currentViewingIndex = -1; editSnapshot = null; }
+      else newCart = [];
+      renderCurrentCart();
+    }
+
+    // [수정] 일반 마감 / 쿠폰 마감을 따로 저장: 해당 종류의 품목만 저장하고 장부에서 빼냄
+    function saveCurrentEvent(kind = receiptKind) {
+      if (kind !== mode) setMode(kind); // 마감은 항상 해당 판매의 장부에서
+      const wantC = (kind === 'COUP');
+      const label = wantC ? '쿠폰 판매' : '일반 판매';
+      const otherLabel = wantC ? '일반 판매' : '쿠폰 판매';
+      leavePastOrder(); // 비운 채 보고 있던 주문은 취소건으로 정리
+      // 저장할 주문: 해당 종류 품목만 남긴 복사본
+      const picked = orderHistory
+        .map(o => ({ ...JSON.parse(JSON.stringify(o)), items: o.items.filter(it => !!it.isC === wantC).map(it => JSON.parse(JSON.stringify(it))) }))
+        .filter(o => o.items.length > 0);
+      if (picked.length === 0) return alert(`저장할 ${label} 내역이 없습니다.`);
+      if (!confirm(`[${label}] 내역만 마감하고 과거 기록으로 저장하시겠습니까?\n저장 후 ${label} 장부는 0원으로 초기화됩니다.\n(${otherLabel} 내역은 그대로 남습니다)`)) return;
       const now = new Date(); const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
       const dateText = `${now.getFullYear()}년 ${(now.getMonth()+1).toString().padStart(2,'0')}월 ${now.getDate().toString().padStart(2,'0')}일 (${days[now.getDay()]})`;
       const timeText = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} 마감`;
-      const evData = { id: Date.now(), dateStr: dateText, timeStr: timeText, eventName: eventName, baseCouponVal: baseCouponVal, history: JSON.parse(JSON.stringify(orderHistory)) };
-      pastEvents.push(evData); localStorage.setItem('coffee_past_events', JSON.stringify(pastEvents));
-      orderHistory = []; orderSeq = 1; renderCurrentCart(); closeReceipt();
-      alert("성공적으로 마감 저장되었습니다!\n[과거 내역] 버튼에서 언제든 다시 볼 수 있습니다.");
+      const evData = { id: Date.now(), kind: wantC ? 'COUP' : 'REG', dateStr: dateText, timeStr: timeText, eventName: eventName, baseCouponVal: baseCouponVal, history: picked };
+      pastEvents.push(evData);
+      if (!safeSet('coffee_past_events', JSON.stringify(pastEvents))) { pastEvents.pop(); return; } // 저장 실패 시 당일 내역 보존
+      // 저장한 종류의 품목을 장부에서 제거, 비게 된 주문은 삭제
+      orderHistory.forEach(o => { o.items = o.items.filter(it => !!it.isC !== wantC); });
+      orderHistory = orderHistory.filter(o => o.items.length > 0);
+      if (orderHistory.length === 0) orderSeq = 1;
+      currentViewingIndex = -1; editSnapshot = null; renderCurrentCart(); closeReceipt();
+      alert(`[${label}] 마감 저장되었습니다!\n[과거 내역] 버튼에서 언제든 다시 볼 수 있습니다.`);
     }
 
     function openPastEventsModal() {
@@ -869,15 +1004,23 @@
       else {
         [...pastEvents].reverse().forEach((ev, i) => {
           const actualIdx = pastEvents.length - 1 - i;
-          let tSales = 0, tCoup = 0;
-          ev.history.forEach(ord => ord.items.forEach(it => { if(it.isC) tCoup += it.qty; else tSales += (it.p * it.qty); }));
-          list.innerHTML += `<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:10px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;"><div><div style="font-size:16px; font-weight:900; color:#0288d1;">${ev.eventName}</div><div style="font-size:12px; color:#555; margin-top:2px;">${ev.dateStr} ${ev.timeStr}</div></div><button style="background:#e03131; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="deletePastEvent(${actualIdx})">삭제</button></div><div style="font-size:13px; font-weight:bold; color:#333; margin-bottom:8px;">매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span> / 쿠폰: <span style="color:#e65100">${tCoup}장</span></div><button style="width:100%; height:38px; background:#495057; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="viewPastReceipt(${actualIdx})">🧾 마감 영수증 보기</button></div>`;
+          let tSales = 0, tCoup = 0, tClaim = 0;
+          ev.history.forEach(ord => { if (ord.cancelled) return; ord.items.forEach(it => {
+            if(it.isC) { const b = getBase(it, ev.baseCouponVal); tCoup += it.qty; tClaim += (b + getEx(it, b)) * it.qty; }
+            else tSales += (it.p * it.qty);
+          }); });
+          const kindBadge = ev.kind === 'COUP' ? '<span style="background:#ff9800; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:6px;">쿠폰</span>'
+                          : ev.kind === 'REG' ? '<span style="background:#2e7d32; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:6px;">일반</span>' : '';
+          const summary = ev.kind === 'COUP' ? `쿠폰: <span style="color:#e65100">${tCoup}장</span> / 청구: <span style="color:#e65100">${tClaim.toLocaleString()}원</span>`
+                        : ev.kind === 'REG' ? `매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span>`
+                        : `매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span> / 쿠폰: <span style="color:#e65100">${tCoup}장</span>`;
+          list.innerHTML += `<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:10px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;"><div><div style="font-size:16px; font-weight:900; color:#0288d1;">${kindBadge}${ev.eventName}</div><div style="font-size:12px; color:#555; margin-top:2px;">${ev.dateStr} ${ev.timeStr}</div></div><button style="background:#e03131; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="deletePastEvent(${actualIdx})">삭제</button></div><div style="font-size:13px; font-weight:bold; color:#333; margin-bottom:8px;">${summary}</div><button style="width:100%; height:38px; background:#495057; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="viewPastReceipt(${actualIdx})">🧾 마감 영수증 보기</button></div>`;
         });
       }
       document.getElementById('pastEventsModal').style.display = 'flex';
     }
     function closePastEventsModal() { document.getElementById('pastEventsModal').style.display = 'none'; }
-    function deletePastEvent(idx) { if(!confirm("이 과거 마감 기록을 완전히 삭제하시겠습니까?")) return; pastEvents.splice(idx, 1); localStorage.setItem('coffee_past_events', JSON.stringify(pastEvents)); openPastEventsModal(); }
+    function deletePastEvent(idx) { if(!confirm("이 과거 마감 기록을 완전히 삭제하시겠습니까?")) return; pastEvents.splice(idx, 1); safeSet('coffee_past_events', JSON.stringify(pastEvents)); openPastEventsModal(); }
     function viewPastReceipt(idx) { closePastEventsModal(); showReceipt(pastEvents[idx]); }
 
     function showReceipt(histData = null) {
@@ -885,7 +1028,7 @@
         const isHist = (histData !== null);
         const targetHistory = isHist ? histData.history : orderHistory;
         const targetEventName = isHist ? histData.eventName : eventName;
-        const targetCouponVal = isHist ? histData.baseCouponVal : baseCouponVal;
+        const fallbackBase = isHist ? histData.baseCouponVal : baseCouponVal;
 
         let dateText = "";
         if (isHist) { dateText = `${histData.dateStr} ${histData.timeStr}`; } 
@@ -897,76 +1040,104 @@
         document.getElementById('rPrintEventName').innerText = `${targetEventName}`;
         document.getElementById('rPrintDateTime').innerText = dateText;
 
-        const isCoupMode = (mode === 'COUP');
+        // [수정] 따로 저장된 과거 기록은 그 종류(일반/쿠폰)로 표시, 그 외에는 현재 모드 기준
+        const isCoupMode = (isHist && histData.kind) ? (histData.kind === 'COUP') : (mode === 'COUP');
+        receiptKind = isCoupMode ? 'COUP' : 'REG';
         document.getElementById('rPrintTitle').innerText = isCoupMode ? '[ 쿠폰 정산 영수증 ]' : '[ 일반 매출 영수증 ]';
         document.getElementById('rCouponSection').style.display = isCoupMode ? 'block' : 'none';
         document.getElementById('rDirectSection').style.display = isCoupMode ? 'none' : 'block';
 
-        let stats = {}, totalQty = 0, totalSalesOrClaim = 0, totalExtra = 0, totalCard = 0, totalCash = 0; 
-        let grandAbsoluteTotalDirect = 0, grandAbsoluteTotalCoupBase = 0, grandAbsoluteTotalCoupExtra = 0;
+        // [수정] 품목은 '이름+가격(+기준금액)'으로 묶고, 쿠폰은 판매 당시 기준금액으로 청구액 계산
+        let stats = {}, totalQty = 0, totalBase = 0, totalExtra = 0;
+        let totalSales = 0, totalCard = 0, totalCash = 0, totalOther = 0;
+        let grandDirect = 0, grandCoupClaim = 0;
+        const baseSet = new Set();
+
+        // [수정] 주문 건수: 이 영수증 종류의 품목이 든 주문 수(취소건 제외) + 주문번호 범위 + 취소 건수
+        const kindOrders = targetHistory.filter(o => o.items.some(it => !!it.isC === isCoupMode));
+        const activeCnt = kindOrders.filter(o => !o.cancelled).length;
+        const cancelCnt = kindOrders.length - activeCnt;
+        const seqs = kindOrders.map(o => o.seq).filter(s => typeof s === 'number');
+        const orderCountText = kindOrders.length === 0 ? '0건'
+          : `${activeCnt}건` + (seqs.length || cancelCnt ? ` (${seqs.length ? `#${Math.min(...seqs)} ~ #${Math.max(...seqs)}` : ''}${seqs.length && cancelCnt ? ', ' : ''}${cancelCnt ? `취소 ${cancelCnt}건` : ''})` : '');
+        document.getElementById(isCoupMode ? 'rCoupOrders' : 'rDirectOrders').innerText = orderCountText;
 
         targetHistory.forEach(order => {
+          if (order.cancelled) return; // [수정] 취소된 주문은 모든 합계에서 제외
           order.items.forEach(it => {
-            if (it.isC) { 
-              let itemExTotal = it.exTotal || (it.ex * it.qty);
-              grandAbsoluteTotalCoupBase += (it.qty * targetCouponVal); 
-              grandAbsoluteTotalCoupExtra += itemExTotal; 
-            } else { 
-              grandAbsoluteTotalDirect += (it.p * it.qty); 
-            }
-
-            if (isCoupMode && it.isC) {
-              if(!stats[it.n]) stats[it.n] = { p: it.p, ex: it.ex, qty: 0 };
-              stats[it.n].qty += it.qty; 
-              totalQty += it.qty; 
-              totalExtra += (it.exTotal || (it.ex * it.qty));
-            } else if (!isCoupMode && !it.isC) {
-              if(!stats[it.n]) stats[it.n] = { p: it.p, qty: 0 };
-              stats[it.n].qty += it.qty; totalSalesOrClaim += (it.p * it.qty);
-              if(order.payType === 'CARD') totalCard += (it.p * it.qty);
-              if(order.payType === 'CASH') totalCash += (it.p * it.qty);
+            if (it.isC) {
+              const b = getBase(it, fallbackBase);
+              const ex = getEx(it, b);
+              const lineBase = b * it.qty, lineEx = ex * it.qty;
+              grandCoupClaim += lineBase + lineEx;
+              if (isCoupMode) {
+                const key = `${it.n}|${it.p}|${b}`;
+                if (!stats[key]) stats[key] = { n: it.n, p: it.p, b: b, ex: ex, qty: 0 };
+                stats[key].qty += it.qty;
+                totalQty += it.qty; totalBase += lineBase; totalExtra += lineEx; baseSet.add(b);
+              }
+            } else {
+              const line = it.p * it.qty;
+              grandDirect += line;
+              if (!isCoupMode) {
+                const key = `${it.n}|${it.p}`;
+                if (!stats[key]) stats[key] = { n: it.n, p: it.p, qty: 0 };
+                stats[key].qty += it.qty;
+                totalSales += line;
+                if (order.payType === 'CARD') totalCard += line;
+                else if (order.payType === 'CASH') totalCash += line;
+                else totalOther += line;
+              }
             }
           });
         });
 
         if (isCoupMode) {
           const tbody = document.getElementById('rCouponItems'); tbody.innerHTML = '';
-          if(Object.keys(stats).length === 0) document.getElementById('rCouponEmptyMsg').style.display = 'block';
+          const keys = Object.keys(stats);
+          if(keys.length === 0) document.getElementById('rCouponEmptyMsg').style.display = 'block';
           else {
             document.getElementById('rCouponEmptyMsg').style.display = 'none';
-            Object.keys(stats).forEach(k => { 
+            keys.forEach(k => { 
               const item = stats[k]; 
-              let rowExtraTotal = item.ex * item.qty; 
-              tbody.innerHTML += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:4px 0;">${k}</td><td style="text-align:right;">${item.p.toLocaleString()}</td><td style="text-align:right; color:#d32f2f;">+${rowExtraTotal.toLocaleString()}</td><td style="text-align:right; font-weight:bold;">${item.qty}잔</td><td style="text-align:right; font-weight:bold;">${(item.p * item.qty).toLocaleString()}원</td></tr>`; 
+              const rowExtra = item.ex * item.qty;
+              const rowClaim = (item.b + item.ex) * item.qty;
+              tbody.innerHTML += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:4px 0;">${item.n}</td><td style="text-align:right;">${item.p.toLocaleString()}</td><td style="text-align:right; color:#d32f2f;">+${rowExtra.toLocaleString()}</td><td style="text-align:right; font-weight:bold;">${item.qty}잔</td><td style="text-align:right; font-weight:bold;">${rowClaim.toLocaleString()}원</td></tr>`; 
             });
           }
-          const baseClaim = totalQty * targetCouponVal;
-          document.getElementById('rBasePriceLbl').innerText = targetCouponVal.toLocaleString(); document.getElementById('rTotQty').innerText = totalQty + '장';
-          document.getElementById('rTotBase').innerText = baseClaim.toLocaleString() + '원'; document.getElementById('rTotExtra').innerText = '+' + totalExtra.toLocaleString() + '원';
-          document.getElementById('rGrandClaim').innerText = (baseClaim + totalExtra).toLocaleString() + '원';
+          const baseLbl = (baseSet.size <= 1) ? (baseSet.size === 1 ? [...baseSet][0] : fallbackBase).toLocaleString() : '기준금액별 ';
+          document.getElementById('rBasePriceLbl').innerText = baseLbl;
+          document.getElementById('rTotQty').innerText = totalQty + '장';
+          document.getElementById('rTotBase').innerText = totalBase.toLocaleString() + '원';
+          document.getElementById('rTotExtra').innerText = '+' + totalExtra.toLocaleString() + '원';
+          document.getElementById('rGrandClaim').innerText = (totalBase + totalExtra).toLocaleString() + '원';
         } else {
           const tbody = document.getElementById('rDirectItems'); tbody.innerHTML = '';
-          if(Object.keys(stats).length === 0) document.getElementById('rDirectEmptyMsg').style.display = 'block';
+          const keys = Object.keys(stats);
+          if(keys.length === 0) document.getElementById('rDirectEmptyMsg').style.display = 'block';
           else {
             document.getElementById('rDirectEmptyMsg').style.display = 'none';
-            Object.keys(stats).forEach(k => { 
+            keys.forEach(k => { 
               const item = stats[k]; 
-              tbody.innerHTML += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:4px 0;">${k}</td><td style="text-align:right;">${item.p.toLocaleString()}</td><td style="text-align:right; font-weight:bold;">${item.qty}잔</td><td style="text-align:right; font-weight:bold;">${(item.p * item.qty).toLocaleString()}원</td></tr>`; 
+              tbody.innerHTML += `<tr style="border-bottom:1px dashed #eee;"><td style="padding:4px 0;">${item.n}</td><td style="text-align:right;">${item.p.toLocaleString()}</td><td style="text-align:right; font-weight:bold;">${item.qty}잔</td><td style="text-align:right; font-weight:bold;">${(item.p * item.qty).toLocaleString()}원</td></tr>`; 
             });
           }
           document.getElementById('rDirectCard').innerText = totalCard.toLocaleString() + '원';
           document.getElementById('rDirectCash').innerText = totalCash.toLocaleString() + '원';
-          document.getElementById('rDirectPay').innerText = totalSalesOrClaim.toLocaleString() + '원';
+          document.getElementById('rDirectOther').innerText = totalOther.toLocaleString() + '원';
+          document.getElementById('rowDirectOther').style.display = totalOther > 0 ? 'flex' : 'none';
+          document.getElementById('rDirectPay').innerText = totalSales.toLocaleString() + '원';
         }
 
-        const finalAbsoluteGrandTotal = grandAbsoluteTotalDirect + grandAbsoluteTotalCoupBase + grandAbsoluteTotalCoupExtra;
-        document.getElementById('rTotalAll').innerText = finalAbsoluteGrandTotal.toLocaleString() + '원';
+        // [수정] 일반 판매와 쿠폰 판매를 완전히 분리: 각 영수증은 자기 금액만 합산
+        document.getElementById('rTotalLabel').innerText = isCoupMode ? '★ 쿠폰 청구 총액:' : '★ 일반 판매 총매출:';
+        document.getElementById('rTotalAll').innerText = (isCoupMode ? (totalBase + totalExtra) : totalSales).toLocaleString() + '원';
 
         const actionArea = document.getElementById('receiptActionArea');
         if (isHist) {
           actionArea.innerHTML = `<button style="width:65%; height:44px; background:#2e7d32; color:#fff; border:none; font-weight:900; font-size:16px; border-radius:6px; cursor:pointer;" onclick="window.print()">인쇄하기</button><button style="width:32%; height:44px; background:#333; color:#fff; border:none; font-weight:bold; font-size:15px; border-radius:6px; cursor:pointer;" onclick="closeReceipt()">닫기</button>`;
         } else {
-          actionArea.innerHTML = `<button style="width:38%; height:44px; background:#1971c2; color:#fff; border:none; font-weight:900; font-size:14px; border-radius:6px; cursor:pointer;" onclick="saveCurrentEvent()">💾 마감 (저장)</button><button style="width:30%; height:44px; background:#2e7d32; color:#fff; border:none; font-weight:900; font-size:15px; border-radius:6px; cursor:pointer;" onclick="window.print()">인쇄</button><button style="width:28%; height:44px; background:#333; color:#fff; border:none; font-weight:bold; font-size:14px; border-radius:6px; cursor:pointer;" onclick="closeReceipt()">닫기</button>`;
+          actionArea.innerHTML = `<button style="width:38%; height:44px; background:#1971c2; color:#fff; border:none; font-weight:900; font-size:14px; border-radius:6px; cursor:pointer;" onclick="saveCurrentEvent()">💾 ${isCoupMode ? '쿠폰' : '일반'} 마감 저장</button><button style="width:30%; height:44px; background:#2e7d32; color:#fff; border:none; font-weight:900; font-size:15px; border-radius:6px; cursor:pointer;" onclick="window.print()">인쇄</button><button style="width:28%; height:44px; background:#333; color:#fff; border:none; font-weight:bold; font-size:14px; border-radius:6px; cursor:pointer;" onclick="closeReceipt()">닫기</button>`;
         }
         document.getElementById('rModal').style.display = 'flex';
       } catch (err) {
@@ -976,7 +1147,93 @@
     
     function closeReceipt() { document.getElementById('rModal').style.display = 'none'; }
 
+    function openMenuEditModal(idx) {
+      document.getElementById('menuEditModalTitle').innerText = '기존 메뉴 수정';
+      const board = getCurrentBoard();
+      if(!board || !board.items[idx]) return;
+      const it = board.items[idx];
+      
+      document.getElementById('editMenuIdx').value = idx;
+      document.getElementById('editMName').value = it.n || ''; 
+      document.getElementById('editMPrice').value = it.p || 0;
+      document.getElementById('editMShape').value = it.shape || 'square'; 
+      document.getElementById('editMColor').value = it.c || '#0288d1';
+      document.getElementById('editMIsSlush').checked = !!it.isSlush; 
+      document.getElementById('editMFile').value = '';
+      tempUploadedImg = it.img || ""; 
+      document.getElementById('btnDeleteMenu').style.display = 'block';
+      document.getElementById('menuEditModal').style.display = 'flex';
+    }
+
+    // [수정] 누락되어 있던 메뉴 편집 함수들
+    function closeMenuEditModal() {
+      document.getElementById('menuEditModal').style.display = 'none';
+      tempUploadedImg = '';
+    }
+
+    function saveEditedMenu() {
+      const idx = parseInt(document.getElementById('editMenuIdx').value, 10);
+      const name = document.getElementById('editMName').value.trim();
+      const priceStr = document.getElementById('editMPrice').value.trim();
+      const price = Number(priceStr);
+      if (!name) return alert('메뉴 이름을 입력하세요.');
+      if (priceStr === '' || !Number.isInteger(price) || price < 0) return alert('가격은 0 이상의 정수(원)로 입력하세요.');
+
+      const board = getCurrentBoard();
+      const backup = JSON.stringify(menuBoards);
+      const data = {
+        n: name, p: price,
+        c: document.getElementById('editMColor').value,
+        shape: document.getElementById('editMShape').value,
+        img: tempUploadedImg || '',
+        isSlush: document.getElementById('editMIsSlush').checked
+      };
+      if (isNaN(idx) || idx < 0) board.items.push(data);
+      else if (board.items[idx]) board.items[idx] = data;
+      else return alert('수정할 메뉴를 찾을 수 없습니다.');
+
+      if (!saveBoardsData()) { menuBoards = JSON.parse(backup); return; } // 저장 실패 시 원상복구
+      closeMenuEditModal();
+      drawGrid();
+    }
+
+    function deleteSelectedMenu() {
+      const idx = parseInt(document.getElementById('editMenuIdx').value, 10);
+      const board = getCurrentBoard();
+      if (isNaN(idx) || idx < 0 || !board.items[idx]) return;
+      if (!confirm(`'${board.items[idx].n}' 메뉴를 삭제하시겠습니까?`)) return;
+      board.items.splice(idx, 1);
+      saveBoardsData();
+      closeMenuEditModal();
+      drawGrid();
+    }
+
+    function handleImageFile(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          // 저장 공간 절약을 위해 최대 300px로 축소
+          const max = 300, s = Math.min(1, max / Math.max(img.width, img.height));
+          const cv = document.createElement('canvas');
+          cv.width = Math.round(img.width * s); cv.height = Math.round(img.height * s);
+          cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+          tempUploadedImg = cv.toDataURL('image/jpeg', 0.75);
+        };
+        img.onerror = () => alert('이미지를 불러올 수 없습니다.');
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
     setMode('REG'); renderCurrentCart(); updateCouponUI();
+
+    // [수정] 이전 날짜에 마감하지 않은 판매 내역이 남아 있으면 알림
+    if (['REG', 'COUP'].some(k => ledgers[k].history.some(o => o.date && o.date !== todayKey()))) {
+      setTimeout(() => alert('⚠ 이전 날짜에 마감하지 않은 판매 내역이 남아 있습니다.\n[🧾 마감]에서 먼저 마감 저장해주세요.'), 300);
+    }
   </script>
 </body>
 </html>
