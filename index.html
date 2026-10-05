@@ -865,6 +865,25 @@
     
     function closeReceipt() { document.getElementById('rModal').style.display = 'none'; }
 
+    // ★ 기존 메뉴 수정 팝업 함수 정상 작동 연결부 ★
+    function openMenuEditModal(idx) {
+      document.getElementById('menuEditModalTitle').innerText = '기존 메뉴 수정';
+      const board = menuBoards.find(b => b.id === currentBoardId);
+      if(!board || !board.items[idx]) return;
+      const it = board.items[idx];
+      
+      document.getElementById('editMenuIdx').value = idx;
+      document.getElementById('editMName').value = it.n || ''; 
+      document.getElementById('editMPrice').value = it.p || 0;
+      document.getElementById('editMShape').value = it.shape || 'square'; 
+      document.getElementById('editMColor').value = it.c || '#0288d1';
+      document.getElementById('editMIsSlush').checked = !!it.isSlush; 
+      document.getElementById('editMFile').value = '';
+      tempUploadedImg = it.img || ""; 
+      document.getElementById('btnDeleteMenu').style.display = 'block';
+      document.getElementById('menuEditModal').style.display = 'flex';
+    }
+
     setMode('REG'); renderCurrentCart(); updateCouponUI();
   </script>
 </body>
