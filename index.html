@@ -1346,7 +1346,7 @@
     // [추가] 서버 백업 · 여러 기기 동시 판매 (Firebase)
     //  - 계산·장부는 지금처럼 이 기기(localStorage)가 기준. 바뀐 주문만 서버로 보냄(덮어쓰기라 중복 합산 없음)
     //  - 오프라인이면 '보낼 목록(outbox)'에 쌓아두고 연결되면 자동 전송 (앱을 껐다 켜도 유지)
-    //  - 서버 연결 코드(PosCloud)는 아래 별도 <script type="module">에서 붙음. 없으면 지금처럼 이 기기만으로 동작
+    //  - 서버 연결 코드(PosCloud)는 아래 별도 스크립트(REST 직접 통신)에서 붙음. 없으면 지금처럼 이 기기만으로 동작
     // =====================================================================
     const Sync = {
       backend: null, uid: null, email: null, failed: false,
@@ -1518,7 +1518,7 @@
       Sync.unsub.push(B.listen('config/menu', d => {
         if (!d) { if (cloudOn()) syncMenuSaved(); return; }            // 서버에 메뉴판이 없으면 이 기기 메뉴판을 올림
         if ((d.updatedAt || 0) > Sync.menuTs) applyRemoteMenu(d);
-      }));
+      }, { probe: 'updatedAt' }));
       Sync.unsub.push(B.listen('config/coupon', d => { Sync.couponCfg = d; if (!recomputeCloudCoupons()) updateCouponUI(); syncSave(); flushOutbox(); }));
       Sync.unsub.push(B.listenCol('couponUse', list => {
         Sync.couponUse = {}; list.forEach(u => { if (u && u.device) Sync.couponUse[u.device] = u; });
@@ -1819,75 +1819,191 @@
       setTimeout(() => alert('⚠ 이전 날짜에 마감하지 않은 판매 내역이 남아 있습니다.\n[🧾 마감]에서 먼저 마감 저장해주세요.'), 300);
     }
   </script>
-  <!-- [추가] 서버 연결 모듈 (Firebase). 인터넷이 없어서 못 불러와도 포스는 이 기기만으로 정상 동작 -->
-  <script type="module">
-    const V = '12.19.0', CDN = `https://www.gstatic.com/firebasejs/${V}/`;
-    const firebaseConfig = {
-      apiKey: "AIzaSyDvQSO3L58N_jk88TArVi6ELE5MPwstF_o",
-      authDomain: "coffee-pos-26941.firebaseapp.com",
-      projectId: "coffee-pos-26941",
-      storageBucket: "coffee-pos-26941.firebasestorage.app",
-      messagingSenderId: "529440424627",
-      appId: "1:529440424627:web:287f19125d5eb0f9e7a6c6"
-    };
-    window.__cloudStage = '모듈 시작';
-    const stage = s => { window.__cloudStage = s; };
-    const limit = (p, ms, what) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(what + ' 시간 초과(' + ms / 1000 + '초)')), ms))]);
-    (async () => {
-    try {
-      stage('1/4 기본 모듈 받기');
-      const { initializeApp } = await limit(import(CDN + 'firebase-app.js'), 20000, '기본 모듈');
-      stage('2/4 로그인 모듈 받기');
-      const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } = await limit(import(CDN + 'firebase-auth.js'), 20000, '로그인 모듈');
-      stage('3/4 데이터베이스 모듈 받기');
-      const F = await limit(import(CDN + 'firebase-firestore.js'), 25000, '데이터베이스 모듈');
-      stage('4/4 연결 준비');
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      let db;
-      try { db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentSingleTabManager() }) }); }
-      catch (e) { db = F.getFirestore(app); } // 오프라인 저장소를 못 쓰는 환경이면 기본값
-      let uid = null;
-      const path = p => `users/${uid}/${p}`;
-      const clean = o => JSON.parse(JSON.stringify(o));
-      window.PosCloud = {
-        onUser(cb) { return onAuthStateChanged(auth, u => { uid = u ? u.uid : null; cb(u ? { uid: u.uid, email: u.email } : null); }); },
-        signIn: (e, pw) => signInWithEmailAndPassword(auth, e, pw),
-        signOut: () => signOut(auth),
-        set: (p, d, merge = true) => F.setDoc(F.doc(db, path(p)), clean(d), { merge }),
-        async query(col, conds) {
-          const q = F.query(F.collection(db, path(col)), ...conds.map(c => F.where(c[0], c[1], c[2])));
-          let snap;
-          try { snap = await F.getDocsFromServer(q); } catch (e) { snap = await F.getDocs(q); } // 오프라인이면 기기에 저장된 마지막 데이터
-          return { docs: snap.docs.map(d => d.data()), fromCache: snap.metadata.fromCache };
-        },
-        listen(p, cb) { return F.onSnapshot(F.doc(db, path(p)), s => cb(s.exists() ? s.data() : null), e => console.warn('listen', p, e)); },
-        listenCol(col, cb) { return F.onSnapshot(F.collection(db, path(col)), s => cb(s.docs.map(d => d.data())), e => console.warn('listenCol', col, e)); },
-        claimDevice(code, inst, force) {
-          return F.runTransaction(db, async tx => {
-            const ref = F.doc(db, path('devices/' + code));
-            const s = await tx.get(ref);
-            const now = Date.now();
-            if (s.exists()) {
-              const d = s.data();
-              if (d.instanceId === inst) { tx.set(ref, { lastSeen: now }, { merge: true }); return { ok: true, existed: true }; }
-              if (!force) return { ok: false, taken: true };
-              tx.set(ref, { code, instanceId: inst, claimedAt: now, lastSeen: now }, { merge: true });
-              return { ok: true, existed: true, tookOver: true };
-            }
-            tx.set(ref, { code, instanceId: inst, claimedAt: now, lastSeen: now });
-            return { ok: true, existed: false };
+  <!-- [수정] 서버 연결 (Firebase REST 직접 통신) — 구형 아이패드(iOS 12)에서도 동작하도록 외부 프로그램 없이 구현 -->
+  <script>
+  (function () {
+    var PROJECT = 'coffee-pos-26941';
+    var API_KEY = 'AIzaSyDvQSO3L58N_jk88TArVi6ELE5MPwstF_o';
+    var DOCS = 'https://firestore.googleapis.com/v1/projects/' + PROJECT + '/databases/(default)/documents';
+    var POLL_MS = window.__POLL_MS || 45000;   // 다른 기기 변경 확인 주기
+    var AUTH_KEY = 'coffee_auth';
+    var auth = null;                          // { uid, email, idToken, exp, refreshToken }
+    try { auth = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) { auth = null; }
+    var userCb = null;
+    window.__cloudStage = '연결 준비';
+
+    function err(code, msg) { var e = new Error(msg || code); e.code = code; return e; }
+    function saveAuth() { try { if (auth) localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); else localStorage.removeItem(AUTH_KEY); } catch (e) {} }
+    function emitUser() { if (userCb) userCb(auth ? { uid: auth.uid, email: auth.email } : null); }
+
+    // ---------- 값 변환 (자바스크립트 ↔ Firestore) ----------
+    function enc(v) {
+      if (v === null || v === undefined) return { nullValue: null };
+      if (typeof v === 'boolean') return { booleanValue: v };
+      if (typeof v === 'number') return (Number.isInteger(v) && Math.abs(v) <= 9007199254740991) ? { integerValue: String(v) } : { doubleValue: v };
+      if (typeof v === 'string') return { stringValue: v };
+      if (Array.isArray(v)) return { arrayValue: { values: v.map(enc) } };
+      if (typeof v === 'object') return { mapValue: { fields: encFields(v) } };
+      return { stringValue: String(v) };
+    }
+    function encFields(o) { var f = {}; Object.keys(o).forEach(function (k) { if (o[k] !== undefined) f[k] = enc(o[k]); }); return f; }
+    function dec(v) {
+      if (!v) return null;
+      if ('nullValue' in v) return null;
+      if ('booleanValue' in v) return v.booleanValue;
+      if ('integerValue' in v) return Number(v.integerValue);
+      if ('doubleValue' in v) return Number(v.doubleValue);
+      if ('stringValue' in v) return v.stringValue;
+      if ('arrayValue' in v) return (v.arrayValue.values || []).map(dec);
+      if ('mapValue' in v) return decFields(v.mapValue.fields || {});
+      if ('timestampValue' in v) return v.timestampValue;
+      return null;
+    }
+    function decFields(f) { var o = {}; Object.keys(f || {}).forEach(function (k) { o[k] = dec(f[k]); }); return o; }
+    function fieldPath(k) { return /^[A-Za-z_][A-Za-z0-9_]*$/.test(k) ? k : '`' + k.replace(/\\/g, '\\\\').replace(/`/g, '\\`') + '`'; }
+
+    // ---------- 로그인 (토큰은 1시간마다 자동 갱신) ----------
+    function postJSON(url, body, headers) {
+      return fetch(url, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, headers || {}), body: JSON.stringify(body) })
+        .catch(function () { throw err('auth/network-request-failed', '인터넷 연결 실패'); });
+    }
+    function authFail(r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        var m = (j && j.error && j.error.message) || ('HTTP ' + r.status);
+        throw err('auth/' + m.toLowerCase().replace(/[^a-z0-9]+/g, '-'), m);
+      });
+    }
+    function getToken() {
+      if (!auth) return Promise.reject(err('unauthenticated', '로그인 필요'));
+      if (auth.idToken && auth.exp - 60000 > Date.now()) return Promise.resolve(auth.idToken);
+      return fetch('https://securetoken.googleapis.com/v1/token?key=' + API_KEY, {
+        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(auth.refreshToken)
+      }).catch(function () { throw err('unavailable', '인터넷 연결 실패'); }).then(function (r) {
+        if (!r.ok) {
+          return r.json().catch(function () { return {}; }).then(function (j) {
+            var m = (j && j.error && j.error.message) || ('HTTP ' + r.status);
+            if (/TOKEN_EXPIRED|USER_DISABLED|USER_NOT_FOUND|INVALID_REFRESH_TOKEN/.test(m)) { auth = null; saveAuth(); emitUser(); }
+            throw err('unauthenticated', m);
           });
         }
-      };
-      stage('완료');
-      window.dispatchEvent(new Event('poscloud-ready'));
-    } catch (e) {
-      console.warn('PosCloud load failed', e);
-      window.__cloudErr = `[${window.__cloudStage}] ${(e && (e.message || e.name)) || e}`;
-      window.dispatchEvent(new Event('poscloud-failed'));
+        return r.json().then(function (j) {
+          auth.idToken = j.id_token; auth.refreshToken = j.refresh_token; auth.exp = Date.now() + Number(j.expires_in || 3600) * 1000;
+          saveAuth(); return auth.idToken;
+        });
+      });
     }
-    })();
+
+    // ---------- 데이터 읽기/쓰기 ----------
+    function docUrl(p) { return DOCS + '/users/' + auth.uid + '/' + p; }
+    function call(method, url, body) {
+      return getToken().then(function (tok) {
+        var opt = { method: method, headers: { 'Authorization': 'Bearer ' + tok } };
+        if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+        return fetch(url, opt).catch(function () { throw err('unavailable', '인터넷 연결 실패'); });
+      }).then(function (r) {
+        if (r.ok) return r.json();
+        if (r.status === 404) return null;
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          var st = (j && j.error && j.error.status) || ('HTTP_' + r.status);
+          throw err(st.toLowerCase().replace(/_/g, '-'), (j && j.error && j.error.message) || st);
+        });
+      });
+    }
+    function getDoc(p, mask) {
+      var q = mask ? ('?' + mask.map(function (m) { return 'mask.fieldPaths=' + encodeURIComponent(fieldPath(m)); }).join('&')) : '';
+      return call('GET', docUrl(p) + q).then(function (j) { return j && j.fields !== undefined ? decFields(j.fields) : (j ? {} : null); });
+    }
+    function setDoc(p, data, merge, mustNotExist) {
+      var qs = [];
+      if (merge !== false) Object.keys(data).forEach(function (k) { if (data[k] !== undefined) qs.push('updateMask.fieldPaths=' + encodeURIComponent(fieldPath(k))); });
+      if (mustNotExist) qs.push('currentDocument.exists=false');
+      return call('PATCH', docUrl(p) + (qs.length ? '?' + qs.join('&') : ''), { fields: encFields(data) });
+    }
+    function runQuery(col, conds) {
+      var sq = { from: [{ collectionId: col }] };
+      var fs = (conds || []).map(function (c) { return { fieldFilter: { field: { fieldPath: c[0] }, op: 'EQUAL', value: enc(c[2]) } }; });
+      if (fs.length === 1) sq.where = fs[0]; else if (fs.length > 1) sq.where = { compositeFilter: { op: 'AND', filters: fs } };
+      return call('POST', DOCS + '/users/' + auth.uid + ':runQuery', { structuredQuery: sq }).then(function (arr) {
+        return (arr || []).filter(function (x) { return x && x.document; }).map(function (x) { return decFields(x.document.fields || {}); });
+      });
+    }
+
+    // ---------- 실시간 대신 주기적 확인 (변경 있을 때만 알림) ----------
+    var subs = [];   // { path, col, cb, probe, last, lastProbe, data }
+    function fire(s, data) { var j = JSON.stringify(data === undefined ? null : data); if (j !== s.last) { s.last = j; s.data = data; try { s.cb(JSON.parse(j)); } catch (e) { console.warn(e); } } }
+    function pollOne(s) {
+      if (!auth) return Promise.resolve();
+      if (s.col) return runQuery(s.path, []).then(function (list) { fire(s, list); }).catch(function () {});
+      if (s.probe) {   // 큰 문서(메뉴판)는 변경 시각만 먼저 확인
+        return getDoc(s.path, [s.probe]).then(function (pv) {
+          var v = pv ? pv[s.probe] : null;
+          if (s.last !== undefined && v === s.lastProbe) return;
+          s.lastProbe = v;
+          return getDoc(s.path).then(function (d) { fire(s, d); });
+        }).catch(function () {});
+      }
+      return getDoc(s.path).then(function (d) { fire(s, d); }).catch(function () {});
+    }
+    function pollAll() { subs.forEach(pollOne); }
+    setInterval(function () { if (navigator.onLine !== false && document.visibilityState !== 'hidden') pollAll(); }, POLL_MS);
+    window.addEventListener('online', pollAll);
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') pollAll(); });
+    // 이 기기에서 쓴 내용은 기다리지 않고 바로 반영
+    function applyLocal(p, data, merge) {
+      subs.forEach(function (s) {
+        if (!s.col && s.path === p && s.last !== undefined) {
+          var cur = s.data ? JSON.parse(JSON.stringify(s.data)) : {};
+          var nd = merge === false ? JSON.parse(JSON.stringify(data)) : Object.assign(cur, JSON.parse(JSON.stringify(data)));
+          if (s.probe) s.lastProbe = nd[s.probe];
+          fire(s, nd);
+        } else if (s.col && p.indexOf(s.path + '/') === 0 && p.slice(s.path.length + 1).indexOf('/') < 0 && s.last !== undefined) {
+          var id = p.slice(s.path.length + 1), list = (s.data || []).slice(), ids = s.ids || {};
+          // 컬렉션 목록은 문서 키를 모르면 다음 확인 때 갱신 (couponUse는 device 필드로 구분)
+          var idx = -1; list.forEach(function (d, i) { if (d && (d.device === id || d.code === id)) idx = i; });
+          var base = idx >= 0 ? list[idx] : {};
+          var nd2 = merge === false ? JSON.parse(JSON.stringify(data)) : Object.assign(JSON.parse(JSON.stringify(base)), JSON.parse(JSON.stringify(data)));
+          if (idx >= 0) list[idx] = nd2; else list.push(nd2);
+          fire(s, list);
+        }
+      });
+    }
+
+    window.PosCloud = {
+      onUser: function (cb) { userCb = cb; setTimeout(emitUser, 0); return function () { userCb = null; }; },
+      signIn: function (email, pw) {
+        return postJSON('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + API_KEY, { email: email, password: pw, returnSecureToken: true })
+          .then(function (r) {
+            if (!r.ok) return authFail(r);
+            return r.json().then(function (j) {
+              auth = { uid: j.localId, email: j.email, idToken: j.idToken, refreshToken: j.refreshToken, exp: Date.now() + Number(j.expiresIn || 3600) * 1000 };
+              saveAuth(); emitUser();
+            });
+          });
+      },
+      signOut: function () { auth = null; saveAuth(); subs = []; emitUser(); return Promise.resolve(); },
+      set: function (p, d, merge) { var data = JSON.parse(JSON.stringify(d)); return setDoc(p, data, merge).then(function () { applyLocal(p, data, merge); }); },
+      query: function (col, conds) { return runQuery(col, conds).then(function (docs) { return { docs: docs, fromCache: false }; }); },
+      listen: function (p, cb, opt) { var s = { path: p, cb: cb, probe: opt && opt.probe }; subs.push(s); pollOne(s); return function () { subs = subs.filter(function (x) { return x !== s; }); }; },
+      listenCol: function (col, cb) { var s = { path: col, cb: cb, col: true }; subs.push(s); pollOne(s); return function () { subs = subs.filter(function (x) { return x !== s; }); }; },
+      claimDevice: function (code, inst, force) {
+        var p = 'devices/' + code, now = Date.now();
+        return getDoc(p).then(function (d) {
+          if (d) {
+            if (d.instanceId === inst) return setDoc(p, { lastSeen: now }).then(function () { return { ok: true, existed: true }; });
+            if (!force) return { ok: false, taken: true };
+            return setDoc(p, { code: code, instanceId: inst, claimedAt: now, lastSeen: now }).then(function () { return { ok: true, existed: true, tookOver: true }; });
+          }
+          // 동시에 두 기기가 같은 번호를 잡지 않도록 '없을 때만 만들기'
+          return setDoc(p, { code: code, instanceId: inst, claimedAt: now, lastSeen: now }, true, true)
+            .then(function () { return { ok: true, existed: false }; })
+            .catch(function (e) { if (/failed-precondition|already-exists/.test(e.code || '')) return { ok: false, taken: true }; throw e; });
+        });
+      }
+    };
+    window.__cloudStage = '완료';
+    window.dispatchEvent(new Event('poscloud-ready'));
+  })();
   </script>
   <script>
     // [추가] 오프라인 실행: 인터넷 없이도 앱이 열리도록 서비스 워커 등록 (GitHub 주소에서만 동작)
