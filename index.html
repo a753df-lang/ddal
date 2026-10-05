@@ -1660,7 +1660,13 @@
       const info = document.getElementById('cloudInfo'), btns = document.getElementById('cloudButtons');
       const B = (label, fn, color) => `<button style="flex:1; min-width:110px; height:38px; background:${color}; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:13px; cursor:pointer;" onclick="${fn}">${label}</button>`;
       let lines = [];
-      if (!Sync.backend) lines.push(Sync.failed ? '서버 연결 기능을 불러오지 못했습니다 (인터넷 연결 후 앱을 다시 열어주세요). 판매기록은 이 기기에 저장되고 있습니다.' : '서버 연결 준비 중...');
+      if (!Sync.backend) {
+        if (Sync.failed) {
+          lines.push('<b style="color:#c92a2a">서버 연결 기능을 불러오지 못했습니다.</b> 판매기록은 이 기기에 계속 저장되고 있습니다.');
+          lines.push(`원인: <b>${Sync.failReason || '-'}</b>`);
+          lines.push(`<span style="font-size:11px; color:#666;">인터넷: ${navigator.onLine === false ? '끊김' : '연결됨'} · 기기: ${(navigator.userAgent.match(/(iPad|iPhone|Android[^;)]*|Windows NT [\d.]+|Mac OS X [\d_]+)/) || ['?'])[0]} · ${(navigator.userAgent.match(/(OS [\d_]+ like Mac|Chrome\/[\d]+|Version\/[\d.]+ (Mobile\/\w+ )?Safari|SamsungBrowser\/[\d.]+|Firefox\/[\d]+)/) || ['?'])[0]}</span>`);
+        } else lines.push(`서버 연결 준비 중... <span style="font-size:11px; color:#666;">(${window.__cloudStage || '시작 전'})</span>`);
+      }
       else if (!Sync.uid) lines.push('<b style="color:#c92a2a">로그인 안 됨</b> — 판매기록이 서버에 백업되지 않습니다.');
       else {
         lines.push(`계정: <b>${Sync.email || ''}</b>`);
@@ -1672,6 +1678,7 @@
       }
       info.innerHTML = lines.join('<br>');
       let h = '';
+      if (!Sync.backend) h += B('🔄 다시 연결', 'location.reload()', '#1864ab');
       if (Sync.backend && !Sync.uid) h += B('로그인', 'closeModeOptionModal(); openLoginModal()', '#1864ab');
       if (cloudRead() && (!Sync.device || Sync.viewer)) h += B('판매 기기로 등록', 'closeModeOptionModal(); openDeviceModal()', '#2e7d32');
       if (cloudOn()) h += B('지금 서버로 보내기', 'syncScan(); renderCloudCard()', '#2e7d32');
@@ -1768,7 +1775,14 @@
     }
 
     window.addEventListener('poscloud-ready', () => attachCloud(window.PosCloud));
-    window.addEventListener('poscloud-failed', () => { Sync.failed = true; updateSyncBadge(); });
+    window.addEventListener('poscloud-failed', () => { if (Sync.backend) return; Sync.failed = true; Sync.failReason = window.__cloudErr || '알 수 없는 오류'; updateSyncBadge(); });
+    // [추가] 연결 기능이 멈춰서 '준비 중'에서 넘어가지 않으면 30초 뒤 실패로 표시하고 이유를 보여줌
+    setTimeout(() => {
+      if (Sync.backend || Sync.failed) return;
+      Sync.failed = true;
+      Sync.failReason = window.__cloudStage ? `[${window.__cloudStage}] 단계에서 30초 넘게 멈춤` : '연결 기능이 시작되지 않음 (이 브라우저가 지원하지 않을 수 있음)';
+      updateSyncBadge();
+    }, 30000);
     window.addEventListener('online', () => { flushOutbox(); updateSyncBadge(); });
     window.addEventListener('offline', updateSyncBadge);
 
@@ -1816,10 +1830,18 @@
       messagingSenderId: "529440424627",
       appId: "1:529440424627:web:287f19125d5eb0f9e7a6c6"
     };
+    window.__cloudStage = '모듈 시작';
+    const stage = s => { window.__cloudStage = s; };
+    const limit = (p, ms, what) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(what + ' 시간 초과(' + ms / 1000 + '초)')), ms))]);
+    (async () => {
     try {
-      const { initializeApp } = await import(CDN + 'firebase-app.js');
-      const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } = await import(CDN + 'firebase-auth.js');
-      const F = await import(CDN + 'firebase-firestore.js');
+      stage('1/4 기본 모듈 받기');
+      const { initializeApp } = await limit(import(CDN + 'firebase-app.js'), 20000, '기본 모듈');
+      stage('2/4 로그인 모듈 받기');
+      const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } = await limit(import(CDN + 'firebase-auth.js'), 20000, '로그인 모듈');
+      stage('3/4 데이터베이스 모듈 받기');
+      const F = await limit(import(CDN + 'firebase-firestore.js'), 25000, '데이터베이스 모듈');
+      stage('4/4 연결 준비');
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       let db;
@@ -1858,11 +1880,14 @@
           });
         }
       };
+      stage('완료');
       window.dispatchEvent(new Event('poscloud-ready'));
     } catch (e) {
       console.warn('PosCloud load failed', e);
+      window.__cloudErr = `[${window.__cloudStage}] ${(e && (e.message || e.name)) || e}`;
       window.dispatchEvent(new Event('poscloud-failed'));
     }
+    })();
   </script>
   <script>
     // [추가] 오프라인 실행: 인터넷 없이도 앱이 열리도록 서비스 워커 등록 (GitHub 주소에서만 동작)
