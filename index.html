@@ -18,11 +18,25 @@
       display: flex; 
       align-items: center; 
       justify-content: space-between; 
-      padding: 22px 6px 4px 6px; 
+      padding: 22px 10px 4px 10px; 
       border-bottom: 2px solid rgba(0,0,0,0.15); 
     }
     
-    .tab-side-btn { height: 36px; padding: 0 8px; border-radius: 6px; font-weight: 900; font-size: 13px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.15); white-space: nowrap; }
+    /* ★ [일반 판매] & [쿠폰 판매] 버튼 터치 크기 대폭 확대 ★ */
+    .tab-side-btn { 
+      height: 44px; 
+      padding: 0 16px; 
+      border-radius: 8px; 
+      font-weight: 900; 
+      font-size: 16px; 
+      border: 2px solid transparent; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      box-shadow: 0 3px 6px rgba(0,0,0,0.2); 
+      white-space: nowrap; 
+    }
     .tab-side-btn:active { transform: scale(0.96); }
     
     .header-center-box { display: flex; align-items: center; }
@@ -34,7 +48,7 @@
     .btn-coup-set { background: #e65100; color: #fff; border-radius: 4px; padding: 2px 5px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; }
 
     .header-right-group { display: flex; align-items: center; }
-    .btn-action-top { height: 36px; padding: 0 6px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 4px; white-space: nowrap; }
+    .btn-action-top { height: 38px; padding: 0 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); margin-left: 4px; white-space: nowrap; }
     .btn-action-top:active { transform: scale(0.96); }
 
     body.theme-reg { background-color: #ffffff; color: #222; }
@@ -576,11 +590,10 @@
       document.getElementById('editMIsSlush').checked = false; 
       document.getElementById('editMFile').value = '';
       tempUploadedImg = ''; 
-      document.getElementById('btnDeleteMenu').style.display = 'block'; // 삭제 대신 추가이므로 내부적으로 처리
+      document.getElementById('btnDeleteMenu').style.display = 'block';
       document.getElementById('menuEditModal').style.display = 'flex';
     }
 
-    // ★ [기존 메뉴 수정] 클릭 시 모달창 열고 값 셋팅 ★
     function openMenuEditModal(idx) {
       const board = menuBoards.find(b => b.id === currentBoardId);
       if (!board || !board.items[idx]) return;
@@ -600,7 +613,6 @@
       document.getElementById('menuEditModal').style.display = 'flex';
     }
 
-    // ★ [취소] 및 [저장] 시 모달창 닫기 연동 ★
     function closeMenuEditModal() { 
       document.getElementById('menuEditModal').style.display = 'none'; 
       tempUploadedImg = ""; 
@@ -616,31 +628,44 @@
       reader.readAsDataURL(file); 
     }
     
-    // ★ [저장] 버튼 클릭 시 입력된 이름과 가격을 확실하게 반영하고 모달 닫기 ★
+    // ★ [저장] 버튼: 입력창의 값을 강제로 확실하게 가져와서 객체에 덮어씌움 ★
     function saveEditedMenu() {
       const currentBoard = menuBoards.find(b => b.id === currentBoardId);
-      const idx = parseInt(document.getElementById('editMenuIdx').value, 10);
-      const name = document.getElementById('editMName').value.trim(); 
-      const price = parseInt(document.getElementById('editMPrice').value, 10);
+      const idxStr = document.getElementById('editMenuIdx').value;
+      const idx = parseInt(idxStr, 10);
       
-      if(!name || isNaN(price)) {
+      const nameInput = document.getElementById('editMName').value.trim(); 
+      const priceInput = parseInt(document.getElementById('editMPrice').value, 10);
+      
+      if(!nameInput || isNaN(priceInput)) {
         alert('메뉴 이름과 올바른 가격을 입력하세요.');
         return;
       }
       
-      const newItem = { 
-        n: name, 
-        p: price, 
-        shape: document.getElementById('editMShape').value, 
-        c: document.getElementById('editMColor').value, 
-        isSlush: document.getElementById('editMIsSlush').checked, 
-        img: tempUploadedImg 
-      };
+      const shapeVal = document.getElementById('editMShape').value;
+      const colorVal = document.getElementById('editMColor').value;
+      const slushVal = document.getElementById('editMIsSlush').checked;
       
-      if (idx === -1) {
-        currentBoard.items.push(newItem);
+      if (isNaN(idx) || idx < 0) {
+        // 새 메뉴 추가인 경우
+        currentBoard.items.push({ 
+          n: nameInput, 
+          p: priceInput, 
+          shape: shapeVal, 
+          c: colorVal, 
+          isSlush: slushVal, 
+          img: tempUploadedImg 
+        });
       } else {
-        currentBoard.items[idx] = newItem;
+        // 기존 메뉴 수정인 경우 확실하게 갱신
+        currentBoard.items[idx].n = nameInput;
+        currentBoard.items[idx].p = priceInput;
+        currentBoard.items[idx].shape = shapeVal;
+        currentBoard.items[idx].c = colorVal;
+        currentBoard.items[idx].isSlush = slushVal;
+        if(tempUploadedImg) {
+          currentBoard.items[idx].img = tempUploadedImg;
+        }
       }
       
       saveBoardsData(); 
@@ -648,7 +673,6 @@
       drawGrid();
     }
     
-    // ★ [삭제] 버튼 클릭 시 해당 메뉴 삭제 후 모달 닫기 ★
     function deleteSelectedMenu() {
       if(!confirm("이 메뉴를 삭제하시겠습니까?")) return;
       const idx = parseInt(document.getElementById('editMenuIdx').value, 10);
