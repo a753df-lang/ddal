@@ -99,6 +99,9 @@
       background-size: cover; background-position: center; overflow: hidden;
     }
     .btn-item:active { transform: scale(0.96); }
+    /* [추가] 사진·그림이 있는 메뉴: 이름을 아래쪽 어두운 띠에 표시해 잘 보이게 */
+    .btn-item.has-img { justify-content: flex-end; padding: 0; }
+    .btn-item.has-img .m-title { width: 100%; height: 44%; box-sizing: border-box; background: rgba(20,20,20,0.72); color: #fff; padding: 5px 3px 6px; margin: 0; font-size: 24px; line-height: 1.1; letter-spacing: -0.8px; display: flex; align-items: center; justify-content: center; word-break: keep-all; -webkit-line-clamp: unset; }
     .btn-square { border-radius: 10px; }
     .btn-circle { border-radius: 50%; }
     
@@ -353,6 +356,7 @@
       </div>
       <div class="opt-card">
         <div class="opt-card-title">✏ 메뉴 추가 및 수정</div>
+        <button style="width:100%; height:40px; margin-top:8px; background:#e8590c; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="makePhotoBoard()">📷 '일반사진메뉴' 만들기 (기본 음료 + 그림)</button>
         <div style="display:flex; justify-content:space-between; margin-top:8px;">
           <button style="width:48%; height:40px; background:#0288d1; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="addNewMenuItem()">+ 새 메뉴 추가</button>
           <button id="btnToggleEditInModal" style="width:48%; height:40px; background:#ffd43b; color:#000; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="toggleEditModeFromModal()">✏ 기존 메뉴 수정 켜기</button>
@@ -557,6 +561,99 @@
 
   </div><!-- /#app -->
 
+  <script>
+// 커피트럭 '일반사진메뉴'용 음료 그림 (직접 그린 SVG, 저작권 문제 없음)
+// 컵 대신 음료를 대표하는 재료(원두·우유·초콜릿·과일 등)를 위쪽에 작게, 오른쪽에 ICE/HOT 표시
+// 아래쪽 약 45%는 큰 메뉴 이름 띠 자리라 비워 둠. iOS 12에서도 쓰도록 ES2017 문법만 사용
+// 재료 중심 그림 (컵 없음). 이름+온도+스타일 → SVG
+var PhotoArt = (function () {
+  var D = {
+    americano: { bg: '#5b4037', main: ['bean'] },
+    latte:     { bg: '#c7a17a', main: ['milk', 'beanS'] },
+    mocha:     { bg: '#8c4a3b', main: ['choco', 'beanS'] },
+    macchiato: { bg: '#e38b25', main: ['caramel'] },
+    vanilla:   { bg: '#e6c65c', main: ['flowerB'] },
+    plumtea:   { bg: '#7cb342', main: ['plum'] },
+    peachtea:  { bg: '#ff8a65', main: ['peach'] },
+    grapefruit:{ bg: '#e5576b', main: ['grapefruit'] },
+    greengrape:{ bg: '#43a047', main: ['grape'] },
+    lemon:     { bg: '#f2b705', main: ['lemon'] },
+    slush:     { bg: '#29a8e0', main: ['snow'] },
+    strawlatte:{ bg: '#ec6f8f', main: ['milk', 'strawS'] },
+    strawjuice:{ bg: '#d32f4f', main: ['straw'] },
+    ginger:    { bg: '#b5793a', main: ['ginger'] },
+    yuja:      { bg: '#f59e0b', main: ['yuja'] },
+    tea:       { bg: '#6d8a5a', main: ['leaf'] },
+    coffee:    { bg: '#5b4037', main: ['bean'] }
+  };
+  function kind(n) {
+    n = String(n || '');
+    var R = [[/모카/, 'mocha'], [/마끼아또|마키아토|카라멜/, 'macchiato'], [/바닐라/, 'vanilla'], [/딸기\s*라떼/, 'strawlatte'], [/딸기/, 'strawjuice'],
+      [/라떼/, 'latte'], [/아메리카노|에스프레소|커피/, 'americano'], [/매실/, 'plumtea'], [/복숭아|아이스티/, 'peachtea'], [/자몽/, 'grapefruit'],
+      [/청포도/, 'greengrape'], [/레몬/, 'lemon'], [/슬러시/, 'slush'], [/생강/, 'ginger'], [/유자/, 'yuja'], [/차|티/, 'tea']];
+    for (var i = 0; i < R.length; i++) if (R[i][0].test(n)) return R[i][1];
+    return 'coffee';
+  }
+  // ---- 재료 그림: 중심 (0,0), 크기 약 반지름 50 ----
+  function slice(ring, pulp, seg) {
+    var g = '<circle r="50" fill="' + ring + '"/><circle r="43" fill="#fffdf5"/><circle r="39" fill="' + pulp + '"/>';
+    for (var i = 0; i < 10; i++) { var a = i * Math.PI / 5; g += '<line x1="0" y1="0" x2="' + (39 * Math.cos(a)).toFixed(1) + '" y2="' + (39 * Math.sin(a)).toFixed(1) + '" stroke="#fffdf5" stroke-width="4"/>'; }
+    return g + '<circle r="6" fill="#fffdf5"/>';
+  }
+  var ING = {
+    bean: function () { return '<g transform="rotate(-30)"><ellipse rx="34" ry="48" fill="#6b3f26"/><ellipse rx="34" ry="48" fill="none" stroke="#4a2a18" stroke-width="3"/><path d="M0 -44 C-16 -16 16 16 0 44" stroke="#3a2012" stroke-width="7" fill="none" stroke-linecap="round"/><ellipse cx="-14" cy="-20" rx="6" ry="12" fill="#fff" opacity=".18"/></g>'; },
+    beanS: function () { return '<g transform="translate(30 30) scale(.45)">' + ING.bean() + '</g>'; },
+    milk: function () { return '<path d="M0 -52 C18 -24 40 0 40 20 C40 42 22 54 0 54 C-22 54 -40 42 -40 20 C-40 0 -18 -24 0 -52 Z" fill="#fffaf2"/><ellipse cx="-16" cy="16" rx="6" ry="12" fill="#fff" opacity=".9"/><path d="M0 -52 C18 -24 40 0 40 20 C40 42 22 54 0 54" fill="none" stroke="#e8dccb" stroke-width="3"/>'; },
+    choco: function () { var g = '<g transform="rotate(-12)"><rect x="-38" y="-48" width="76" height="96" rx="8" fill="#4e2a1e"/>'; for (var r = 0; r < 4; r++) for (var c = 0; c < 2; c++) g += '<rect x="' + (-32 + c * 34) + '" y="' + (-42 + r * 22.5) + '" width="30" height="19" rx="3" fill="#6d3b2a"/>'; return g + '<rect x="-38" y="-48" width="76" height="96" rx="8" fill="none" stroke="#3a1e15" stroke-width="3"/></g>'; },
+    caramel: function () { return '<path d="M0 -50 C16 -24 38 0 38 22 C38 42 20 52 0 52 C-20 52 -38 42 -38 22 C-38 0 -16 -24 0 -50 Z" fill="#c26a1a"/><path d="M-22 18 C-22 4 -10 -10 -4 -18" stroke="#ffd59a" stroke-width="7" fill="none" stroke-linecap="round" opacity=".8"/><path d="M-34 -36 q10 8 20 0 q10 -8 20 0 q10 8 20 0" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".9"/>'; },
+    flowerB: function () { var g = '<path d="M-44 44 Q0 10 46 -40" stroke="#4a3220" stroke-width="7" stroke-linecap="round" fill="none"/>'; g += '<g transform="translate(-6 -6)">'; for (var i = 0; i < 5; i++) g += '<ellipse rx="15" ry="30" transform="rotate(' + (i * 72) + ') translate(0 -22)" fill="#fffbea" stroke="#e9d38a" stroke-width="2.5"/>'; return g + '<circle r="11" fill="#f2b632"/></g>'; },
+    plum: function () { return '<circle cy="6" r="44" fill="#9ccc3c"/><path d="M0 -38 Q-10 6 0 50" stroke="#7da52a" stroke-width="4" fill="none"/><ellipse cx="-18" cy="-12" rx="9" ry="14" fill="#fff" opacity=".35"/><path d="M0 -38 L4 -54" stroke="#5d4037" stroke-width="6" stroke-linecap="round"/><path d="M4 -50 Q26 -66 40 -48 Q20 -38 4 -50 Z" fill="#33691e"/>'; },
+    peach: function () { return '<path d="M0 -36 C30 -50 50 -20 46 8 C42 38 18 52 0 52 C-18 52 -42 38 -46 8 C-50 -20 -30 -50 0 -36 Z" fill="#ffab7a"/><path d="M0 -34 Q-12 8 0 50" stroke="#f0805e" stroke-width="5" fill="none"/><ellipse cx="22" cy="0" rx="14" ry="22" fill="#ff7a6b" opacity=".45"/><path d="M2 -38 Q18 -64 42 -54 Q26 -36 2 -38 Z" fill="#4caf50"/>'; },
+    grapefruit: function () { return slice('#e9435e', '#ff8f9b'); },
+    lemon: function () { return slice('#f5c400', '#fff09a'); },
+    yuja: function () { return slice('#f08c00', '#ffc65c'); },
+    grape: function () { var g = '<path d="M0 -40 L6 -58" stroke="#5d4037" stroke-width="6" stroke-linecap="round"/><path d="M6 -54 Q30 -70 44 -50 Q24 -42 6 -54 Z" fill="#2e7d32"/>'; [[0, -30], [-17, -18], [17, -18], [-26, 0], [0, -4], [26, 0], [-14, 18], [14, 18], [0, 36]].forEach(function (p) { g += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="14" fill="#a5d65a" stroke="#7cb342" stroke-width="2.5"/><circle cx="' + (p[0] - 4) + '" cy="' + (p[1] - 5) + '" r="3.5" fill="#fff" opacity=".6"/>'; }); return g; },
+    straw: function () { var g = '<path d="M0 52 C-44 26 -46 -26 -20 -32 C-8 -35 0 -26 0 -26 C0 -26 8 -35 20 -32 C46 -26 44 26 0 52 Z" fill="#e8213f"/><path d="M-24 -32 L-12 -48 L0 -36 L12 -48 L24 -32 Q0 -20 -24 -32 Z" fill="#3fae49"/>'; [[-14, -10], [10, -12], [0, 4], [-20, 12], [20, 10], [-8, 24], [8, 26], [0, 40]].forEach(function (p) { g += '<ellipse cx="' + p[0] + '" cy="' + p[1] + '" rx="2.6" ry="4" fill="#ffe08a"/>'; }); return g + '<ellipse cx="-18" cy="-14" rx="6" ry="10" fill="#fff" opacity=".25"/>'; },
+    strawS: function () { return '<g transform="translate(28 26) scale(.5)">' + ING.straw() + '</g>'; },
+    ginger: function () { return '<g transform="rotate(-15)"><path d="M-46 10 C-50 -14 -30 -22 -18 -14 C-16 -34 4 -40 10 -24 C20 -38 42 -30 38 -10 C52 -4 50 22 30 24 C20 40 -10 40 -18 26 C-34 34 -48 26 -46 10 Z" fill="#e8c27a" stroke="#b98a3e" stroke-width="4"/><path d="M-26 6 q8 -4 14 2 M2 -6 q8 -4 14 2 M8 16 q8 -4 14 2" stroke="#b98a3e" stroke-width="3" fill="none" stroke-linecap="round"/></g>'; },
+    snow: function () { var g = '<g stroke="#fff" stroke-width="8" stroke-linecap="round">'; for (var i = 0; i < 3; i++) { var a = i * 60; g += '<g transform="rotate(' + a + ')"><line x1="0" y1="-50" x2="0" y2="50"/><path d="M-12 -38 L0 -26 L12 -38 M-12 38 L0 26 L12 38" fill="none"/></g>'; } return g + '</g><circle r="9" fill="#fff"/>'; },
+    leaf: function () { return '<path d="M-40 40 C-40 -10 0 -46 44 -44 C44 0 10 40 -40 40 Z" fill="#7cb342"/><path d="M-40 40 L30 -30" stroke="#33691e" stroke-width="5"/>'; }
+  };
+  function ingredient(k) { return D[k].main.map(function (m) { return ING[m](); }).join(''); }
+  function hex(h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+  function mix(a, b, t) { var x = hex(a), y = hex(b); return '#' + x.map(function (v, i) { return ('0' + Math.round(v + (y[i] - v) * t).toString(16)).slice(-2); }).join(''); }
+  var steam = '<g stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"><path d="M-10 6 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M4 6 q-6 -8 0 -16 q6 -8 0 -16"/><path d="M18 6 q-6 -8 0 -16 q6 -8 0 -16"/></g>';
+  var flake = '<g stroke="#fff" stroke-width="4" stroke-linecap="round"><line x1="0" y1="-14" x2="0" y2="14"/><line x1="-12" y1="-7" x2="12" y2="7"/><line x1="-12" y1="7" x2="12" y2="-7"/></g>';
+  function svg(n, t, style) {
+    var k = kind(n), d = D[k], isHot = t === 'hot' || (t !== 'ice' && /hot|핫|생강|유자/i.test(n));
+    var tc = isHot ? '#e03131' : '#1c7ed6', ing = ingredient(k), body = '';
+    if (style === 'E') { // 색 배경 + 재료 크게 + 핫/아이스 둥근 표시
+      body = '<rect width="200" height="200" fill="' + d.bg + '"/><circle cx="100" cy="80" r="62" fill="#fff" opacity=".16"/>' +
+        '<g transform="translate(100 80) scale(1.05)">' + ing + '</g>' +
+        '<circle cx="150" cy="34" r="22" fill="' + tc + '" stroke="#fff" stroke-width="4"/><g transform="translate(146 41) scale(.85)">' + (isHot ? steam : '') + '</g>' + (isHot ? '' : '<g transform="translate(150 34) scale(.9)">' + flake + '</g>');
+    }
+    if (style === 'F') { // 위 절반 음료색 / 아래 진한색 + 재료 + 크게 깔린 온도 그림
+      var dk = mix(d.bg, '#000000', 0.3);
+      // 그림은 위쪽에 작게 (아래는 큰 이름 띠 자리)
+      body = '<rect width="200" height="200" fill="' + dk + '"/><path d="M0 0 H200 V70 Q100 98 0 70 Z" fill="' + d.bg + '"/>' +
+        '<g transform="translate(150 38) scale(1.6)" opacity=".22">' + (isHot ? '<g transform="translate(-4 8)">' + steam + '</g>' : flake) + '</g>' +
+        '<g transform="translate(92 54) scale(.66)">' + ing + '</g>' +
+        '<rect x="124" y="62" width="56" height="25" rx="12.5" fill="' + tc + '"/><text x="152" y="80.5" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="16" fill="#fff">' + (isHot ? 'HOT' : 'ICE') + '</text>';
+    }
+    if (style === 'G' && k === 'slush') ing = ing.replace(/#fff"/g, '#3fa9e0"');
+    if (style === 'G') { // 밝은 배경 + 스티커처럼 흰 테두리 재료 + 모서리 온도 삼각형
+      var light = mix(d.bg, '#ffffff', 0.8);
+      body = '<rect width="200" height="200" fill="' + light + '"/>' +
+        '<g transform="translate(100 82) scale(1.05)"><g transform="translate(3 5)" opacity=".18" style="filter:none">' + ing.replace(/fill="[^"]+"/g, 'fill="#000"').replace(/stroke="[^"]+"/g, 'stroke="#000"') + '</g>' +
+        '<g stroke="#fff" stroke-width="14" stroke-linejoin="round" fill="#fff">' + ing.replace(/fill="[^"]+"/g, 'fill="#fff"').replace(/stroke="[^"]+"/g, 'stroke="#fff"').replace(/stroke-width="[^"]+"/g, 'stroke-width="14"') + '</g>' + ing + '</g>' +
+        '<circle cx="152" cy="32" r="20" fill="' + tc + '"/><g transform="translate(152 32) scale(.8)">' + (isHot ? '<g transform="translate(-4 10)">' + steam + '</g>' : flake) + '</g>';
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">' + body + '</svg>';
+  }
+  function dataUrl(n, t, st) { return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg(n, t, st || 'F')))); }
+  return { svg: svg, dataUrl: dataUrl, kind: kind };
+})();
+  </script>
   <script>
     // [수정] 저장/불러오기 안전 처리 (저장 실패 시 경고)
     function safeSet(key, val) {
@@ -800,6 +897,28 @@
       menuBoards.push({ id: "board_" + Date.now(), name: name, items: JSON.parse(JSON.stringify(menuBoards[0].items)) });
       saveBoardsData(); renderBoardSwapList();
     }
+    // [추가] '기본 음료' 메뉴판을 그대로 복사해 음료 그림을 넣은 '일반사진메뉴' 만들기 (기본 메뉴판은 그대로)
+    // 메뉴 이름·가격·슬러시·핫/아이스는 그대로 복사 → 판매·정산 계산은 기본 메뉴판과 똑같음
+    const PHOTO_BOARD_ID = 'board_photo_basic', PHOTO_BOARD_NAME = '일반사진메뉴';
+    function buildPhotoItems(src) {
+      return src.items.map(it => {
+        const c = JSON.parse(JSON.stringify(it)), t = menuTemp(it);
+        c.t = t; c.shape = 'square'; c.img = PhotoArt.dataUrl(c.n, t);
+        return c;
+      });
+    }
+    function makePhotoBoard() {
+      const src = menuBoards.find(b => b.name === '기본 음료' && b.id !== PHOTO_BOARD_ID) || menuBoards.find(b => b.id !== PHOTO_BOARD_ID);
+      if (!src) return alert('복사할 메뉴판이 없습니다.');
+      const idx = menuBoards.findIndex(b => b.id === PHOTO_BOARD_ID || b.name === PHOTO_BOARD_NAME);
+      if (idx >= 0 && !confirm(`'${PHOTO_BOARD_NAME}'이 이미 있습니다.\n'${src.name}' 메뉴판 기준으로 다시 만들까요?\n(${PHOTO_BOARD_NAME}에서 따로 바꾼 내용은 사라집니다)`)) return;
+      const backup = JSON.stringify(menuBoards);
+      const board = { id: idx >= 0 ? menuBoards[idx].id : PHOTO_BOARD_ID, name: PHOTO_BOARD_NAME, items: buildPhotoItems(src) };
+      if (idx >= 0) menuBoards[idx] = board; else menuBoards.push(board);
+      if (!saveBoardsData()) { menuBoards = JSON.parse(backup); return alert('저장 공간이 부족해 만들지 못했습니다.'); }
+      renderBoardSwapList();
+      if (confirm(`'${PHOTO_BOARD_NAME}' 메뉴판을 만들었습니다 (메뉴 ${board.items.length}개).\n지금 이 메뉴판으로 바꿀까요?`)) swapToBoard(board.id);
+    }
     function deleteBoard(idx) {
       if(!confirm("이 메뉴판을 삭제하시겠습니까?")) return;
       // [수정] 현재 메뉴판을 지우면 남은 첫 메뉴판으로 전환
@@ -913,7 +1032,8 @@
         b.className = `btn-item ${it.shape === 'circle' ? 'btn-circle' : 'btn-square'}`;
         b.style.backgroundColor = it.c || '#0288d1';
         b.style.color = (it.c === '#fbc02d') ? '#222' : '#fff';
-        b.style.backgroundImage = it.img ? `url(${it.img})` : 'none';
+        b.style.backgroundImage = it.img ? `url("${it.img}")` : 'none';
+        if (it.img) b.classList.add('has-img');
 
         const isSlushMenu = (it.isSlush === true || it.n.includes("슬러시"));
 
@@ -933,7 +1053,7 @@
     function fitMenuTitles() {
       const ts = document.querySelectorAll('#mGrid .m-title');
       for (let i = 0; i < ts.length; i++) {
-        const t = ts[i]; let fs = 21; t.style.fontSize = '';
+        const t = ts[i]; let fs = (t.parentNode && t.parentNode.classList.contains('has-img')) ? 24 : 21; t.style.fontSize = ''; // 그림 메뉴는 이름을 더 크게
         while (fs > 13 && (t.scrollWidth > t.clientWidth + 1 || t.scrollHeight > t.clientHeight + 1)) { fs--; t.style.fontSize = fs + 'px'; }
       }
     }
@@ -1279,6 +1399,10 @@
                     : `매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span> / 쿠폰: <span style="color:#e65100">${tCoup}장</span>`;
       return `<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:10px; margin-bottom:8px;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;"><div><div style="font-size:16px; font-weight:900; color:#0288d1;">${kindBadge}${ev.device ? `<span style="background:#495057; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:6px;">${ev.device}</span>` : ''}${ev.eventName}</div><div style="font-size:12px; color:#555; margin-top:2px;">${ev.dateStr} ${ev.timeStr}</div></div><button style="background:#e03131; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="deletePastEvent(${actualIdx})">삭제</button></div><div style="font-size:13px; font-weight:bold; color:#333; margin-bottom:6px;">${summary}</div><button style="width:100%; height:38px; background:#495057; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="viewPastReceipt(${actualIdx})">🧾 마감 영수증 보기</button></div>`;
     }
+    // [추가] 여러 날 행사 예정: date=시작, endDate=끝 (행사 달력 앱과 같은 규칙, 최대 31일)
+    function planAddDays(k, n) { return padDate(new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10) + n)); }
+    function planEndOf(x) { const a = normDate(x.date), e = normDate(x.endDate); if (!e || e < a) return a; const days = Math.round((new Date(+e.slice(0,4), +e.slice(5,7)-1, +e.slice(8,10)) - new Date(+a.slice(0,4), +a.slice(5,7)-1, +a.slice(8,10))) / 86400000); return days < 31 ? e : a; }
+    function planOn(x, k) { const a = normDate(x.date); return !!a && a <= k && k <= planEndOf(x); }
     function calRecords(monthPrefix) {
       // 날짜별 기록 모으기: { 'YYYY-MM-DD': [{kind, name, device, local idx|null}] }
       const map = {}, seen = {};
@@ -1300,7 +1424,7 @@
       pastCal.srvState[monthPrefix] = 'loading';
       Promise.all([
         Sync.backend.queryRange('events', 'dateKey', monthPrefix + '-01', monthPrefix + '-31', ['dateKey', 'eventName', 'kind', 'device', 'id']),
-        Sync.backend.queryRange('plans', 'date', monthPrefix + '-01', monthPrefix + '-31', ['date', 'name', 'memo', 'id']) // [추가] 행사 예정 (행사 달력 앱에서 입력)
+        Sync.backend.queryRange('plans', 'date', planAddDays(monthPrefix + '-01', -31), monthPrefix + '-31', ['date', 'endDate', 'name', 'memo', 'id']) // [추가] 행사 예정 (행사 달력 앱에서 입력, 여러 날 행사는 앞달에서 시작할 수 있음)
       ]).then(r => { pastCal.srv[monthPrefix] = r[0] || []; pastCal.plans[monthPrefix] = r[1] || []; pastCal.srvState[monthPrefix] = Date.now(); })
         .catch(() => { pastCal.srvState[monthPrefix] = 0; })
         .then(() => { if (document.getElementById('pastEventsModal').style.display === 'flex') renderPastCal(); });
@@ -1332,7 +1456,7 @@
         const k = `${mp}-${String(d).padStart(2, '0')}`, r = recs[k] || [];
         const hasR = r.some(x => x.kind === 'REG'), hasC = r.some(x => x.kind === 'COUP');
         const names = []; r.forEach(x => { if (x.name && names.indexOf(x.name) < 0) names.push(x.name); });
-        const pl = (pastCal.plans[mp] || []).filter(x => normDate(x.date) === k);
+        const pl = (pastCal.plans[mp] || []).filter(x => planOn(x, k));
         h += `<div class="cal-day${r.length ? ' has' : ''}${k === today ? ' today' : ''}${k === pastCal.sel ? ' sel' : ''}" onclick="pickCalDay('${k}')"><span class="cal-num">${d}</span><span class="cal-dots">${hasR ? '<span class="cal-dot dot-reg"></span>' : ''}${hasC ? '<span class="cal-dot dot-coup"></span>' : ''}</span><div class="cal-name">${names.join(', ')}</div>${pl.map(x => `<div class="cal-plan">${x.name}</div>`).join('')}</div>`;
       }
       const tail = (7 - (first + days) % 7) % 7; for (let i = 0; i < tail; i++) h += `<div class="cal-day other"></div>`;
@@ -1346,7 +1470,7 @@
       const sm = sel.slice(0, 7), r = (calRecords(sm)[sel] || []);
       const dd = new Date(+sel.slice(0, 4), +sel.slice(5, 7) - 1, +sel.slice(8, 10));
       let lh = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><b style="font-size:15px;">${+sel.slice(5, 7)}월 ${+sel.slice(8, 10)}일 (${'일월화수목금토'[dd.getDay()]})</b>${cloudRead() ? `<button style="height:32px; padding:0 10px; background:#1864ab; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:13px; cursor:pointer;" onclick="openIntegratedFor('${sel}')">🌐 이 날 통합 영수증</button>` : ''}</div>`;
-      (pastCal.plans[sm] || []).filter(x => normDate(x.date) === sel).forEach(x => { lh += `<div style="background:#f1f8ff; border:1px solid #a5d8ff; border-radius:8px; padding:8px 10px; margin-bottom:8px;"><b style="font-size:15px;"><span class="cal-plan" style="display:inline-block; font-size:12px;">예정</span> ${x.name}</b>${x.memo ? `<div style="font-size:12px; color:#555; margin-top:3px; white-space:pre-wrap;">${x.memo}</div>` : ''}</div>`; });
+      (pastCal.plans[sm] || []).filter(x => planOn(x, sel)).forEach(x => { const a = normDate(x.date), e = planEndOf(x); lh += `<div style="background:#f1f8ff; border:1px solid #a5d8ff; border-radius:8px; padding:8px 10px; margin-bottom:8px;"><b style="font-size:15px;"><span class="cal-plan" style="display:inline-block; font-size:12px;">예정</span> ${x.name}</b>${a !== e ? `<div style="font-size:12px; color:#1c7ed6; font-weight:bold; margin-top:2px;">${+a.slice(5,7)}/${+a.slice(8,10)} ~ ${+e.slice(5,7)}/${+e.slice(8,10)}</div>` : ''}${x.memo ? `<div style="font-size:12px; color:#555; margin-top:3px; white-space:pre-wrap;">${x.memo}</div>` : ''}</div>`; });
       if (!r.length) lh += '<div style="text-align:center; padding:10px; color:#666; font-size:13px;">이 날은 마감 기록이 없습니다.</div>';
       r.filter(x => x.idx !== null).sort((a, b) => b.idx - a.idx).forEach(x => { lh += pastCardHtml(pastEvents[x.idx], x.idx); });
       const others = r.filter(x => x.idx === null);
