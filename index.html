@@ -118,6 +118,11 @@
     .m-price { font-size: 11px; opacity: 0.95; }
     .m-title { font-size: 21px; line-height: 1.12; -webkit-line-clamp: 3; letter-spacing: -0.5px; margin-bottom: 0; }
     .badge { position: absolute; top: 3px; right: 3px; background: #d32f2f; color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 4px; font-weight: bold; z-index: 3; }
+    /* [추가] 메뉴 수정 모드에서 길게 눌러 끌어 옮기기 */
+    .btn-item { -webkit-touch-callout: none; }
+    .btn-item.drag-src { opacity: 0.25; }
+    .btn-item.drag-over { outline: 5px solid #ffd43b; outline-offset: -5px; }
+    .drag-ghost { position: fixed; z-index: 5000; pointer-events: none; opacity: 0.9; box-shadow: 0 10px 24px rgba(0,0,0,0.45); margin: 0 !important; }
     .edit-tag { position: absolute; top: 3px; left: 3px; background: #ffd43b; color: #000; font-size: 10px; font-weight: bold; padding: 2px 4px; border-radius: 3px; z-index: 3; }
 
     /* 전표 영역 */
@@ -225,6 +230,12 @@
       #rModal { position: absolute !important; top: 0; left: 0; width: 100%; height: auto; display: block !important; background: none !important; }
       #rModal .modal-box { box-shadow: none !important; max-height: none !important; overflow: visible !important; width: 100% !important; max-width: none !important; }
       #receiptActionArea { display: none !important; }
+      /* [추가] 통합 영수증 인쇄 / PDF 저장 */
+      body.print-int #rModal { display: none !important; }
+      body.print-int #intModal, body.print-int #intModal * { visibility: visible !important; }
+      body.print-int #intModal { position: absolute !important; top: 0; left: 0; width: 100%; height: auto; display: block !important; background: none !important; }
+      body.print-int #intModal .modal-box { box-shadow: none !important; max-height: none !important; overflow: visible !important; width: 100% !important; max-width: none !important; }
+      body.print-int #intModal .int-noprint { display: none !important; }
     }
   </style>
 </head>
@@ -257,7 +268,7 @@
       <div class="current-board-info">
         <span>메뉴판: <span class="badge-board-name" id="lblCurrentBoardName">기본 음료</span> <span class="menu-more-hint" id="lblMenuMore"></span></span>
         <span style="display:flex; align-items:center; gap:8px;">
-          <span id="editModeNotice" style="display:none; color:#ffd43b; font-weight:900;">✏ 수정 모드</span>
+          <span id="editModeNotice" style="display:none; color:#ffd43b; font-weight:900;">✏ 수정 모드 · 길게 눌러 끌면 위치 이동</span>
           <span id="syncBadge" class="sync-badge" onclick="openCloudPanel()">☁ 연결 준비 중</span>
         </span>
       </div>
@@ -501,13 +512,16 @@
     <div class="modal-box" style="font-family:monospace; width:94%; max-width:520px; padding:16px;">
       <div style="text-align:center;">
         <h2 style="font-size:20px; font-weight:900; margin-bottom:6px;" id="intTitle">[ 통합 영수증 ]</h2>
-        <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:6px;">
+        <div class="int-noprint" style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:6px;">
           <input type="date" id="intDate" style="height:36px; border:1px solid #ccc; border-radius:6px; padding:0 8px; font-size:14px;" onchange="renderIntegrated()">
           <button style="height:36px; padding:0 12px; background:#1864ab; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="renderIntegrated()">새로고침</button>
         </div>
       </div>
       <div id="intBody" style="font-size:13px;"></div>
-      <button style="width:100%; height:44px; background:#333; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer; margin-top:12px;" onclick="closeIntegrated()">닫기</button>
+      <div class="int-noprint" style="display:flex; justify-content:space-between; margin-top:12px;">
+        <button style="width:62%; height:44px; background:#2e7d32; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:15px; cursor:pointer;" onclick="printIntegrated()">🖨 인쇄 / PDF 저장</button>
+        <button style="width:35%; height:44px; background:#333; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:15px; cursor:pointer;" onclick="closeIntegrated()">닫기</button>
+      </div>
     </div>
   </div>
 
@@ -784,6 +798,82 @@
       isEditMode = !isEditMode; updateEditToggleBtnText();
       document.getElementById('editModeNotice').style.display = isEditMode ? 'inline' : 'none'; drawGrid(); closeModeOptionModal();
     }
+    // ===== [추가] 메뉴 수정 모드: 길게 눌러(0.45초) 끌어다 놓으면 그 자리로 이동, 나머지는 한 칸씩 밀림 =====
+    // (메뉴판 순서만 바뀜 — 판매 금액·쿠폰 계산에는 쓰이지 않음)
+    const menuDrag = { timer: 0, src: -1, active: false, ghost: null, btn: null, over: -1, sx: 0, sy: 0, dx: 0, dy: 0, justDropped: false, scrollTimer: 0, lastY: 0 };
+    function mdPoint(e) { const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e; return { x: t.clientX, y: t.clientY }; }
+    function attachMenuDrag(b, idx) {
+      const start = function (e) {
+        if (menuDrag.active) return;
+        const pt = mdPoint(e); menuDrag.sx = pt.x; menuDrag.sy = pt.y; menuDrag.src = idx; menuDrag.btn = b;
+        clearTimeout(menuDrag.timer);
+        menuDrag.timer = setTimeout(function () { mdBegin(pt); }, 450);
+      };
+      b.addEventListener('touchstart', start, { passive: true });
+      b.addEventListener('mousedown', start);
+      b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    }
+    function mdBegin(pt) {
+      const b = menuDrag.btn; if (!b || !isEditMode) return;
+      const r = b.getBoundingClientRect();
+      const g = b.cloneNode(true); g.className += ' drag-ghost';
+      const sc = r.width / (b.offsetWidth || r.width); // 화면 자동 맞춤 배율과 같게
+      g.style.width = b.offsetWidth + 'px'; g.style.height = b.offsetHeight + 'px'; g.style.left = r.left + 'px'; g.style.top = r.top + 'px';
+      g.style.transformOrigin = '0 0'; g.style.transform = 'scale(' + (sc * 1.06) + ')';
+      document.body.appendChild(g);
+      menuDrag.ghost = g; menuDrag.dx = pt.x - r.left; menuDrag.dy = pt.y - r.top; menuDrag.active = true; menuDrag.over = menuDrag.src; menuDrag.lastY = pt.y;
+      b.classList.add('drag-src');
+      if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) {}
+      menuDrag.scrollTimer = setInterval(mdAutoScroll, 30);
+    }
+    function mdMove(e) {
+      if (!menuDrag.active) {
+        if (menuDrag.timer && menuDrag.btn) { const p = mdPoint(e); if (Math.abs(p.x - menuDrag.sx) > 10 || Math.abs(p.y - menuDrag.sy) > 10) { clearTimeout(menuDrag.timer); menuDrag.timer = 0; } }
+        return;
+      }
+      if (e.cancelable) e.preventDefault();
+      const p = mdPoint(e); menuDrag.lastY = p.y;
+      menuDrag.ghost.style.left = (p.x - menuDrag.dx) + 'px'; menuDrag.ghost.style.top = (p.y - menuDrag.dy) + 'px';
+      mdHover(p);
+    }
+    function mdHover(p) {
+      const el = document.elementFromPoint(p.x, p.y);
+      const t = el && el.closest ? el.closest('#mGrid .btn-item') : null;
+      const btns = document.querySelectorAll('#mGrid .btn-item');
+      const ni = t ? Array.prototype.indexOf.call(btns, t) : -1;
+      if (ni === menuDrag.over) return;
+      if (menuDrag.over >= 0 && btns[menuDrag.over]) btns[menuDrag.over].classList.remove('drag-over');
+      menuDrag.over = ni;
+      if (ni >= 0 && ni !== menuDrag.src) btns[ni].classList.add('drag-over');
+    }
+    function mdAutoScroll() {
+      const gr = document.getElementById('mGrid'), r = gr.getBoundingClientRect(), y = menuDrag.lastY, edge = r.height * 0.12;
+      if (y > r.bottom - edge) gr.scrollTop += 8; else if (y < r.top + edge) gr.scrollTop -= 8; else return;
+      mdHover({ x: parseFloat(menuDrag.ghost.style.left) + menuDrag.dx, y: y });
+    }
+    function mdEnd() {
+      clearTimeout(menuDrag.timer); menuDrag.timer = 0;
+      if (!menuDrag.active) { menuDrag.btn = null; return; }
+      clearInterval(menuDrag.scrollTimer);
+      const from = menuDrag.src, to = menuDrag.over;
+      if (menuDrag.ghost && menuDrag.ghost.parentNode) menuDrag.ghost.parentNode.removeChild(menuDrag.ghost);
+      menuDrag.active = false; menuDrag.ghost = null; menuDrag.btn = null;
+      menuDrag.justDropped = true; setTimeout(function () { menuDrag.justDropped = false; }, 400);
+      const gr = document.getElementById('mGrid'), keep = gr.scrollTop;
+      const items = getCurrentBoard().items;
+      if (to >= 0 && to !== from && from >= 0 && from < items.length && to < items.length) {
+        const backup = JSON.stringify(menuBoards);
+        const it = items.splice(from, 1)[0]; items.splice(to, 0, it);
+        if (!saveBoardsData()) menuBoards = JSON.parse(backup); // 저장 실패 시 원상복구
+      }
+      drawGrid(); gr.scrollTop = keep;
+      if (Sync.pendingMenu) { const d = Sync.pendingMenu; Sync.pendingMenu = null; if ((d.updatedAt || 0) > Sync.menuTs) applyRemoteMenu(d); } // 끄는 동안 받은 다른 기기 메뉴판 반영
+    }
+    document.addEventListener('touchmove', mdMove, { passive: false });
+    document.addEventListener('mousemove', mdMove);
+    document.addEventListener('touchend', mdEnd); document.addEventListener('touchcancel', mdEnd);
+    document.addEventListener('mouseup', mdEnd);
+
     function updateEditToggleBtnText() {
       const btn = document.getElementById('btnToggleEditInModal');
       btn.innerText = isEditMode ? '✓ 메뉴 수정 끄기' : '✏ 기존 메뉴 수정 켜기'; btn.style.background = isEditMode ? '#adb5bd' : '#ffd43b';
@@ -808,11 +898,13 @@
         const isSlushMenu = (it.isSlush === true || it.n.includes("슬러시"));
 
         b.onclick = () => {
+          if (isEditMode && menuDrag.justDropped) return; // 수정 모드에서 끌어 옮긴 직후의 누름은 무시 (판매 중에는 영향 없음)
           if (isEditMode) openMenuEditModal(idx);
           else if (isSlushMenu) openSlushModal(it);
           else addToCurrentCart(it.n, it.p, 1);
         };
         let editBadge = isEditMode ? `<span class="edit-tag">수정</span>` : '';
+        if (isEditMode) attachMenuDrag(b, idx);
         b.innerHTML = `${editBadge} <div class="m-title">${it.n}</div>` + (isEditMode ? ` <div class="m-price">${Number(it.p).toLocaleString()}원</div>` : '');
         g.appendChild(b);
       });
@@ -1340,6 +1432,7 @@
         isSlush: document.getElementById('editMIsSlush').checked,
         t: document.getElementById('editMTemp').value
       };
+      if ((isNaN(idx) || idx < 0) && data.t === '') data.t = guessTemp(name); // 새 메뉴는 이름으로 핫/아이스 추측
       if (isNaN(idx) || idx < 0) board.items.push(data);
       else if (board.items[idx]) board.items[idx] = data;
       else return alert('수정할 메뉴를 찾을 수 없습니다.');
@@ -1524,7 +1617,7 @@
     }
     function applyRemoteMenu(data) {
       if (!data || !Array.isArray(data.boards) || !data.boards.length) return;
-      if (document.getElementById('menuEditModal').style.display === 'flex') { Sync.pendingMenu = data; return; }
+      if (document.getElementById('menuEditModal').style.display === 'flex' || menuDrag.active) { Sync.pendingMenu = data; return; }
       menuBoards = data.boards;
       try { localStorage.setItem('coffee_menu_boards', JSON.stringify(menuBoards)); } catch (e) {}
       Sync.menuTs = data.updatedAt; localStorage.setItem('coffee_menu_ts', String(Sync.menuTs));
@@ -1736,7 +1829,14 @@
       document.getElementById('intModal').style.display = 'flex';
       renderIntegrated();
     }
-    function closeIntegrated() { document.getElementById('intModal').style.display = 'none'; }
+    function closeIntegrated() { document.body.classList.remove('print-int'); document.getElementById('intModal').style.display = 'none'; }
+    // [추가] 통합 영수증만 인쇄 (아이폰/아이패드는 인쇄 화면에서 PDF로 저장·공유 가능)
+    function printIntegrated() {
+      document.body.classList.add('print-int');
+      const done = function () { document.body.classList.remove('print-int'); window.removeEventListener('afterprint', done); };
+      window.addEventListener('afterprint', done);
+      window.print();
+    }
     function aggregateIntegrated(kind, events, openOrders, devices, date) {
       // 순수 계산 함수 (검증용으로 분리) — 마감된 기록만 합산, 미마감은 경고로 따로
       const isC = kind === 'COUP';
