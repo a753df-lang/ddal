@@ -74,6 +74,14 @@
     .container { display: flex; flex: 1; height: calc(100% - 72px); overflow: hidden; }
     .menu-panel { flex: 65; padding: 6px; display: flex; flex-direction: column; overflow: hidden; }
     .cart-panel { flex: 35; min-width: 340px; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+    /* [추가] 메뉴칸·전표칸 사이 막대: 손가락으로 끌어서 폭 조절 */
+    .split-bar { flex: 0 0 16px; width: 16px; display: flex; align-items: center; justify-content: center; cursor: col-resize; touch-action: none; -webkit-user-select: none; user-select: none; }
+    .split-bar span { display: block; width: 8px; height: 80px; border-radius: 4px; background: #adb5bd; }
+    body.theme-reg .split-bar { background: #f1f3f5; }
+    body.theme-coup .split-bar { background: #181818; }
+    .split-bar.dragging span { background: #1c7ed6; }
+    body.theme-coup .split-bar span { background: #555; }
+    body.theme-coup .split-bar.dragging span { background: #ffa94d; }
 
     .current-board-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 12px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; height: 22px; min-height: 22px; }
     .badge-board-name { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; }
@@ -108,6 +116,7 @@
       font-weight: 900; 
     }
     .m-price { font-size: 11px; opacity: 0.95; }
+    .m-title { font-size: 21px; line-height: 1.12; -webkit-line-clamp: 3; letter-spacing: -0.5px; margin-bottom: 0; }
     .badge { position: absolute; top: 3px; right: 3px; background: #d32f2f; color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 4px; font-weight: bold; z-index: 3; }
     .edit-tag { position: absolute; top: 3px; left: 3px; background: #ffd43b; color: #000; font-size: 10px; font-weight: bold; padding: 2px 4px; border-radius: 3px; z-index: 3; }
 
@@ -116,6 +125,11 @@
     .nav-arrow-btn { background: #495057; color: #fff; border: none; border-radius: 6px; padding: 6px 8px; font-weight: bold; font-size: 12px; cursor: pointer; white-space: nowrap; }
     .nav-arrow-btn:disabled { opacity: 0.3; cursor: not-allowed; }
     .status-text { font-size: 13px; font-weight: bold; white-space: nowrap; margin: 0 2px; }
+    .cart-nav-header { flex-wrap: wrap; padding: 4px 8px 8px; }
+    .cart-nav-header .status-text { order: -1; flex-basis: 100%; text-align: center; font-size: 13px; line-height: 16px; margin: 0 0 4px; }
+    .nav-btns { display: flex; width: 100%; }
+    .nav-btns button { flex: 1; height: 50px; font-size: 18px !important; font-weight: 900 !important; padding: 0 !important; border-radius: 8px !important; margin: 0 !important; }
+    .nav-btns button + button { margin-left: 6px !important; }
     .btn-new-order { background: #00897b; color: #fff; border: none; border-radius: 6px; padding: 6px 8px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
 
     .cart-list { flex: 1; overflow-y: auto; padding: 4px 8px; }
@@ -124,6 +138,8 @@
     .item-info { flex: 1.3; min-width: 0; padding-right: 4px; }
     .item-title { font-weight: 900; font-size: 15px; color: #000 !important; line-height: 1.15; white-space: normal; word-break: keep-all; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; width: 100%; }
     body.theme-coup .item-title { color: #fff !important; }
+    .item-title.hot { color: #7f0000 !important; }
+    body.theme-coup .item-title.hot { color: #ff6b6b !important; }
     
     .item-sub { font-size: 12px; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #555; font-weight: bold; }
     body.theme-coup .item-sub { color: #aaa; }
@@ -247,12 +263,13 @@
       </div>
       <div class="grid-container" id="mGrid"></div>
     </div>
+    <div class="split-bar" id="splitBar" title="끌어서 칸 크기 조절 (두 번 누르면 원래대로)"><span></span></div>
 
     <div class="cart-panel">
       <div class="cart-nav-header">
-        <button class="nav-arrow-btn" id="btnPrevOrder" onclick="navigateOrder(-1)">◀ 이전</button>
         <div class="status-text" id="orderStatusTitle">현재 주문</div>
-        <div style="display:flex; align-items:center;">
+        <div class="nav-btns">
+          <button class="nav-arrow-btn" id="btnPrevOrder" onclick="navigateOrder(-1)">◀ 이전</button>
           <button class="nav-arrow-btn" id="btnNextOrder" onclick="navigateOrder(1)" disabled>다음 ▶</button>
           <button class="btn-new-order" onclick="resetToNewOrder()">새주문</button>
         </div>
@@ -335,6 +352,7 @@
       <input type="hidden" id="editMenuIdx">
       <div class="form-group"><label>메뉴 이름</label><input type="text" id="editMName"></div>
       <div class="form-group"><label>판매 가격 (원)</label><input type="number" id="editMPrice"></div>
+      <div class="form-group"><label>온도 구분 (전표에 핫은 빨간 글씨)</label><select id="editMTemp"><option value="ice">아이스</option><option value="hot">핫</option><option value="">구분 없음</option></select></div>
       <div class="form-group"><label>버튼 모양</label><select id="editMShape"><option value="square">사각형 버튼</option><option value="circle">원형 버튼</option></select></div>
       <div class="form-group"><label>버튼 색상</label><select id="editMColor"><option value="#0288d1">파랑</option><option value="#d32f2f">빨강</option><option value="#689f38">초록</option><option value="#fbc02d">노랑</option><option value="#e91e63">분홍</option><option value="#f57c00">주황</option><option value="#7b1fa2">보라</option><option value="#455a64">회색</option></select></div>
       <div class="form-group"><label>사진 등록</label><input type="file" id="editMFile" accept="image/*" onchange="handleImageFile(event)"></div>
@@ -658,6 +676,7 @@
       document.getElementById('btnReceiptTop').innerText = (m === 'REG') ? '🧾 일반 마감' : '🧾 쿠폰 마감';
       document.getElementById('btnReceiptTop').style.background = (m === 'REG') ? '#1b5e20' : '#e65100';
       updateCouponUI();
+      try { applySplit(); } catch (e) {} // [추가] 일반/쿠폰별로 기억한 칸 폭
       drawGrid();
       renderCurrentCart();
     }
@@ -794,9 +813,17 @@
           else addToCurrentCart(it.n, it.p, 1);
         };
         let editBadge = isEditMode ? `<span class="edit-tag">수정</span>` : '';
-        b.innerHTML = `${editBadge} <div class="m-title">${it.n}</div> <div class="m-price">${Number(it.p).toLocaleString()}원</div>`;
+        b.innerHTML = `${editBadge} <div class="m-title">${it.n}</div>` + (isEditMode ? ` <div class="m-price">${Number(it.p).toLocaleString()}원</div>` : '');
         g.appendChild(b);
       });
+      fitMenuTitles();
+    }
+    function fitMenuTitles() {
+      const ts = document.querySelectorAll('#mGrid .m-title');
+      for (let i = 0; i < ts.length; i++) {
+        const t = ts[i]; let fs = 21; t.style.fontSize = '';
+        while (fs > 13 && (t.scrollWidth > t.clientWidth + 1 || t.scrollHeight > t.clientHeight + 1)) { fs--; t.style.fontSize = fs + 'px'; }
+      }
     }
 
     function addNewMenuItem() {
@@ -806,6 +833,7 @@
       document.getElementById('editMName').value = ''; document.getElementById('editMPrice').value = '';
       document.getElementById('editMShape').value = 'square'; document.getElementById('editMColor').value = '#0288d1';
       document.getElementById('editMIsSlush').checked = false; document.getElementById('editMFile').value = '';
+      document.getElementById('editMTemp').value = '';
       tempUploadedImg = ''; document.getElementById('btnDeleteMenu').style.display = 'none';
       document.getElementById('menuEditModal').style.display = 'flex';
     }
@@ -881,6 +909,16 @@
       renderCurrentCart();
     }
 
+    // [추가] 메뉴 온도(핫/아이스): 메뉴 수정에서 지정한 값 우선, 지정 안 했으면 이름으로 추측
+    function guessTemp(n) { n = String(n || ''); return /hot|핫|생강차|유자차/i.test(n) ? 'hot' : (/ice|아이스/i.test(n) ? 'ice' : ''); }
+    function menuTemp(it) { return (it && (it.t === 'hot' || it.t === 'ice' || it.t === '')) ? it.t : guessTemp(it && it.n); }
+    function isHotName(n) {
+      for (let i = 0; i < menuBoards.length; i++) {
+        const its = menuBoards[i].items || [];
+        for (let j = 0; j < its.length; j++) if (its[j].n === n) return menuTemp(its[j]) === 'hot';
+      }
+      return guessTemp(n) === 'hot'; // 메뉴판에 없는 이름(지운 메뉴 등)은 이름으로 추측
+    }
     function renderCurrentCart() {
       const el = document.getElementById('cList'); el.innerHTML = '';
       let targetList = (currentViewingIndex === -1) ? newCart : orderHistory[currentViewingIndex].items;
@@ -901,7 +939,7 @@
         if (cancelledView) {
           el.innerHTML += `
           <div class="item-row" style="opacity:0.55; text-decoration:line-through;">
-            <div class="item-info"><div class="item-title">${it.n}</div><div class="item-sub">${it.isC ? '쿠폰' : '단가: '+it.p.toLocaleString()+'원'}</div></div>
+            <div class="item-info"><div class="item-title${isHotName(it.n) ? ' hot' : ''}">${it.n}</div><div class="item-sub">${it.isC ? '쿠폰' : '단가: '+it.p.toLocaleString()+'원'}</div></div>
             <span class="qty-text" style="margin-right:8px;">${it.qty}</span>
             <div class="item-price">${it.isC ? '0원' : (it.p*it.qty).toLocaleString()+'원'}</div>
           </div>`;
@@ -910,7 +948,7 @@
         el.innerHTML += `
           <div class="item-row">
             <div class="item-info">
-              <div class="item-title">${it.n}</div>
+              <div class="item-title${isHotName(it.n) ? ' hot' : ''}">${it.n}</div>
               <div class="item-sub">${it.isC ? '단가차액: +'+(it.exTotal).toLocaleString()+'원' : '단가: '+it.p.toLocaleString()+'원'}</div>
             </div>
             <div class="qty-controls">
@@ -930,7 +968,7 @@
       document.getElementById('vTotal').innerText = dir.toLocaleString() + '원';
 
       document.getElementById('rowCoupCount').style.display = (mode === 'COUP') ? 'flex' : 'none';
-      document.getElementById('rowDirectPay').style.display = (mode === 'COUP') ? 'none' : 'flex';
+      document.getElementById('rowDirectPay').style.display = 'none'; // [수정] 받을 금액과 같은 값이라 숨김
 
       const btnArea = document.getElementById('paymentBtnArea'); const titleEl = document.getElementById('orderStatusTitle');
       if(currentViewingIndex === -1) {
@@ -1270,6 +1308,7 @@
       document.getElementById('editMShape').value = it.shape || 'square'; 
       document.getElementById('editMColor').value = it.c || '#0288d1';
       document.getElementById('editMIsSlush').checked = !!it.isSlush; 
+      document.getElementById('editMTemp').value = menuTemp(it);
       document.getElementById('editMFile').value = '';
       tempUploadedImg = it.img || ""; 
       document.getElementById('btnDeleteMenu').style.display = 'block';
@@ -1298,7 +1337,8 @@
         c: document.getElementById('editMColor').value,
         shape: document.getElementById('editMShape').value,
         img: tempUploadedImg || '',
-        isSlush: document.getElementById('editMIsSlush').checked
+        isSlush: document.getElementById('editMIsSlush').checked,
+        t: document.getElementById('editMTemp').value
       };
       if (isNaN(idx) || idx < 0) board.items.push(data);
       else if (board.items[idx]) board.items[idx] = data;
@@ -1307,7 +1347,7 @@
       if (!saveBoardsData()) { menuBoards = JSON.parse(backup); return; } // 저장 실패 시 원상복구
       const g = document.getElementById('mGrid'); const keepScroll = g.scrollTop;
       closeMenuEditModal();
-      drawGrid();
+      drawGrid(); renderCurrentCart(); // [추가] 핫/아이스 바꾸면 전표 색도 바로 반영
       g.scrollTop = (isNaN(idx) || idx < 0) ? g.scrollHeight : keepScroll; // 새 메뉴면 맨 아래로, 수정이면 보던 위치 유지
     }
 
@@ -1806,6 +1846,49 @@
       document.documentElement.style.setProperty('--dvh', (H / s / 100) + 'px');
     }
     window.addEventListener('resize', () => fitScreen());
+
+    // ===== [추가] 메뉴칸·전표칸 폭 조절 (막대를 끌기, 두 번 누르면 원래대로). 일반/쿠폰 따로 기억 =====
+    const SPLIT_MIN = 320, SPLIT_MAX = 620;
+    function splitKey() { return 'coffee_split_' + (typeof mode !== 'undefined' ? mode : 'REG'); }
+    function applySplit() {
+      const cp = document.querySelector('.cart-panel'); if (!cp) return;
+      let w = null; try { w = parseInt(localStorage.getItem(splitKey()), 10); } catch (e) {}
+      if (w && w >= SPLIT_MIN && w <= SPLIT_MAX) { cp.style.flex = '0 0 ' + w + 'px'; cp.style.minWidth = SPLIT_MIN + 'px'; }
+      else { cp.style.flex = ''; cp.style.minWidth = ''; }
+      if (typeof fitMenuTitles === 'function') fitMenuTitles();
+    }
+    (function () {
+      const bar = document.getElementById('splitBar'); if (!bar) return;
+      let dragging = false, lastTap = 0, raf = 0, curW = 0;
+      function scaleNow() { const m = /scale\(([\d.]+)\)/.exec(document.getElementById('app').style.transform || ''); return m ? parseFloat(m[1]) : 1; }
+      function xOf(e) { const t = e.touches && e.touches[0] ? e.touches[0] : e; return t.clientX; }
+      function start(e) {
+        const now = Date.now();
+        if (now - lastTap < 350) { try { localStorage.removeItem(splitKey()); } catch (er) {} applySplit(); lastTap = 0; e.preventDefault(); return; }
+        lastTap = now; dragging = true; bar.classList.add('dragging'); e.preventDefault();
+      }
+      function move(e) {
+        if (!dragging) return; e.preventDefault();
+        const appW = document.getElementById('app').getBoundingClientRect();
+        const s = scaleNow();
+        curW = Math.round((appW.right - xOf(e)) / s - 8);
+        curW = Math.max(SPLIT_MIN, Math.min(SPLIT_MAX, curW));
+        const cp = document.querySelector('.cart-panel');
+        cp.style.flex = '0 0 ' + curW + 'px'; cp.style.minWidth = SPLIT_MIN + 'px';
+        if (!raf) raf = requestAnimationFrame(function () { raf = 0; fitMenuTitles(); });
+      }
+      function end() {
+        if (!dragging) return; dragging = false; bar.classList.remove('dragging');
+        if (curW) { try { localStorage.setItem(splitKey(), String(curW)); } catch (e) {} curW = 0; }
+        fitMenuTitles();
+      }
+      bar.addEventListener('touchstart', start, { passive: false });
+      document.addEventListener('touchmove', move, { passive: false });
+      document.addEventListener('touchend', end); document.addEventListener('touchcancel', end);
+      bar.addEventListener('mousedown', start);
+      document.addEventListener('mousemove', move); document.addEventListener('mouseup', end);
+    })();
+    window.addEventListener('resize', function () { if (typeof fitMenuTitles === 'function') fitMenuTitles(); });
     window.addEventListener('orientationchange', () => setTimeout(() => fitScreen(true), 300));
     document.addEventListener('focusout', () => setTimeout(() => fitScreen(), 300));
     fitScreen(true);
