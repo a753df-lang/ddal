@@ -118,6 +118,25 @@
     .m-price { font-size: 11px; opacity: 0.95; }
     .m-title { font-size: 21px; line-height: 1.12; -webkit-line-clamp: 3; letter-spacing: -0.5px; margin-bottom: 0; }
     .badge { position: absolute; top: 3px; right: 3px; background: #d32f2f; color: #fff; font-size: 10px; padding: 2px 4px; border-radius: 4px; font-weight: bold; z-index: 3; }
+    /* [추가] 과거 행사 달력 */
+    .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .cal-head button { width: 54px; height: 38px; background: #495057; color: #fff; border: none; border-radius: 8px; font-size: 18px; font-weight: 900; cursor: pointer; }
+    .cal-title { font-size: 19px; font-weight: 900; }
+    .cal-grid { display: -webkit-box; display: flex; flex-wrap: wrap; border-top: 1px solid #dee2e6; border-left: 1px solid #dee2e6; }
+    .cal-grid > div { width: 14.2857%; box-sizing: border-box; border-right: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6; }
+    .cal-wd { text-align: center; font-size: 12px; font-weight: 900; padding: 3px 0; background: #f1f3f5; }
+    .cal-day { height: 56px; padding: 2px 3px; overflow: hidden; cursor: pointer; background: #fff; }
+    .cal-day.other { background: #f8f9fa; cursor: default; }
+    .cal-day.has { background: #fffbe6; }
+    .cal-day.sel { outline: 3px solid #1c7ed6; outline-offset: -3px; }
+    .cal-num { font-size: 13px; font-weight: 900; line-height: 16px; }
+    .cal-day.today .cal-num { background: #1c7ed6; color: #fff; border-radius: 9px; padding: 0 5px; display: inline-block; }
+    .cal-dots { display: inline-block; vertical-align: top; margin-left: 2px; }
+    .cal-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin: 3px 1px 0; }
+    .dot-reg { background: #2e7d32; } .dot-coup { background: #ff9800; }
+    .cal-name { font-size: 10.5px; font-weight: bold; color: #333; line-height: 12px; word-break: break-all; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+    .cal-plan { margin-top: 1px; font-size: 10px; font-weight: bold; line-height: 12px; color: #fff; background: #1c7ed6; border-radius: 3px; padding: 1px 3px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .cal-legend { font-size: 11px; color: #555; margin-top: 4px; display: flex; justify-content: space-between; }
     /* [추가] 메뉴 수정 모드에서 길게 눌러 끌어 옮기기 */
     .btn-item { -webkit-touch-callout: none; }
     .btn-item.drag-src { opacity: 0.25; }
@@ -418,13 +437,14 @@
 
   <!-- 과거 내역 모달 -->
   <div class="modal-overlay" id="pastEventsModal">
-    <div class="modal-box" style="width:92%; max-width:500px; padding:18px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div class="modal-box" style="width:94%; max-width:640px; padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h2 style="font-size:18px; font-weight:900;">📅 과거 행사 내역</h2>
         <button style="background:#495057; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="closePastEventsModal()">닫기</button>
       </div>
       <button style="width:100%; height:42px; background:#1864ab; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:15px; cursor:pointer; margin-bottom:10px;" onclick="openIntegrated()">🌐 전체 기기 통합 영수증 (서버)</button>
-      <div id="pastEventsList" style="max-height:calc(var(--dvh, 1vh) * 60); overflow-y:auto; border-top:2px solid #222; padding-top:10px;"></div>
+      <div id="pastCal"></div>
+      <div id="pastEventsList" style="max-height:calc(var(--dvh, 1vh) * 30); overflow-y:auto; border-top:2px solid #222; padding-top:8px; margin-top:6px;"></div>
     </div>
   </div>
 
@@ -1238,29 +1258,104 @@
       alert(`[${label}] 마감 저장되었습니다!\n[과거 내역] 버튼에서 언제든 다시 볼 수 있습니다.`);
     }
 
+    // ===== [수정] 과거 행사 내역: 달력으로 보기 (장사한 날에 색 점 + 행사명) =====
+    // 이 기기 마감 기록 + (로그인 시) 서버에 모인 다른 기기 마감 기록. 보기 전용 — 판매·정산 계산과 무관
+    const pastCal = { y: 0, m: 0, sel: '', srv: {}, srvState: {}, plans: {} };
+    function evDateKey(ev) {
+      const k = normDate(ev.dateKey); if (k) return k;
+      const mt = String(ev.dateStr || '').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+      return mt ? `${mt[1]}-${mt[2].padStart(2, '0')}-${mt[3].padStart(2, '0')}` : '';
+    }
+    function pastCardHtml(ev, actualIdx) {
+      let tSales = 0, tCoup = 0, tClaim = 0;
+      ev.history.forEach(ord => { if (ord.cancelled) return; ord.items.forEach(it => {
+        if(it.isC) { const b = getBase(it, ev.baseCouponVal); tCoup += it.qty; tClaim += (b + getEx(it, b)) * it.qty; }
+        else tSales += (it.p * it.qty);
+      }); });
+      const kindBadge = ev.kind === 'COUP' ? '<span style="background:#ff9800; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:6px;">쿠폰</span>'
+                      : ev.kind === 'REG' ? '<span style="background:#2e7d32; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:6px;">일반</span>' : '';
+      const summary = ev.kind === 'COUP' ? `쿠폰: <span style="color:#e65100">${tCoup}장</span> / 청구: <span style="color:#e65100">${tClaim.toLocaleString()}원</span>`
+                    : ev.kind === 'REG' ? `매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span>`
+                    : `매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span> / 쿠폰: <span style="color:#e65100">${tCoup}장</span>`;
+      return `<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:10px; margin-bottom:8px;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;"><div><div style="font-size:16px; font-weight:900; color:#0288d1;">${kindBadge}${ev.device ? `<span style="background:#495057; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:6px;">${ev.device}</span>` : ''}${ev.eventName}</div><div style="font-size:12px; color:#555; margin-top:2px;">${ev.dateStr} ${ev.timeStr}</div></div><button style="background:#e03131; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="deletePastEvent(${actualIdx})">삭제</button></div><div style="font-size:13px; font-weight:bold; color:#333; margin-bottom:6px;">${summary}</div><button style="width:100%; height:38px; background:#495057; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="viewPastReceipt(${actualIdx})">🧾 마감 영수증 보기</button></div>`;
+    }
+    function calRecords(monthPrefix) {
+      // 날짜별 기록 모으기: { 'YYYY-MM-DD': [{kind, name, device, local idx|null}] }
+      const map = {}, seen = {};
+      pastEvents.forEach((ev, i) => {
+        const k = evDateKey(ev); if (!k || k.indexOf(monthPrefix) !== 0) return;
+        (map[k] = map[k] || []).push({ kind: ev.kind, name: ev.eventName, device: ev.device || '', idx: i });
+        seen[(ev.device || '') + '|' + ev.id] = true;
+      });
+      (pastCal.srv[monthPrefix] || []).forEach(ev => {
+        const k = normDate(ev.dateKey); if (!k || k.indexOf(monthPrefix) !== 0 || seen[(ev.device || '') + '|' + ev.id]) return;
+        (map[k] = map[k] || []).push({ kind: ev.kind, name: ev.eventName, device: ev.device || '', idx: null });
+      });
+      return map;
+    }
+    function loadCalServer(monthPrefix) {
+      if (!cloudRead() || !Sync.backend || typeof Sync.backend.queryRange !== 'function') return;
+      const st = pastCal.srvState[monthPrefix];
+      if (st === 'loading' || (st && Date.now() - st < 60000)) return; // 1분 안에는 다시 안 받음
+      pastCal.srvState[monthPrefix] = 'loading';
+      Promise.all([
+        Sync.backend.queryRange('events', 'dateKey', monthPrefix + '-01', monthPrefix + '-31', ['dateKey', 'eventName', 'kind', 'device', 'id']),
+        Sync.backend.queryRange('plans', 'date', monthPrefix + '-01', monthPrefix + '-31', ['date', 'name', 'memo', 'id']) // [추가] 행사 예정 (행사 달력 앱에서 입력)
+      ]).then(r => { pastCal.srv[monthPrefix] = r[0] || []; pastCal.plans[monthPrefix] = r[1] || []; pastCal.srvState[monthPrefix] = Date.now(); })
+        .catch(() => { pastCal.srvState[monthPrefix] = 0; })
+        .then(() => { if (document.getElementById('pastEventsModal').style.display === 'flex') renderPastCal(); });
+    }
     function openPastEventsModal() {
-      const list = document.getElementById('pastEventsList'); list.innerHTML = '';
-      if (pastEvents.length === 0) list.innerHTML = '<div style="text-align:center; padding:20px; color:#666; font-size:14px;">저장된 과거 행사 내역이 없습니다.</div>';
-      else {
-        [...pastEvents].reverse().forEach((ev, i) => {
-          const actualIdx = pastEvents.length - 1 - i;
-          let tSales = 0, tCoup = 0, tClaim = 0;
-          ev.history.forEach(ord => { if (ord.cancelled) return; ord.items.forEach(it => {
-            if(it.isC) { const b = getBase(it, ev.baseCouponVal); tCoup += it.qty; tClaim += (b + getEx(it, b)) * it.qty; }
-            else tSales += (it.p * it.qty);
-          }); });
-          const kindBadge = ev.kind === 'COUP' ? '<span style="background:#ff9800; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:6px;">쿠폰</span>'
-                          : ev.kind === 'REG' ? '<span style="background:#2e7d32; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:6px;">일반</span>' : '';
-          const summary = ev.kind === 'COUP' ? `쿠폰: <span style="color:#e65100">${tCoup}장</span> / 청구: <span style="color:#e65100">${tClaim.toLocaleString()}원</span>`
-                        : ev.kind === 'REG' ? `매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span>`
-                        : `매출: <span style="color:#1b5e20">${tSales.toLocaleString()}원</span> / 쿠폰: <span style="color:#e65100">${tCoup}장</span>`;
-          list.innerHTML += `<div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:10px; margin-bottom:10px;"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;"><div><div style="font-size:16px; font-weight:900; color:#0288d1;">${kindBadge}${ev.device ? `<span style="background:#495057; color:#fff; padding:2px 6px; border-radius:4px; font-size:12px; margin-right:6px;">${ev.device}</span>` : ''}${ev.eventName}</div><div style="font-size:12px; color:#555; margin-top:2px;">${ev.dateStr} ${ev.timeStr}</div></div><button style="background:#e03131; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer; font-weight:bold;" onclick="deletePastEvent(${actualIdx})">삭제</button></div><div style="font-size:13px; font-weight:bold; color:#333; margin-bottom:8px;">${summary}</div><button style="width:100%; height:38px; background:#495057; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="viewPastReceipt(${actualIdx})">🧾 마감 영수증 보기</button></div>`;
-        });
+      const now = new Date();
+      if (!pastCal.y) { pastCal.y = now.getFullYear(); pastCal.m = now.getMonth(); }
+      if (!pastCal.sel) {
+        // 처음 열면: 오늘 기록이 있으면 오늘, 아니면 가장 최근 마감한 날
+        const today = padDate(now); let latest = '';
+        pastEvents.forEach(ev => { const k = evDateKey(ev); if (k > latest) latest = k; });
+        const pick = pastEvents.some(ev => evDateKey(ev) === today) ? today : latest;
+        if (pick) { pastCal.sel = pick; pastCal.y = +pick.slice(0, 4); pastCal.m = +pick.slice(5, 7) - 1; }
       }
       document.getElementById('pastEventsModal').style.display = 'flex';
+      renderPastCal();
     }
+    function moveCalMonth(d) { pastCal.m += d; if (pastCal.m < 0) { pastCal.m = 11; pastCal.y--; } if (pastCal.m > 11) { pastCal.m = 0; pastCal.y++; } renderPastCal(); }
+    function pickCalDay(k) { pastCal.sel = k; renderPastCal(); }
+    function renderPastCal() {
+      const y = pastCal.y, m = pastCal.m, mp = `${y}-${String(m + 1).padStart(2, '0')}`;
+      loadCalServer(mp);
+      const recs = calRecords(mp), today = padDate(new Date());
+      const first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+      let h = `<div class="cal-head"><button onclick="moveCalMonth(-1)">◀</button><div class="cal-title">${y}년 ${m + 1}월</div><button onclick="moveCalMonth(1)">▶</button></div><div class="cal-grid">`;
+      ['일', '월', '화', '수', '목', '금', '토'].forEach((w, i) => { h += `<div class="cal-wd" style="${i === 0 ? 'color:#e03131;' : i === 6 ? 'color:#1c7ed6;' : ''}">${w}</div>`; });
+      for (let i = 0; i < first; i++) h += `<div class="cal-day other"></div>`;
+      for (let d = 1; d <= days; d++) {
+        const k = `${mp}-${String(d).padStart(2, '0')}`, r = recs[k] || [];
+        const hasR = r.some(x => x.kind === 'REG'), hasC = r.some(x => x.kind === 'COUP');
+        const names = []; r.forEach(x => { if (x.name && names.indexOf(x.name) < 0) names.push(x.name); });
+        const pl = (pastCal.plans[mp] || []).filter(x => normDate(x.date) === k);
+        h += `<div class="cal-day${r.length ? ' has' : ''}${k === today ? ' today' : ''}${k === pastCal.sel ? ' sel' : ''}" onclick="pickCalDay('${k}')"><span class="cal-num">${d}</span><span class="cal-dots">${hasR ? '<span class="cal-dot dot-reg"></span>' : ''}${hasC ? '<span class="cal-dot dot-coup"></span>' : ''}</span><div class="cal-name">${names.join(', ')}</div>${pl.map(x => `<div class="cal-plan">${x.name}</div>`).join('')}</div>`;
+      }
+      const tail = (7 - (first + days) % 7) % 7; for (let i = 0; i < tail; i++) h += `<div class="cal-day other"></div>`;
+      const st = pastCal.srvState[mp];
+      h += `</div><div class="cal-legend"><span><span class="cal-dot dot-reg"></span> 일반 판매 &nbsp; <span class="cal-dot dot-coup"></span> 쿠폰 판매 &nbsp; <span class="cal-plan" style="display:inline-block;">예정</span> 행사 예정</span><span>${!cloudRead() ? '이 기기 기록만' : st === 'loading' ? '서버 기록 불러오는 중…' : st ? '전체 기기 기록 포함' : '서버 연결 안 됨 · 이 기기 기록만'}</span></div>`;
+      document.getElementById('pastCal').innerHTML = h;
+      // 선택한 날 목록
+      const list = document.getElementById('pastEventsList');
+      const sel = pastCal.sel;
+      if (!sel) { list.innerHTML = '<div style="text-align:center; padding:14px; color:#666; font-size:14px;">' + (pastEvents.length ? '날짜를 누르면 그날 마감 기록이 나옵니다.' : '저장된 과거 행사 내역이 없습니다.') + '</div>'; return; }
+      const sm = sel.slice(0, 7), r = (calRecords(sm)[sel] || []);
+      const dd = new Date(+sel.slice(0, 4), +sel.slice(5, 7) - 1, +sel.slice(8, 10));
+      let lh = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><b style="font-size:15px;">${+sel.slice(5, 7)}월 ${+sel.slice(8, 10)}일 (${'일월화수목금토'[dd.getDay()]})</b>${cloudRead() ? `<button style="height:32px; padding:0 10px; background:#1864ab; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:13px; cursor:pointer;" onclick="openIntegratedFor('${sel}')">🌐 이 날 통합 영수증</button>` : ''}</div>`;
+      (pastCal.plans[sm] || []).filter(x => normDate(x.date) === sel).forEach(x => { lh += `<div style="background:#f1f8ff; border:1px solid #a5d8ff; border-radius:8px; padding:8px 10px; margin-bottom:8px;"><b style="font-size:15px;"><span class="cal-plan" style="display:inline-block; font-size:12px;">예정</span> ${x.name}</b>${x.memo ? `<div style="font-size:12px; color:#555; margin-top:3px; white-space:pre-wrap;">${x.memo}</div>` : ''}</div>`; });
+      if (!r.length) lh += '<div style="text-align:center; padding:10px; color:#666; font-size:13px;">이 날은 마감 기록이 없습니다.</div>';
+      r.filter(x => x.idx !== null).sort((a, b) => b.idx - a.idx).forEach(x => { lh += pastCardHtml(pastEvents[x.idx], x.idx); });
+      const others = r.filter(x => x.idx === null);
+      if (others.length) lh += `<div style="font-size:12px; color:#555; margin:4px 0 6px;">다른 기기 마감 (영수증은 통합 영수증에서 확인):</div>` + others.map(x => `<div style="background:#f1f3f5; border-radius:6px; padding:6px 8px; margin-bottom:4px; font-size:13px; font-weight:bold;"><span class="cal-dot ${x.kind === 'COUP' ? 'dot-coup' : 'dot-reg'}"></span> ${x.device || '?'} · ${x.kind === 'COUP' ? '쿠폰' : '일반'} · ${x.name || ''}</div>`).join('');
+      list.innerHTML = lh;
+    }
+    function openIntegratedFor(k) { document.getElementById('intDate').value = k; openIntegrated(); }
     function closePastEventsModal() { document.getElementById('pastEventsModal').style.display = 'none'; }
-    function deletePastEvent(idx) { if(!confirm("이 과거 마감 기록을 이 기기에서 삭제하시겠습니까?" + (cloudRead() ? "\n(서버에 백업된 기록은 남아 있어 통합 영수증에는 계속 나옵니다)" : ""))) return; pastEvents.splice(idx, 1); safeSet('coffee_past_events', JSON.stringify(pastEvents)); openPastEventsModal(); }
+    function deletePastEvent(idx) { if(!confirm("이 과거 마감 기록을 이 기기에서 삭제하시겠습니까?" + (cloudRead() ? "\n(서버에 백업된 기록은 남아 있어 통합 영수증에는 계속 나옵니다)" : ""))) return; pastEvents.splice(idx, 1); safeSet('coffee_past_events', JSON.stringify(pastEvents)); renderPastCal(); }
     function viewPastReceipt(idx) { closePastEventsModal(); showReceipt(pastEvents[idx]); }
 
     function showReceipt(histData = null) {
@@ -1889,7 +1984,8 @@
       const R = aggregateIntegrated(kind, ev.docs, op.docs, dv.docs, date);
       const won = v => v.toLocaleString() + '원';
       const fmtT = t => t ? new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-      let h = `<div style="text-align:center; font-size:12px; color:#555;">${eventName}${(ev.fromCache || op.fromCache) ? ' · <b style="color:#e67700">오프라인: 마지막으로 받은 데이터 기준</b>' : ''}</div>`;
+      const evNames = []; ev.docs.forEach(e => { if (e.kind === kind && normDate(e.dateKey) === date && e.eventName && evNames.indexOf(e.eventName) < 0) evNames.push(e.eventName); }); // [수정] 그날 실제 행사명
+      let h = `<div style="text-align:center; font-size:14px; font-weight:900; color:#222; margin-bottom:2px;">${evNames.length ? evNames.join(' · ') : '(행사명 없음)'}</div><div style="text-align:center; font-size:12px; color:#555;">${(ev.fromCache || op.fromCache) ? '<b style="color:#e67700">오프라인: 마지막으로 받은 데이터 기준</b>' : ''}</div>`;
       const cls = isC ? 'int-sec int-coup' : 'int-sec int-reg';
       // 기기별
       h += `<div class="${cls}"><div style="font-weight:900; margin-bottom:6px;">기기별 (${date})</div><table><thead><tr style="border-bottom:1px solid #999; color:#555;"><th style="text-align:left;">기기</th><th style="text-align:right;">주문</th>` +
@@ -2167,6 +2263,15 @@
       signOut: function () { auth = null; saveAuth(); subs = []; emitUser(); return Promise.resolve(); },
       set: function (p, d, merge) { var data = JSON.parse(JSON.stringify(d)); return setDoc(p, data, merge).then(function () { applyLocal(p, data, merge); }); },
       query: function (col, conds) { return runQuery(col, conds).then(function (docs) { return { docs: docs, fromCache: false }; }); },
+      // [추가] 달력용: field 값이 lo~hi 사이인 문서의 일부 칸만 조회 (판매·정산 계산에는 쓰지 않음)
+      queryRange: function (col, field, lo, hi, fields) {
+        var f = function (op, v) { return { fieldFilter: { field: { fieldPath: field }, op: op, value: enc(v) } }; };
+        var sq = { from: [{ collectionId: col }], where: { compositeFilter: { op: 'AND', filters: [f('GREATER_THAN_OR_EQUAL', lo), f('LESS_THAN_OR_EQUAL', hi)] } } };
+        if (fields && fields.length) sq.select = { fields: fields.map(function (x) { return { fieldPath: x }; }) };
+        return call('POST', DOCS + '/users/' + auth.uid + ':runQuery', { structuredQuery: sq }).then(function (arr) {
+          return (arr || []).filter(function (x) { return x && x.document; }).map(function (x) { return decFields(x.document.fields || {}); });
+        });
+      },
       listen: function (p, cb, opt) { var s = { path: p, cb: cb, probe: opt && opt.probe }; subs.push(s); pollOne(s); return function () { subs = subs.filter(function (x) { return x !== s; }); }; },
       listenCol: function (col, cb) { var s = { path: col, cb: cb, col: true }; subs.push(s); pollOne(s); return function () { subs = subs.filter(function (x) { return x !== s; }); }; },
       claimDevice: function (code, inst, force) {

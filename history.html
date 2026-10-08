@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="행사 달력">
+<meta name="theme-color" content="#1864ab">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<title>행사 달력</title>
+<!--
+  커피트럭 행사 달력 (기록 보기 전용 앱)
+  - 서버에 모인 마감 기록을 달력으로 보기, 날짜별 통합 영수증, 인쇄/PDF
+  - 앞으로의 행사 예정 일정 추가/수정/삭제 (서버 users/{uid}/plans)
+  - 핸드폰 달력 앱으로 내보내기 (.ics)
+  - 판매·주문·마감 기록은 읽기만 함 (절대 쓰지 않음). 쓰는 것은 '예정 일정'뿐
+  - 구형 아이패드(iOS 12) 사파리에서도 돌아가도록 ES2017 문법만 사용
+-->
+<style>
+  :root { --reg: #2e7d32; --coup: #ff9800; --plan: #1c7ed6; --ink: #212529; --sub: #495057; --line: #dee2e6; --bg: #f1f3f5; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; -webkit-text-size-adjust: 100%; }
+  body { padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+  input, select, textarea { -webkit-user-select: text; user-select: text; font-size: 16px; }
+  button { font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 10px 12px 40px; }
+  .top { display: flex; justify-content: space-between; align-items: center; padding: 6px 0 10px; }
+  .top h1 { font-size: 21px; font-weight: 900; }
+  .top .who { font-size: 12px; color: var(--sub); text-align: right; }
+  .top .who button { margin-top: 3px; background: #868e96; color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: bold; }
+  .card { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 12px; }
+  .btn { height: 44px; border: none; border-radius: 10px; font-size: 15px; font-weight: 900; color: #fff; }
+  .btn-blue { background: var(--plan); } .btn-dark { background: #343a40; } .btn-gray { background: #868e96; } .btn-red { background: #e03131; } .btn-green { background: var(--reg); } .btn-orange { background: #e8590c; }
+  .row2 { display: flex; justify-content: space-between; }
+  .row2 > * { width: 49%; }
+
+  /* 로그인 */
+  #loginView .card { margin-top: 40px; padding: 20px; }
+  #loginView h2 { font-size: 18px; margin-bottom: 6px; }
+  #loginView p { font-size: 13px; color: var(--sub); margin-bottom: 14px; line-height: 1.5; }
+  .fld { margin-bottom: 10px; }
+  .fld label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: var(--sub); }
+  .fld input, .fld textarea { width: 100%; height: 46px; border: 1px solid #ced4da; border-radius: 8px; padding: 0 12px; background: #fff; }
+  .fld textarea { height: 70px; padding: 10px 12px; resize: vertical; }
+  .msg { font-size: 13px; color: #c92a2a; min-height: 18px; margin: 4px 0 8px; }
+
+  /* 달력 */
+  .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cal-head button { width: 52px; height: 42px; background: #495057; color: #fff; border: none; border-radius: 10px; font-size: 18px; font-weight: 900; }
+  .cal-title { font-size: 20px; font-weight: 900; text-align: center; }
+  .cal-title small { display: block; font-size: 11px; font-weight: bold; color: var(--plan); }
+  .cal-grid { display: flex; flex-wrap: wrap; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+  .cal-grid > div { width: 14.2857%; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .cal-wd { text-align: center; font-size: 12px; font-weight: 900; padding: 4px 0; background: #f8f9fa; }
+  .cal-day { height: 76px; padding: 2px 3px; overflow: hidden; background: #fff; position: relative; }
+  .cal-day.other { background: #f8f9fa; }
+  .cal-day.has { background: #fffbe6; }
+  .cal-day.sel { box-shadow: inset 0 0 0 3px var(--plan); }
+  .cal-num { font-size: 13px; font-weight: 900; line-height: 17px; }
+  .cal-day.today .cal-num { background: var(--plan); color: #fff; border-radius: 9px; padding: 0 5px; display: inline-block; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin: 0 1px; vertical-align: middle; }
+  .dot-reg { background: var(--reg); } .dot-coup { background: var(--coup); }
+  .cal-name { font-size: 10.5px; font-weight: bold; line-height: 12px; color: #333; word-break: break-all; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .cal-plan { margin-top: 1px; font-size: 10px; font-weight: bold; line-height: 12px; color: #fff; background: var(--plan); border-radius: 3px; padding: 1px 3px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .legend { display: flex; flex-wrap: wrap; justify-content: space-between; font-size: 11px; color: var(--sub); margin-top: 6px; }
+  .legend .tag { display: inline-block; background: var(--plan); color: #fff; border-radius: 3px; padding: 0 4px; font-weight: bold; }
+  .status { font-size: 11px; color: var(--sub); }
+
+  /* 선택한 날 */
+  .day-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .day-title b { font-size: 17px; }
+  .day-title button { height: 36px; padding: 0 12px; border: none; border-radius: 8px; background: var(--plan); color: #fff; font-weight: 900; font-size: 13px; }
+  .sec-t { font-size: 13px; font-weight: 900; color: var(--sub); margin: 10px 0 6px; }
+  .item { border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 8px; background: #fff; }
+  .item .nm { font-size: 16px; font-weight: 900; }
+  .item .meta { font-size: 12px; color: var(--sub); margin-top: 3px; }
+  .item .sum { font-size: 14px; font-weight: bold; margin-top: 6px; }
+  .badge { display: inline-block; color: #fff; border-radius: 4px; padding: 1px 6px; font-size: 12px; font-weight: bold; margin-right: 5px; vertical-align: middle; }
+  .b-reg { background: var(--reg); } .b-coup { background: var(--coup); } .b-dev { background: #495057; } .b-plan { background: var(--plan); }
+  .item.plan { border-color: #a5d8ff; background: #f1f8ff; }
+  .item .acts { margin-top: 8px; display: flex; justify-content: flex-end; }
+  .item .acts button { height: 34px; padding: 0 14px; border: none; border-radius: 8px; color: #fff; font-weight: bold; font-size: 13px; margin-left: 6px; }
+  .wheel { height: 48px; font-size: 18px; font-weight: bold; border: 1px solid #ced4da; border-radius: 10px; background: #fff; padding: 0 8px; color: var(--ink); }
+  .res { display: block; width: 100%; text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px; margin-bottom: 6px; }
+  .res .d { font-size: 13px; font-weight: 900; color: var(--sub); }
+  .res .n { font-size: 16px; font-weight: 900; margin-top: 2px; }
+  .res .n mark { background: #ffec99; color: inherit; }
+  .res.plan { background: #f1f8ff; border-color: #a5d8ff; }
+  .res-h { font-size: 12px; font-weight: 900; color: var(--sub); margin: 8px 0 4px; }
+  .empty { text-align: center; color: #868e96; font-size: 13px; padding: 10px; }
+
+  /* 창 */
+  .ov { display: none; position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 100; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 10px; }
+  .ov .box { background: #fff; border-radius: 14px; max-width: 560px; margin: 0 auto; padding: 16px; }
+  .ov h3 { font-size: 18px; font-weight: 900; margin-bottom: 12px; }
+
+  /* 통합 영수증 (포스와 같은 모양) */
+  #intBox { font-family: monospace; }
+  .kind-tabs { display: flex; margin-bottom: 8px; }
+  .kind-tabs button { width: 50%; height: 40px; border: none; font-weight: 900; font-size: 14px; background: #e9ecef; color: #495057; }
+  .kind-tabs button:first-child { border-radius: 8px 0 0 8px; } .kind-tabs button:last-child { border-radius: 0 8px 8px 0; }
+  .kind-tabs button.on-reg { background: var(--reg); color: #fff; } .kind-tabs button.on-coup { background: var(--coup); color: #fff; }
+  .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .int-sec { border-radius: 6px; padding: 10px; margin-top: 10px; }
+  .int-sec table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .int-sec td, .int-sec th { padding: 4px 3px; }
+  .int-reg { background: #e8f5e9; border: 1px solid #c8e6c9; }
+  .int-coup { background: #fff3e0; border: 1px solid #ffe0b2; }
+  .int-reg tbody tr:nth-child(even) td { background: #dcefdc; }
+  .int-coup tbody tr:nth-child(even) td { background: #ffe8cc; }
+
+  @media print {
+    body * { visibility: hidden !important; }
+    #intOv, #intOv * { visibility: visible !important; }
+    #intOv { position: absolute !important; left: 0; top: 0; background: none !important; padding: 0 !important; overflow: visible !important; }
+    #intOv .box { max-width: none !important; box-shadow: none !important; }
+    .noprint { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>📅 행사 달력</h1>
+    <div class="who" id="who"></div>
+  </div>
+
+  <!-- 로그인 -->
+  <div id="loginView" style="display:none;">
+    <div class="card">
+      <h2>로그인</h2>
+      <p>포스 서버 백업에 쓰는 계정으로 로그인하세요.<br>이 앱은 기록을 <b>보기만</b> 합니다. 판매 기록은 바꾸지 않아요.</p>
+      <div class="fld"><label>이메일</label><input type="email" id="lgEmail" autocomplete="username" autocapitalize="off"></div>
+      <div class="fld"><label>비밀번호</label><input type="password" id="lgPw" autocomplete="current-password"></div>
+      <div class="msg" id="lgMsg"></div>
+      <button class="btn btn-blue" style="width:100%;" onclick="doLogin()">로그인</button>
+    </div>
+  </div>
+
+  <!-- 달력 -->
+  <div id="mainView" style="display:none;">
+    <div class="row2" style="margin-bottom:10px;">
+      <button class="btn btn-dark" onclick="openSearch('name')">🔍 행사명 검색</button>
+      <button class="btn btn-dark" onclick="openSearch('date')">📅 날짜로 찾기</button>
+    </div>
+    <div class="card">
+      <div class="cal-head">
+        <button onclick="moveMonth(-1)">◀</button>
+        <div class="cal-title" id="calTitle"></div>
+        <button onclick="moveMonth(1)">▶</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="legend">
+        <span><span class="dot dot-reg"></span> 일반 판매 &nbsp;<span class="dot dot-coup"></span> 쿠폰 판매 &nbsp;<span class="tag">예정</span> 행사 예정</span>
+        <span class="status" id="calStatus"></span>
+      </div>
+    </div>
+    <div class="card" id="dayCard"></div>
+    <div class="row2" style="margin-bottom:12px;">
+      <button class="btn btn-blue" onclick="openPlan(null)">＋ 행사 예정 추가</button>
+      <button class="btn btn-dark" onclick="openIcs()">📆 달력 앱으로 내보내기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 예정 일정 추가/수정 -->
+<div class="ov" id="planOv">
+  <div class="box">
+    <h3 id="planTitle">행사 예정 추가</h3>
+    <input type="hidden" id="planId">
+    <div class="fld"><label>날짜</label><input type="date" id="planDate"></div>
+    <div class="fld"><label>행사 이름</label><input type="text" id="planName" placeholder="예) 논산 딸기축제"></div>
+    <div class="fld"><label>메모 (장소·시간·연락처 등)</label><textarea id="planMemo" placeholder="예) 시민공원 B구역, 10시~21시, 담당 김주무관"></textarea></div>
+    <div class="msg" id="planMsg"></div>
+    <div class="row2">
+      <button class="btn btn-blue" onclick="savePlan()">저장</button>
+      <button class="btn btn-gray" onclick="closeOv('planOv')">취소</button>
+    </div>
+    <button class="btn btn-red" id="planDel" style="width:100%; margin-top:10px;" onclick="deletePlan()">이 예정 삭제</button>
+  </div>
+</div>
+
+<!-- 통합 영수증 -->
+<div class="ov" id="intOv">
+  <div class="box" id="intBox">
+    <div class="kind-tabs noprint"><button id="tabReg" onclick="setIntKind('REG')">일반 판매</button><button id="tabCoup" onclick="setIntKind('COUP')">쿠폰 판매</button></div>
+    <h2 style="font-size:19px; font-weight:900; text-align:center; margin-bottom:4px;" id="intTitle"></h2>
+    <div id="intBody" style="font-size:13px;"></div>
+    <div class="row2 noprint" style="margin-top:14px;">
+      <button class="btn btn-green" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
+      <button class="btn btn-dark" onclick="closeOv('intOv')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 검색 -->
+<div class="ov" id="searchOv">
+  <div class="box">
+    <div class="kind-tabs"><button id="sTabName" onclick="setSearchTab('name')">🔍 행사명</button><button id="sTabDate" onclick="setSearchTab('date')">📅 날짜</button></div>
+    <div id="sName">
+      <div class="fld" style="display:flex; margin-top:6px;">
+        <input type="search" id="sQuery" placeholder="행사 이름 일부만 써도 돼요 (예: 딸기)" oninput="runSearch()" style="flex:1;">
+      </div>
+      <div class="status" id="sStatus" style="margin-bottom:6px;"></div>
+    </div>
+    <div id="sDate" style="display:none; margin-top:6px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+        <select id="sY" onchange="fixDays(); runDateList()" class="wheel" style="width:36%;"></select>
+        <select id="sM" onchange="fixDays(); runDateList()" class="wheel" style="width:30%;"></select>
+        <select id="sD" class="wheel" style="width:30%;"></select>
+      </div>
+      <button class="btn btn-blue" style="width:100%; margin-bottom:10px;" onclick="goPickedDate()">이 날짜 보기</button>
+      <div class="status" id="sDStatus" style="margin-bottom:6px;"></div>
+    </div>
+    <div id="sResults" style="max-height:55vh; overflow-y:auto; -webkit-overflow-scrolling:touch;"></div>
+    <button class="btn btn-gray" style="width:100%; margin-top:10px;" onclick="closeOv('searchOv')">닫기</button>
+  </div>
+</div>
+
+<!-- 달력 앱으로 내보내기 -->
+<div class="ov" id="icsOv">
+  <div class="box">
+    <h3>📆 달력 앱으로 내보내기</h3>
+    <p style="font-size:13px; color:#495057; line-height:1.6; margin-bottom:10px;">행사 예정과 지난 행사(장사한 날)를 달력 파일로 만들어 핸드폰 달력(아이폰 캘린더, 구글 캘린더 등)에 넣습니다. 새 일정이 생기면 다시 내보내세요.</p>
+    <label style="display:flex; align-items:center; font-size:14px; font-weight:bold; margin-bottom:8px;"><input type="checkbox" id="icsPlans" checked style="width:20px; height:20px; margin-right:8px;"> 행사 예정</label>
+    <label style="display:flex; align-items:center; font-size:14px; font-weight:bold; margin-bottom:8px;"><input type="checkbox" id="icsPast" checked style="width:20px; height:20px; margin-right:8px;"> 지난 행사 (장사한 날)</label>
+    <div class="msg" id="icsMsg" style="color:#495057;"></div>
+    <div class="row2">
+      <button class="btn btn-blue" onclick="exportIcs()">내보내기</button>
+      <button class="btn btn-gray" onclick="closeOv('icsOv')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ================= 서버 통신 (포스와 같은 Firebase 프로젝트, REST 직접 통신) =================
+  var PROJECT = 'coffee-pos-26941';
+  var API_KEY = 'AIzaSyDvQSO3L58N_jk88TArVi6ELE5MPwstF_o';
+  var DOCS = 'https://firestore.googleapis.com/v1/projects/' + PROJECT + '/databases/(default)/documents';
+  var AUTH_KEY = 'history_auth';            // 포스 로그인(coffee_auth)과 따로 보관 — 이 앱에서 로그아웃해도 포스는 그대로
+  var auth = null;
+  try { auth = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (e) { auth = null; }
+
+  function err(code, msg) { var e = new Error(msg || code); e.code = code; return e; }
+  function saveAuth() { try { if (auth) localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); else localStorage.removeItem(AUTH_KEY); } catch (e) {} }
+  function enc(v) {
+    if (v === null || v === undefined) return { nullValue: null };
+    if (typeof v === 'boolean') return { booleanValue: v };
+    if (typeof v === 'number') return (Number.isInteger(v) && Math.abs(v) <= 9007199254740991) ? { integerValue: String(v) } : { doubleValue: v };
+    if (typeof v === 'string') return { stringValue: v };
+    if (Array.isArray(v)) return { arrayValue: { values: v.map(enc) } };
+    if (typeof v === 'object') return { mapValue: { fields: encFields(v) } };
+    return { stringValue: String(v) };
+  }
+  function encFields(o) { var f = {}; Object.keys(o).forEach(function (k) { if (o[k] !== undefined) f[k] = enc(o[k]); }); return f; }
+  function dec(v) {
+    if (!v) return null;
+    if ('nullValue' in v) return null;
+    if ('booleanValue' in v) return v.booleanValue;
+    if ('integerValue' in v) return Number(v.integerValue);
+    if ('doubleValue' in v) return Number(v.doubleValue);
+    if ('stringValue' in v) return v.stringValue;
+    if ('arrayValue' in v) return (v.arrayValue.values || []).map(dec);
+    if ('mapValue' in v) return decFields(v.mapValue.fields || {});
+    if ('timestampValue' in v) return v.timestampValue;
+    return null;
+  }
+  function decFields(f) { var o = {}; Object.keys(f || {}).forEach(function (k) { o[k] = dec(f[k]); }); return o; }
+
+  function signIn(email, pw) {
+    return fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + API_KEY, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: pw, returnSecureToken: true })
+    }).catch(function () { throw err('network', '인터넷 연결 실패'); }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw err('auth', (j && j.error && j.error.message) || ('HTTP ' + r.status));
+        auth = { uid: j.localId, email: j.email, idToken: j.idToken, refreshToken: j.refreshToken, exp: Date.now() + Number(j.expiresIn || 3600) * 1000 };
+        saveAuth();
+      });
+    });
+  }
+  function getToken() {
+    if (!auth) return Promise.reject(err('unauthenticated', '로그인 필요'));
+    if (auth.idToken && auth.exp - 60000 > Date.now()) return Promise.resolve(auth.idToken);
+    return fetch('https://securetoken.googleapis.com/v1/token?key=' + API_KEY, {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(auth.refreshToken)
+    }).catch(function () { throw err('unavailable', '인터넷 연결 실패'); }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) {
+          var m = (j && j.error && j.error.message) || ('HTTP ' + r.status);
+          if (/TOKEN_EXPIRED|USER_DISABLED|USER_NOT_FOUND|INVALID_REFRESH_TOKEN/.test(m)) { auth = null; saveAuth(); showView(); }
+          throw err('unauthenticated', m);
+        }
+        auth.idToken = j.id_token; auth.refreshToken = j.refresh_token; auth.exp = Date.now() + Number(j.expires_in || 3600) * 1000;
+        saveAuth(); return auth.idToken;
+      });
+    });
+  }
+  function call(method, url, body) {
+    return getToken().then(function (tok) {
+      var opt = { method: method, headers: { 'Authorization': 'Bearer ' + tok } };
+      if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+      return fetch(url, opt).catch(function () { throw err('unavailable', '인터넷 연결 실패'); });
+    }).then(function (r) {
+      if (r.ok) return r.json().catch(function () { return {}; });
+      if (r.status === 404) return null;
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        var st = (j && j.error && j.error.status) || ('HTTP_' + r.status);
+        throw err(st.toLowerCase().replace(/_/g, '-'), (j && j.error && j.error.message) || st);
+      });
+    });
+  }
+  function docUrl(p) { return DOCS + '/users/' + auth.uid + '/' + p; }
+  function runQuery(col, filters, fields) {
+    var sq = { from: [{ collectionId: col }] };
+    if (filters.length === 1) sq.where = filters[0]; else if (filters.length > 1) sq.where = { compositeFilter: { op: 'AND', filters: filters } };
+    if (fields && fields.length) sq.select = { fields: fields.map(function (x) { return { fieldPath: x }; }) };
+    return call('POST', DOCS + '/users/' + auth.uid + ':runQuery', { structuredQuery: sq }).then(function (arr) {
+      return (arr || []).filter(function (x) { return x && x.document; }).map(function (x) { return decFields(x.document.fields || {}); });
+    });
+  }
+  function ff(field, op, v) { return { fieldFilter: { field: { fieldPath: field }, op: op, value: enc(v) } }; }
+  var Cloud = {
+    range: function (col, field, lo, hi, fields) { return runQuery(col, [ff(field, 'GREATER_THAN_OR_EQUAL', lo), ff(field, 'LESS_THAN_OR_EQUAL', hi)], fields); },
+    eq: function (col, field, v) { return runQuery(col, [ff(field, 'EQUAL', v)]); },
+    all: function (col) { return runQuery(col, []); },
+    // 쓰기는 '예정 일정(plans)'만 — 판매·마감 기록은 절대 쓰지 않음
+    savePlan: function (p) { return call('PATCH', docUrl('plans/' + encodeURIComponent(p.id)), { fields: encFields(p) }); },
+    deletePlan: function (id) { return call('DELETE', docUrl('plans/' + encodeURIComponent(id))); }
+  };
+  window.__HistCloud = Cloud;
+
+  // ================= 공통 =================
+  function $(id) { return document.getElementById(id); }
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function padDate(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function normDate(s) { var m = String(s || '').match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); return m ? m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0') : ''; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function won(v) { return Number(v).toLocaleString() + '원'; }
+  var WD = '일월화수목금토';
+  function closeOv(id) { $(id).style.display = 'none'; }
+  window.closeOv = closeOv;
+
+  // ===== 포스와 똑같은 계산 (coffee_pos.html 에서 그대로 가져옴 — 바꾸지 말 것) =====
+  var baseCouponVal = 4000; // 미마감 경고 금액 계산에만 쓰임 (품목에 기준금액이 없을 때)
+  function getBase(it, fallback) { return (typeof it.base === 'number') ? it.base : fallback; }
+  function getEx(it, base) { return (typeof it.ex === 'number') ? it.ex : Math.max(0, it.p - base); }
+  function aggregateIntegrated(kind, events, openOrders, devices, date) {
+    // 순수 계산 함수 (검증용으로 분리) — 마감된 기록만 합산, 미마감은 경고로 따로
+    const isC = kind === 'COUP';
+    const per = {}, items = {};
+    const dev = d => (per[d] = per[d] || { device: d, n: 0, cancel: 0, seqs: [], card: 0, cash: 0, other: 0, total: 0, qty: 0, base: 0, extra: 0, claim: 0, openN: 0, openAmt: 0 });
+    events.filter(e => e.kind === kind && normDate(e.dateKey) === date).forEach(e => {
+      const P = dev(e.device || '?');
+      (e.history || []).forEach(o => {
+        if (!o.items.some(it => !!it.isC === isC)) return;
+        if (typeof o.seq === 'number') P.seqs.push(o.seq);
+        if (o.cancelled) { P.cancel++; return; }
+        P.n++;
+        o.items.forEach(it => {
+          if (!!it.isC !== isC) return;
+          if (isC) {
+            const b = getBase(it, e.baseCouponVal), ex = getEx(it, b), lb = b * it.qty, le = ex * it.qty;
+            P.qty += it.qty; P.base += lb; P.extra += le; P.claim += lb + le;
+            const k = `${it.n}|${it.p}|${b}`; items[k] = items[k] || { n: it.n, p: it.p, b, ex, qty: 0 }; items[k].qty += it.qty;
+          } else {
+            const v = it.p * it.qty; P.total += v;
+            if (o.payType === 'CARD') P.card += v; else if (o.payType === 'CASH') P.cash += v; else P.other += v;
+            const k = `${it.n}|${it.p}`; items[k] = items[k] || { n: it.n, p: it.p, qty: 0 }; items[k].qty += it.qty;
+          }
+        });
+      });
+    });
+    openOrders.filter(o => o.kind === kind && !o.voided && !o.cancelled && normDate(o.date) === date).forEach(o => {
+      const P = dev(o.device || '?'); P.openN++;
+      o.items.forEach(it => { if (!!it.isC !== isC) return; P.openAmt += isC ? (getBase(it, baseCouponVal) + getEx(it, getBase(it, baseCouponVal))) * it.qty : it.p * it.qty; });
+    });
+    (devices || []).forEach(d => { if (d.code) dev(d.code).lastSeen = d.lastSeen || 0; });
+    const list = Object.values(per).sort((a, b) => a.device.localeCompare(b.device));
+    const sum = f => list.reduce((s, p) => s + p[f], 0);
+    return { list, items: Object.values(items), tot: { n: sum('n'), cancel: sum('cancel'), card: sum('card'), cash: sum('cash'), other: sum('other'), total: sum('total'), qty: sum('qty'), base: sum('base'), extra: sum('extra'), claim: sum('claim'), openN: sum('openN') } };
+  }
+  window.__aggregateIntegrated = aggregateIntegrated;
+  // 마감 기록 1건의 합계 (포스 과거 내역 카드와 같은 계산)
+  function eventTotals(ev) {
+    var tSales = 0, tCoup = 0, tClaim = 0;
+    (ev.history || []).forEach(function (ord) { if (ord.cancelled) return; ord.items.forEach(function (it) {
+      if (it.isC) { var b = getBase(it, ev.baseCouponVal); tCoup += it.qty; tClaim += (b + getEx(it, b)) * it.qty; }
+      else tSales += (it.p * it.qty);
+    }); });
+    return { sales: tSales, coup: tCoup, claim: tClaim };
+  }
+  window.__eventTotals = eventTotals;
+
+  // ================= 화면 =================
+  var S = { y: 0, m: 0, sel: '', month: {}, day: {}, intKind: 'REG' };
+  function showView() {
+    var on = !!auth;
+    $('loginView').style.display = on ? 'none' : 'block';
+    $('mainView').style.display = on ? 'block' : 'none';
+    $('who').innerHTML = on ? esc(auth.email) + '<br><button onclick="doLogout()">로그아웃</button>' : '';
+    if (on) { if (!S.y) { var n = new Date(); S.y = n.getFullYear(); S.m = n.getMonth(); S.sel = padDate(n); } renderCal(); loadMonth(true); renderDay(); }
+  }
+  window.doLogin = function () {
+    var em = $('lgEmail').value.trim(), pw = $('lgPw').value;
+    if (!em || !pw) { $('lgMsg').textContent = '이메일과 비밀번호를 입력하세요.'; return; }
+    $('lgMsg').textContent = '로그인 중...';
+    signIn(em, pw).then(function () { $('lgPw').value = ''; $('lgMsg').textContent = ''; showView(); })
+      .catch(function (e) { $('lgMsg').textContent = /INVALID|PASSWORD|EMAIL_NOT_FOUND|CREDENTIAL/.test(e.message) ? '이메일 또는 비밀번호가 맞지 않습니다.' : ('로그인 실패: ' + e.message); });
+  };
+  window.doLogout = function () { if (!confirm('로그아웃할까요? (포스 로그인에는 영향 없음)')) return; auth = null; saveAuth(); S.month = {}; S.day = {}; showView(); };
+
+  function mpOf(y, m) { return y + '-' + pad2(m + 1); }
+  function loadMonth(force) {
+    var mp = mpOf(S.y, S.m), c = S.month[mp];
+    if (c && c.loading) return;
+    if (c && !force && Date.now() - c.at < 60000) return;
+    S.month[mp] = { events: c ? c.events : [], plans: c ? c.plans : [], loading: true, at: 0, err: '' };
+    renderCal();
+    Promise.all([
+      Cloud.range('events', 'dateKey', mp + '-01', mp + '-31', ['dateKey', 'eventName', 'kind', 'device', 'id']),
+      Cloud.range('plans', 'date', mp + '-01', mp + '-31')
+    ]).then(function (r) { S.month[mp] = { events: r[0], plans: r[1], loading: false, at: Date.now(), err: '' }; })
+      .catch(function (e) { var o = S.month[mp]; o.loading = false; o.err = e.message || String(e); })
+      .then(function () { renderCal(); if (S.sel.indexOf(mp) === 0) renderDay(); });
+  }
+  window.moveMonth = function (d) { S.m += d; if (S.m < 0) { S.m = 11; S.y--; } if (S.m > 11) { S.m = 0; S.y++; } renderCal(); loadMonth(false); };
+  window.pickDay = function (k) { S.sel = k; renderCal(); renderDay(); };
+
+  function renderCal() {
+    var y = S.y, m = S.m, mp = mpOf(y, m), c = S.month[mp] || { events: [], plans: [] };
+    var today = padDate(new Date()), first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+    var byDay = {}, plansBy = {};
+    c.events.forEach(function (e) { var k = normDate(e.dateKey); if (!k) return; (byDay[k] = byDay[k] || []).push(e); });
+    c.plans.forEach(function (p) { var k = normDate(p.date); if (!k) return; (plansBy[k] = plansBy[k] || []).push(p); });
+    var nPlan = 0; Object.keys(plansBy).forEach(function (k) { if (k >= today) nPlan += plansBy[k].length; });
+    $('calTitle').innerHTML = y + '년 ' + (m + 1) + '월' + (nPlan ? '<small>예정 ' + nPlan + '건</small>' : '');
+    var h = '';
+    for (var i = 0; i < 7; i++) h += '<div class="cal-wd" style="' + (i === 0 ? 'color:#e03131;' : i === 6 ? 'color:#1c7ed6;' : '') + '">' + WD[i] + '</div>';
+    for (i = 0; i < first; i++) h += '<div class="cal-day other"></div>';
+    for (var d = 1; d <= days; d++) {
+      var k = mp + '-' + pad2(d), r = byDay[k] || [], pl = plansBy[k] || [];
+      var hasR = r.some(function (e) { return e.kind === 'REG'; }), hasC = r.some(function (e) { return e.kind === 'COUP'; });
+      var names = []; r.forEach(function (e) { if (e.eventName && names.indexOf(e.eventName) < 0) names.push(e.eventName); });
+      h += '<div class="cal-day' + (r.length ? ' has' : '') + (k === today ? ' today' : '') + (k === S.sel ? ' sel' : '') + '" onclick="pickDay(\'' + k + '\')">' +
+        '<span class="cal-num">' + d + '</span> ' + (hasR ? '<span class="dot dot-reg"></span>' : '') + (hasC ? '<span class="dot dot-coup"></span>' : '') +
+        '<div class="cal-name">' + esc(names.join(', ')) + '</div>' +
+        pl.map(function (p) { return '<div class="cal-plan">' + esc(p.name) + '</div>'; }).join('') + '</div>';
+    }
+    var tail = (7 - (first + days) % 7) % 7; for (i = 0; i < tail; i++) h += '<div class="cal-day other"></div>';
+    $('calGrid').innerHTML = h;
+    $('calStatus').textContent = c.loading ? '서버에서 불러오는 중…' : c.err ? '⚠ 불러오기 실패 (인터넷 확인)' : '';
+  }
+
+  function loadDay(k, force) {
+    var c = S.day[k];
+    if (c && (c.loading || (!force && Date.now() - c.at < 60000))) return;
+    S.day[k] = { events: c ? c.events : null, loading: true, at: 0, err: '' };
+    Cloud.eq('events', 'dateKey', k).then(function (evs) { S.day[k] = { events: evs, loading: false, at: Date.now(), err: '' }; })
+      .catch(function (e) { var o = S.day[k]; o.loading = false; o.err = e.message || String(e); })
+      .then(function () { if (S.sel === k) renderDay(); });
+  }
+  function renderDay() {
+    var k = S.sel; if (!k) { $('dayCard').innerHTML = '<div class="empty">날짜를 누르세요.</div>'; return; }
+    loadDay(k, false);
+    var c = S.day[k] || {}, mp = k.slice(0, 7), mc = S.month[mp] || { plans: [] };
+    var dd = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10));
+    var h = '<div class="day-title"><b>' + (+k.slice(5, 7)) + '월 ' + (+k.slice(8, 10)) + '일 (' + WD[dd.getDay()] + ')</b><button onclick="openPlan(null, \'' + k + '\')">＋ 이 날 예정</button></div>';
+    // 예정
+    var pl = mc.plans.filter(function (p) { return normDate(p.date) === k; });
+    if (pl.length) {
+      h += '<div class="sec-t">행사 예정</div>';
+      pl.forEach(function (p) {
+        h += '<div class="item plan"><div class="nm"><span class="badge b-plan">예정</span>' + esc(p.name) + '</div>' + (p.memo ? '<div class="meta" style="white-space:pre-wrap;">' + esc(p.memo) + '</div>' : '') +
+          '<div class="acts"><button style="background:#1c7ed6;" onclick="openPlan(\'' + esc(p.id) + '\')">수정</button></div></div>';
+      });
+    }
+    // 마감 기록
+    h += '<div class="sec-t">마감 기록 (전체 기기)</div>';
+    if (c.loading && !c.events) h += '<div class="empty">불러오는 중…</div>';
+    else if (c.err && !c.events) h += '<div class="empty" style="color:#c92a2a;">불러오기 실패: ' + esc(c.err) + '</div>';
+    else {
+      var evs = (c.events || []).slice().sort(function (a, b) { return (a.device || '').localeCompare(b.device || '') || (a.id || 0) - (b.id || 0); });
+      if (!evs.length) h += '<div class="empty">이 날은 마감 기록이 없습니다.</div>';
+      evs.forEach(function (ev) {
+        var t = eventTotals(ev), isC = ev.kind === 'COUP';
+        h += '<div class="item"><div class="nm"><span class="badge ' + (isC ? 'b-coup">쿠폰' : 'b-reg">일반') + '</span>' + (ev.device ? '<span class="badge b-dev">' + esc(ev.device) + '</span>' : '') + esc(ev.eventName) + '</div>' +
+          '<div class="meta">' + esc(ev.dateStr || '') + ' ' + esc(ev.timeStr || '') + '</div>' +
+          '<div class="sum">' + (isC ? '쿠폰 <span style="color:#e65100">' + t.coup + '장</span> / 청구 <span style="color:#e65100">' + won(t.claim) + '</span>' : '매출 <span style="color:#1b5e20">' + won(t.sales) + '</span>') + '</div></div>';
+      });
+      if (evs.length) {
+        var hasR = evs.some(function (e) { return e.kind === 'REG'; }), hasC = evs.some(function (e) { return e.kind === 'COUP'; });
+        h += '<div class="row2" style="margin-top:4px;">' +
+          '<button class="btn btn-green" ' + (hasR ? '' : 'disabled style="opacity:.35;"') + ' onclick="openInt(\'REG\')">🧾 일반 통합 영수증</button>' +
+          '<button class="btn btn-orange" ' + (hasC ? '' : 'disabled style="opacity:.35;"') + ' onclick="openInt(\'COUP\')">🧾 쿠폰 통합 영수증</button></div>';
+      }
+    }
+    $('dayCard').innerHTML = h;
+  }
+
+  // ----- 통합 영수증 (포스와 같은 계산·모양) -----
+  window.openInt = function (kind) { S.intKind = kind; $('intOv').style.display = 'block'; renderInt(); };
+  window.setIntKind = function (kind) { S.intKind = kind; renderInt(); };
+  function renderInt() {
+    var date = S.sel, kind = S.intKind, isC = kind === 'COUP';
+    $('tabReg').className = isC ? '' : 'on-reg'; $('tabCoup').className = isC ? 'on-coup' : '';
+    $('intTitle').textContent = isC ? '[ 쿠폰 통합 정산 (전체 기기) ]' : '[ 일반 통합 매출 (전체 기기) ]';
+    var body = $('intBody'); body.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">서버에서 불러오는 중...</div>';
+    Promise.all([Cloud.eq('events', 'dateKey', date), Cloud.eq('orders', 'closed', false), Cloud.all('devices')]).then(function (r) {
+      if (S.sel !== date || S.intKind !== kind) return;
+      var R = aggregateIntegrated(kind, r[0], r[1], r[2], date);
+      var fmtT = function (t) { return t ? new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'; };
+      var evNames = []; r[0].forEach(function (e) { if (e.kind === kind && normDate(e.dateKey) === date && e.eventName && evNames.indexOf(e.eventName) < 0) evNames.push(e.eventName); });
+      var h = '<div style="text-align:center; font-size:14px; font-weight:900; color:#222; margin-bottom:2px;">' + esc(evNames.length ? evNames.join(' · ') : '(행사명 없음)') + '</div>';
+      var cls = isC ? 'int-sec int-coup' : 'int-sec int-reg';
+      h += '<div class="' + cls + '"><div style="font-weight:900; margin-bottom:6px;">기기별 (' + date + ')</div><table><thead><tr style="border-bottom:1px solid #999; color:#555;"><th style="text-align:left;">기기</th><th style="text-align:right;">주문</th>' +
+        (isC ? '<th style="text-align:right;">회수</th><th style="text-align:right;">청구액</th>' : '<th style="text-align:right;">카드</th><th style="text-align:right;">현금</th><th style="text-align:right;">합계</th>') + '</tr></thead><tbody>';
+      R.list.forEach(function (p) {
+        var rng = p.seqs.length ? ' (' + p.device + '-' + Math.min.apply(null, p.seqs) + '~' + p.device + '-' + Math.max.apply(null, p.seqs) + (p.cancel ? ', 취소 ' + p.cancel : '') + ')' : '';
+        h += '<tr><td><b>' + esc(p.device) + '</b><div style="font-size:10px; color:#666;">동기화 ' + fmtT(p.lastSeen) + '</div></td><td style="text-align:right;">' + p.n + '건<div style="font-size:10px; color:#666;">' + esc(rng) + '</div></td>' +
+          (isC ? '<td style="text-align:right;">' + p.qty + '장</td><td style="text-align:right; font-weight:bold;">' + won(p.claim) + '</td>'
+               : '<td style="text-align:right;">' + won(p.card) + '</td><td style="text-align:right;">' + won(p.cash) + (p.other ? '<div style="font-size:10px; color:#c92a2a;">미지정 ' + won(p.other) + '</div>' : '') + '</td><td style="text-align:right; font-weight:bold;">' + won(p.total) + '</td>') + '</tr>';
+      });
+      if (!R.list.length) h += '<tr><td colspan="5" style="text-align:center; color:#999; padding:10px;">이 날짜의 기록이 없습니다.</td></tr>';
+      h += '</tbody></table></div>';
+      var opens = R.list.filter(function (p) { return p.openN > 0; });
+      if (opens.length) h += '<div style="margin-top:8px; padding:8px; background:#fff5f5; border:1px solid #ffc9c9; border-radius:6px; color:#c92a2a; font-size:12px;">⚠ 아직 마감 안 된 주문이 있습니다 (합계에 미포함):<br>' + opens.map(function (p) { return '· ' + esc(p.device) + '기기: ' + p.openN + '건 ' + won(p.openAmt); }).join('<br>') + '</div>';
+      h += '<div class="' + cls + '"><div style="font-weight:900; margin-bottom:6px;">품목 합계 (전체 기기)</div><table><thead><tr style="border-bottom:1px solid #999; color:#555;"><th style="text-align:left;">품목</th><th style="text-align:right;">단가</th><th style="text-align:right;">잔수</th><th style="text-align:right;">' + (isC ? '청구액' : '합계') + '</th></tr></thead><tbody>' +
+        R.items.map(function (it) { return '<tr><td>' + esc(it.n) + '</td><td style="text-align:right;">' + it.p.toLocaleString() + '</td><td style="text-align:right;">' + it.qty + '잔</td><td style="text-align:right; font-weight:bold;">' + won(isC ? (it.b + it.ex) * it.qty : it.p * it.qty) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      h += '<div style="border-top:2px solid #222; margin-top:12px; padding-top:8px;">' +
+        (isC ? '<div class="row"><span>• 주문 ' + R.tot.n + '건' + (R.tot.cancel ? ' (취소 ' + R.tot.cancel + '건)' : '') + ' / 쿠폰 회수</span><b>' + R.tot.qty + '장</b></div><div class="row"><span>• 기본액</span><span>' + won(R.tot.base) + '</span></div><div class="row"><span>• 사후 초과차액</span><span>+' + won(R.tot.extra) + '</span></div><div class="row" style="font-size:18px; font-weight:900; color:#e65100;"><span>★ 쿠폰 청구 총액</span><span id="intGrand">' + won(R.tot.claim) + '</span></div>'
+             : '<div class="row"><span>• 주문 ' + R.tot.n + '건' + (R.tot.cancel ? ' (취소 ' + R.tot.cancel + '건)' : '') + '</span><span></span></div><div class="row"><span>• 카드</span><span>' + won(R.tot.card) + '</span></div><div class="row"><span>• 현금</span><span>' + won(R.tot.cash) + '</span></div>' + (R.tot.other ? '<div class="row" style="color:#c92a2a;"><span>• 결제수단 미지정</span><span>' + won(R.tot.other) + '</span></div>' : '') + '<div class="row" style="font-size:18px; font-weight:900;"><span>★ 일반 판매 총매출</span><span id="intGrand">' + won(R.tot.total) + '</span></div>') + '</div>';
+      body.innerHTML = h;
+    }).catch(function (e) { body.innerHTML = '<div style="color:#c92a2a; padding:12px;">불러오기 실패: ' + esc(e.message || e) + '</div>'; });
+  }
+
+  // ----- 행사 예정 -----
+  function findPlan(id) { var f = null; Object.keys(S.month).forEach(function (mp) { (S.month[mp].plans || []).forEach(function (p) { if (p.id === id) f = p; }); }); return f; }
+  window.openPlan = function (id, date) {
+    var p = id ? findPlan(id) : null;
+    $('planTitle').textContent = p ? '행사 예정 수정' : '행사 예정 추가';
+    $('planId').value = p ? p.id : '';
+    $('planDate').value = p ? p.date : (date || S.sel || padDate(new Date()));
+    $('planName').value = p ? p.name : ''; $('planMemo').value = p ? (p.memo || '') : '';
+    $('planDel').style.display = p ? 'block' : 'none'; $('planMsg').textContent = '';
+    $('planOv').style.display = 'block';
+  };
+  window.savePlan = function () {
+    var date = normDate($('planDate').value), name = $('planName').value.trim(), memo = $('planMemo').value.trim();
+    if (!date) { $('planMsg').textContent = '날짜를 고르세요.'; return; }
+    if (!name) { $('planMsg').textContent = '행사 이름을 입력하세요.'; return; }
+    var id = $('planId').value || ('p' + Date.now() + Math.floor(Math.random() * 1000));
+    var old = findPlan(id), p = { id: id, date: date, name: name, memo: memo, updatedAt: Date.now() };
+    $('planMsg').textContent = '저장 중...';
+    Cloud.savePlan(p).then(function () {
+      if (old) { var omp = old.date.slice(0, 7); if (S.month[omp]) S.month[omp].plans = S.month[omp].plans.filter(function (x) { return x.id !== id; }); }
+      var mp = date.slice(0, 7); if (S.month[mp]) S.month[mp].plans = S.month[mp].plans.concat([p]);
+      SR.at = 0; closeOv('planOv'); S.sel = date; S.y = +date.slice(0, 4); S.m = +date.slice(5, 7) - 1; renderCal(); renderDay(); loadMonth(true);
+    }).catch(function (e) { $('planMsg').textContent = '저장 실패: ' + (e.message || e) + ' (인터넷 확인)'; });
+  };
+  window.deletePlan = function () {
+    var id = $('planId').value, p = findPlan(id); if (!p) return;
+    if (!confirm("'" + p.name + "' 예정을 삭제할까요?")) return;
+    Cloud.deletePlan(id).then(function () {
+      var mp = p.date.slice(0, 7); if (S.month[mp]) S.month[mp].plans = S.month[mp].plans.filter(function (x) { return x.id !== id; });
+      SR.at = 0; closeOv('planOv'); renderCal(); renderDay();
+    }).catch(function (e) { $('planMsg').textContent = '삭제 실패: ' + (e.message || e); });
+  };
+
+  // ----- 달력 앱으로 내보내기 (.ics) -----
+  window.openIcs = function () { $('icsMsg').textContent = ''; $('icsOv').style.display = 'block'; };
+  function icsEsc(s) { return String(s || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;'); }
+  function icsFold(line) { // 75바이트마다 줄 접기 (한글 3바이트 고려)
+    var out = '', cur = '', n = 0;
+    var chars = Array.from(line); // 글자 단위 (이모지 등 2칸짜리 문자도 쪼개지 않음)
+    for (var i = 0; i < chars.length; i++) { var ch = chars[i], b = unescape(encodeURIComponent(ch)).length; if (n + b > 73) { out += cur + '\r\n '; cur = ''; n = 1; } cur += ch; n += b; }
+    return out + cur;
+  }
+  function nextDay(k) { var d = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10) + 1); return padDate(d); }
+  function buildIcs(plans, events) {
+    var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ddal//coffee-truck//KO', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:커피트럭 행사'];
+    var stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    function add(uid, k, title, desc) {
+      L.push('BEGIN:VEVENT', 'UID:' + uid, 'DTSTAMP:' + stamp, 'DTSTART;VALUE=DATE:' + k.replace(/-/g, ''), 'DTEND;VALUE=DATE:' + nextDay(k).replace(/-/g, ''), icsFold('SUMMARY:' + icsEsc(title)));
+      if (desc) L.push(icsFold('DESCRIPTION:' + icsEsc(desc)));
+      L.push('TRANSP:TRANSPARENT', 'END:VEVENT');
+    }
+    plans.forEach(function (p) { var k = normDate(p.date); if (k) add('plan-' + p.id + '@ddal', k, '📌 ' + p.name, p.memo || ''); });
+    var g = {}; // 같은 날 같은 행사는 하나로 (일반·쿠폰, 여러 기기)
+    events.forEach(function (e) { var k = normDate(e.dateKey); if (!k) return; var key = k + '|' + (e.eventName || ''); (g[key] = g[key] || { k: k, name: e.eventName || '', kinds: {}, devs: {} }); g[key].kinds[e.kind] = 1; if (e.device) g[key].devs[e.device] = 1; });
+    Object.keys(g).sort().forEach(function (key, i) {
+      var x = g[key], kinds = (x.kinds.REG ? ['일반'] : []).concat(x.kinds.COUP ? ['쿠폰'] : []);
+      add('ev-' + x.k.replace(/-/g, '') + '-' + encodeURIComponent(x.name).replace(/%/g, '').slice(0, 40) + '@ddal', x.k, '☕ ' + x.name + ' (' + kinds.join('·') + ')', '마감 기기: ' + Object.keys(x.devs).sort().join(', '));
+    });
+    L.push('END:VCALENDAR');
+    return L.join('\r\n') + '\r\n';
+  }
+  window.__buildIcs = buildIcs;
+  window.exportIcs = function () {
+    var wantP = $('icsPlans').checked, wantE = $('icsPast').checked;
+    if (!wantP && !wantE) { $('icsMsg').textContent = '하나 이상 고르세요.'; return; }
+    $('icsMsg').textContent = '서버에서 불러오는 중...';
+    Promise.all([wantP ? Cloud.all('plans') : Promise.resolve([]), wantE ? Cloud.range('events', 'dateKey', '2000-01-01', '2999-12-31', ['dateKey', 'eventName', 'kind', 'device']) : Promise.resolve([])])
+      .then(function (r) {
+        var ics = buildIcs(r[0], r[1]), cnt = (ics.match(/BEGIN:VEVENT/g) || []).length;
+        if (!cnt) { $('icsMsg').textContent = '내보낼 일정이 없습니다.'; return; }
+        var ios = /iP(ad|hone|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (ios) { location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics); }   // 아이폰·아이패드: 바로 '캘린더에 추가' 화면
+        else {
+          var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' })); a.download = '커피트럭_행사.ics';
+          document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.parentNode.removeChild(a); }, 1000);
+        }
+        $('icsMsg').textContent = cnt + '개 일정을 내보냈습니다. 달력 앱에서 "추가"를 누르세요. (다시 내보내면 중복될 수 있어요)';
+      }).catch(function (e) { $('icsMsg').textContent = '실패: ' + (e.message || e) + ' (인터넷 확인)'; });
+  };
+
+  // ----- 검색 (행사명 / 날짜) -----
+  var SR = { ev: null, plans: null, at: 0, loading: null, tab: 'name' };
+  function loadAll(force) {
+    if (SR.loading) return SR.loading;
+    if (!force && SR.ev && Date.now() - SR.at < 60000) return Promise.resolve();
+    SR.loading = Promise.all([Cloud.range('events', 'dateKey', '2000-01-01', '2999-12-31', ['dateKey', 'eventName', 'kind', 'device']), Cloud.all('plans')])
+      .then(function (r) { SR.ev = r[0]; SR.plans = r[1]; SR.at = Date.now(); })
+      .then(function () { SR.loading = null; }, function (e) { SR.loading = null; throw e; });
+    return SR.loading;
+  }
+  function wd(k) { return WD[new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10)).getDay()]; }
+  function fmtK(k) { return k.slice(0, 4) + '. ' + (+k.slice(5, 7)) + '. ' + (+k.slice(8, 10)) + ' (' + wd(k) + ')'; }
+  function norm(s) { return String(s || '').toLowerCase().replace(/\s+/g, ''); }
+  function hl(name, q) { // 찾은 글자 표시
+    var n = String(name || ''), nn = norm(n); if (!q) return esc(n);
+    var map = []; for (var i = 0; i < n.length; i++) if (!/\s/.test(n[i])) map.push(i);
+    var at = nn.indexOf(q); if (at < 0) return esc(n);
+    var a = map[at], b = map[at + q.length - 1] + 1;
+    return esc(n.slice(0, a)) + '<mark>' + esc(n.slice(a, b)) + '</mark>' + esc(n.slice(b));
+  }
+  function groupEvents(list) { // 같은 날 같은 행사는 한 줄로 (일반·쿠폰, 여러 기기)
+    var g = {}; list.forEach(function (e) { var k = normDate(e.dateKey); if (!k) return; var key = k + '|' + (e.eventName || ''); var x = g[key] = g[key] || { k: k, name: e.eventName || '', reg: false, coup: false, devs: {} }; if (e.kind === 'REG') x.reg = true; if (e.kind === 'COUP') x.coup = true; if (e.device) x.devs[e.device] = 1; });
+    return Object.keys(g).map(function (key) { return g[key]; });
+  }
+  function resEv(x, q) {
+    return '<button class="res" onclick="goDay(\'' + x.k + '\')"><div class="d">' + fmtK(x.k) + ' ' + (x.reg ? '<span class="dot dot-reg"></span>' : '') + (x.coup ? '<span class="dot dot-coup"></span>' : '') + ' <span style="font-weight:bold;">' + esc(Object.keys(x.devs).sort().join(', ')) + '</span></div><div class="n">' + hl(x.name, q) + '</div></button>';
+  }
+  function resPlan(p, q) {
+    return '<button class="res plan" onclick="goDay(\'' + normDate(p.date) + '\')"><div class="d">' + fmtK(normDate(p.date)) + ' <span class="badge b-plan">예정</span></div><div class="n">' + hl(p.name, q) + '</div>' + (p.memo ? '<div class="d" style="font-weight:normal; white-space:pre-wrap;">' + esc(p.memo) + '</div>' : '') + '</button>';
+  }
+  window.openSearch = function (tab) { $('searchOv').style.display = 'block'; setSearchTab(tab); };
+  window.setSearchTab = function (tab) {
+    SR.tab = tab; $('sTabName').className = tab === 'name' ? 'on-reg' : ''; $('sTabDate').className = tab === 'date' ? 'on-reg' : '';
+    $('sName').style.display = tab === 'name' ? 'block' : 'none'; $('sDate').style.display = tab === 'date' ? 'block' : 'none';
+    $('sResults').innerHTML = '';
+    if (tab === 'name') { runSearch(); setTimeout(function () { try { $('sQuery').focus(); } catch (e) {} }, 50); }
+    else { fillWheels(); runDateList(); }
+  };
+  window.runSearch = function () {
+    var q = norm($('sQuery').value);
+    $('sStatus').textContent = SR.ev ? '' : '불러오는 중…';
+    loadAll(false).then(function () {
+      if (SR.tab !== 'name' || norm($('sQuery').value) !== q) return;
+      var today = padDate(new Date());
+      var evs = groupEvents(SR.ev).filter(function (x) { return !q || norm(x.name).indexOf(q) >= 0; }).sort(function (a, b) { return a.k < b.k ? 1 : a.k > b.k ? -1 : 0; }); // 가까운 날부터 (최근 → 옛날)
+      var pls = SR.plans.filter(function (p) { return normDate(p.date) >= today && (!q || norm(p.name).indexOf(q) >= 0); }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }); // 다가오는 순
+      var h = '';
+      if (pls.length) h += '<div class="res-h">다가오는 예정 ' + pls.length + '건</div>' + pls.map(function (p) { return resPlan(p, q); }).join('');
+      h += '<div class="res-h">' + (q ? '찾은 행사 ' : '지난 행사 전체 ') + evs.length + '건 (최근 순)</div>' + (evs.length ? evs.map(function (x) { return resEv(x, q); }).join('') : '<div class="empty">찾는 행사가 없습니다.</div>');
+      $('sResults').innerHTML = h; $('sStatus').textContent = '';
+    }).catch(function (e) { $('sStatus').textContent = '불러오기 실패: ' + (e.message || e) + ' (인터넷 확인)'; });
+  };
+  function fillWheels() {
+    var y = $('sY'), m = $('sM'), d = $('sD'), base = S.sel || padDate(new Date());
+    if (!y.options.length) {
+      var ny = new Date().getFullYear();
+      for (var i = ny + 2; i >= 2020; i--) y.add(new Option(i + '년', i));
+      for (i = 1; i <= 12; i++) m.add(new Option(i + '월', i));
+    }
+    y.value = +base.slice(0, 4); m.value = +base.slice(5, 7); fixDays(); d.value = +base.slice(8, 10);
+  }
+  window.fixDays = function () { // 달에 맞게 일 수 (2월 28/29일, 30일 달)
+    var y = +$('sY').value, m = +$('sM').value, d = $('sD'), keep = +d.value || 1, n = new Date(y, m, 0).getDate();
+    while (d.options.length) d.remove(0);
+    for (var i = 1; i <= n; i++) d.add(new Option(i + '일 (' + WD[new Date(y, m - 1, i).getDay()] + ')', i));
+    d.value = Math.min(keep, n);
+  };
+  window.runDateList = function () { // 고른 달의 기록·예정을 아래에 바로 보여줌
+    var mp = $('sY').value + '-' + pad2($('sM').value);
+    $('sDStatus').textContent = SR.ev ? '' : '불러오는 중…';
+    loadAll(false).then(function () {
+      if (SR.tab !== 'date' || ($('sY').value + '-' + pad2($('sM').value)) !== mp) return;
+      var evs = groupEvents(SR.ev.filter(function (e) { return normDate(e.dateKey).indexOf(mp) === 0; })).sort(function (a, b) { return a.k < b.k ? 1 : -1; });
+      var pls = SR.plans.filter(function (p) { return normDate(p.date).indexOf(mp) === 0; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+      var h = '<div class="res-h">' + (+mp.slice(0, 4)) + '년 ' + (+mp.slice(5, 7)) + '월 — 행사 ' + evs.length + '건' + (pls.length ? ', 예정 ' + pls.length + '건' : '') + '</div>';
+      h += pls.map(function (p) { return resPlan(p, ''); }).join('') + evs.map(function (x) { return resEv(x, ''); }).join('');
+      if (!evs.length && !pls.length) h += '<div class="empty">이 달은 기록이 없습니다.</div>';
+      $('sResults').innerHTML = h; $('sDStatus').textContent = '';
+    }).catch(function (e) { $('sDStatus').textContent = '불러오기 실패: ' + (e.message || e); });
+  };
+  window.goPickedDate = function () { goDay($('sY').value + '-' + pad2($('sM').value) + '-' + pad2($('sD').value)); };
+  window.goDay = function (k) {
+    closeOv('searchOv'); S.sel = k; S.y = +k.slice(0, 4); S.m = +k.slice(5, 7) - 1;
+    renderCal(); loadMonth(false); renderDay();
+    setTimeout(function () { var el = $('dayCard'); if (!el.scrollIntoView) return; try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} } }, 50);
+  };
+
+  // 앱으로 돌아오면 새로 불러오기
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && auth) { loadMonth(true); if (S.sel) loadDay(S.sel, true); } });
+  showView();
+})();
+</script>
+</body>
+</html>
