@@ -2164,8 +2164,27 @@ var PhotoArt = (function () {
       app.style.height = (H / s) + 'px';
       app.style.transform = `scale(${s})`;
       document.documentElement.style.setProperty('--dvh', (H / s / 100) + 'px');
+      fitScreen.lastW = W; fitScreen.lastH = H;
     }
     window.addEventListener('resize', () => fitScreen());
+    // [수정] 다음 날 다시 켜면 화면이 잘리던 문제: 아이패드가 앱을 깨울 때 화면 크기를 잘못 알려주거나
+    // 크기 변경 알림(resize)을 안 보내는 경우가 있어, 앱으로 돌아올 때마다·켠 직후 여러 번·1초마다 크기를 다시 확인
+    function refitScreen() {
+      const ae = document.activeElement;
+      if (ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName) && document.hidden === false && refitScreen.fromWake) { try { ae.blur(); } catch (e) {} } // 깨어날 때 키보드는 닫혀 있음
+      refitScreen.fromWake = false;
+      fitScreen(true);
+      if (typeof fitMenuTitles === 'function') try { fitMenuTitles(); } catch (e) {}
+    }
+    function refitOnWake() { refitScreen.fromWake = true; refitScreen(); [150, 600, 1500].forEach(t => setTimeout(() => fitScreen(), t)); }
+    window.addEventListener('pageshow', refitOnWake);
+    window.addEventListener('focus', () => setTimeout(() => fitScreen(), 100));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refitOnWake(); });
+    [100, 500, 1500, 3000].forEach(t => setTimeout(() => fitScreen(), t));
+    setInterval(() => { // 크기가 바뀌었는데 알림이 없었으면 다시 맞춤 (입력 중일 때는 제외)
+      if (document.hidden) return;
+      if (window.innerWidth !== fitScreen.lastW || window.innerHeight !== fitScreen.lastH) { fitScreen(); if (typeof fitMenuTitles === 'function') try { fitMenuTitles(); } catch (e) {} }
+    }, 1000);
 
     // ===== [추가] 메뉴칸·전표칸 폭 조절 (막대를 끌기, 두 번 누르면 원래대로). 일반/쿠폰 따로 기억 =====
     const SPLIT_MIN = 320, SPLIT_MAX = 620;
