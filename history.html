@@ -339,6 +339,7 @@
   var Cloud = {
     range: function (col, field, lo, hi, fields) { return runQuery(col, [ff(field, 'GREATER_THAN_OR_EQUAL', lo), ff(field, 'LESS_THAN_OR_EQUAL', hi)], fields); },
     eq: function (col, field, v) { return runQuery(col, [ff(field, 'EQUAL', v)]); },
+    openOrdersLite: function () { return runQuery('orders', [ff('closed', 'EQUAL', false)], ['date', 'kind', 'device', 'voided', 'cancelled']); },
     all: function (col) { return runQuery(col, []); },
     // 쓰기는 '예정 일정(plans)'만 — 판매·마감 기록은 절대 쓰지 않음
     savePlan: function (p) { return call('PATCH', docUrl('plans/' + encodeURIComponent(p.id)), { fields: encFields(p) }); },
@@ -362,39 +363,51 @@
   function getBase(it, fallback) { return (typeof it.base === 'number') ? it.base : fallback; }
   function getEx(it, base) { return (typeof it.ex === 'number') ? it.ex : Math.max(0, it.p - base); }
   function aggregateIntegrated(kind, events, openOrders, devices, date) {
-    // 순수 계산 함수 (검증용으로 분리) — 마감된 기록만 합산, 미마감은 경고로 따로
+    // 순수 계산 함수 (검증용으로 분리)
+    // [수정] 마감했든 안 했든 '판매한 날짜' 기준으로 모든 주문을 합산
+    //  · 마감한 주문: 마감 기록(events) 안의 주문 — 주문마다 판매 날짜(o.date), 없으면 마감 날짜
+    //  · 마감 안 한 주문: 서버의 주문(closed=false) — 같은 주문이 마감 기록에도 있으면 한 번만 셈
     const isC = kind === 'COUP';
-    const per = {}, items = {};
-    const dev = d => (per[d] = per[d] || { device: d, n: 0, cancel: 0, seqs: [], card: 0, cash: 0, other: 0, total: 0, qty: 0, base: 0, extra: 0, claim: 0, openN: 0, openAmt: 0 });
-    events.filter(e => e.kind === kind && normDate(e.dateKey) === date).forEach(e => {
-      const P = dev(e.device || '?');
+    const per = {}, items = {}, seen = {};
+    const dev = d => (per[d] = per[d] || { device: d, n: 0, cancel: 0, seqs: [], card: 0, cash: 0, other: 0, total: 0, qty: 0, base: 0, extra: 0, claim: 0, openN: 0, openAmt: 0, openCancel: 0 });
+    const okey = (d, o) => `${d}|${kind}|${o.id != null ? o.id : 's' + o.seq}`;
+    const addOrder = (P, o, fallbackBase, isOpen) => {
+      if (!o.items || !o.items.some(it => !!it.isC === isC)) return;
+      if (typeof o.seq === 'number') P.seqs.push(o.seq);
+      if (o.cancelled) { P.cancel++; if (isOpen) P.openCancel++; return; }
+      P.n++; if (isOpen) P.openN++;
+      o.items.forEach(it => {
+        if (!!it.isC !== isC) return;
+        if (isC) {
+          const b = getBase(it, fallbackBase), ex = getEx(it, b), lb = b * it.qty, le = ex * it.qty;
+          P.qty += it.qty; P.base += lb; P.extra += le; P.claim += lb + le; if (isOpen) P.openAmt += lb + le;
+          const k = `${it.n}|${it.p}|${b}`; items[k] = items[k] || { n: it.n, p: it.p, b, ex, qty: 0 }; items[k].qty += it.qty;
+        } else {
+          const v = it.p * it.qty; P.total += v; if (isOpen) P.openAmt += v;
+          if (o.payType === 'CARD') P.card += v; else if (o.payType === 'CASH') P.cash += v; else P.other += v;
+          const k = `${it.n}|${it.p}`; items[k] = items[k] || { n: it.n, p: it.p, qty: 0 }; items[k].qty += it.qty;
+        }
+      });
+    };
+    // 1) 마감한 주문 (어느 날 마감했든, 판매한 날짜가 이 날인 주문만)
+    events.filter(e => e.kind === kind).forEach(e => {
+      const d = e.device || '?';
       (e.history || []).forEach(o => {
-        if (!o.items.some(it => !!it.isC === isC)) return;
-        if (typeof o.seq === 'number') P.seqs.push(o.seq);
-        if (o.cancelled) { P.cancel++; return; }
-        P.n++;
-        o.items.forEach(it => {
-          if (!!it.isC !== isC) return;
-          if (isC) {
-            const b = getBase(it, e.baseCouponVal), ex = getEx(it, b), lb = b * it.qty, le = ex * it.qty;
-            P.qty += it.qty; P.base += lb; P.extra += le; P.claim += lb + le;
-            const k = `${it.n}|${it.p}|${b}`; items[k] = items[k] || { n: it.n, p: it.p, b, ex, qty: 0 }; items[k].qty += it.qty;
-          } else {
-            const v = it.p * it.qty; P.total += v;
-            if (o.payType === 'CARD') P.card += v; else if (o.payType === 'CASH') P.cash += v; else P.other += v;
-            const k = `${it.n}|${it.p}`; items[k] = items[k] || { n: it.n, p: it.p, qty: 0 }; items[k].qty += it.qty;
-          }
-        });
+        const od = normDate(o.date) || normDate(e.dateKey);
+        if (od !== date) return;
+        const k = okey(d, o); if (seen[k]) return; seen[k] = 1;   // 같은 주문이 두 마감 기록에 있어도 한 번만
+        addOrder(dev(d), o, e.baseCouponVal, false);
       });
     });
-    openOrders.filter(o => o.kind === kind && !o.voided && !o.cancelled && normDate(o.date) === date).forEach(o => {
-      const P = dev(o.device || '?'); P.openN++;
-      o.items.forEach(it => { if (!!it.isC !== isC) return; P.openAmt += isC ? (getBase(it, baseCouponVal) + getEx(it, getBase(it, baseCouponVal))) * it.qty : it.p * it.qty; });
+    // 2) 아직 마감 안 한 주문 (서버에 올라간 것). 이미 마감 기록에 들어간 주문은 건너뜀
+    openOrders.filter(o => o.kind === kind && !o.voided && !o.closed && normDate(o.date) === date).forEach(o => {
+      const d = o.device || '?', k = okey(d, o); if (seen[k]) return; seen[k] = 1;
+      addOrder(dev(d), o, baseCouponVal, true);
     });
-    (devices || []).forEach(d => { if (d.code) dev(d.code).lastSeen = d.lastSeen || 0; });
+    (devices || []).forEach(d => { if (d.code && per[d.code]) per[d.code].lastSeen = d.lastSeen || 0; });
     const list = Object.values(per).sort((a, b) => a.device.localeCompare(b.device));
     const sum = f => list.reduce((s, p) => s + p[f], 0);
-    return { list, items: Object.values(items), tot: { n: sum('n'), cancel: sum('cancel'), card: sum('card'), cash: sum('cash'), other: sum('other'), total: sum('total'), qty: sum('qty'), base: sum('base'), extra: sum('extra'), claim: sum('claim'), openN: sum('openN') } };
+    return { list, items: Object.values(items), tot: { n: sum('n'), cancel: sum('cancel'), card: sum('card'), cash: sum('cash'), other: sum('other'), total: sum('total'), qty: sum('qty'), base: sum('base'), extra: sum('extra'), claim: sum('claim'), openN: sum('openN'), openAmt: sum('openAmt') } };
   }
   window.__aggregateIntegrated = aggregateIntegrated;
   // 마감 기록 1건의 합계 (포스 과거 내역 카드와 같은 계산)
@@ -431,23 +444,27 @@
     var mp = mpOf(S.y, S.m), c = S.month[mp];
     if (c && c.loading) return;
     if (c && !force && Date.now() - c.at < 60000) return;
-    S.month[mp] = { events: c ? c.events : [], plans: c ? c.plans : [], loading: true, at: 0, err: '' };
+    S.month[mp] = { events: c ? c.events : [], plans: c ? c.plans : [], open: c ? c.open : [], loading: true, at: 0, err: '' };
     renderCal();
     Promise.all([
-      Cloud.range('events', 'dateKey', mp + '-01', mp + '-31', ['dateKey', 'eventName', 'kind', 'device', 'id']),
-      Cloud.range('plans', 'date', addDays(mp + '-01', -PLAN_MAX_DAYS), mp + '-31')
-    ]).then(function (r) { S.month[mp] = { events: r[0], plans: r[1], loading: false, at: Date.now(), err: '' }; })
+      Cloud.range('events', 'dateKey', mp + '-01', addDays(mp + '-01', 92), ['dateKey', 'saleDates', 'eventName', 'kind', 'device', 'id']), // 다음 달에 마감한 기록도
+      Cloud.range('plans', 'date', addDays(mp + '-01', -PLAN_MAX_DAYS), mp + '-31'),
+      Cloud.openOrdersLite()   // 아직 마감 안 한 판매
+    ]).then(function (r) { S.month[mp] = { events: r[0], plans: r[1], open: r[2], loading: false, at: Date.now(), err: '' }; })
       .catch(function (e) { var o = S.month[mp]; o.loading = false; o.err = e.message || String(e); })
       .then(function () { renderCal(); if (S.sel.indexOf(mp) === 0) renderDay(); });
   }
   window.moveMonth = function (d) { S.m += d; if (S.m < 0) { S.m = 11; S.y--; } if (S.m > 11) { S.m = 0; S.y++; } renderCal(); loadMonth(false); };
   window.pickDay = function (k) { S.sel = k; renderCal(); renderDay(); };
 
+  // [수정] 마감 기록이 어느 날 판매분인지: saleDates(새 기록) → 없으면 마감 날짜
+  function evSaleDates(e) { return (e.saleDates && e.saleDates.length) ? e.saleDates.map(normDate).filter(Boolean) : [normDate(e.dateKey)].filter(Boolean); }
   function renderCal() {
-    var y = S.y, m = S.m, mp = mpOf(y, m), c = S.month[mp] || { events: [], plans: [] };
+    var y = S.y, m = S.m, mp = mpOf(y, m), c = S.month[mp] || { events: [], plans: [], open: [] };
     var today = padDate(new Date()), first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
     var byDay = {}, plansBy = {};
-    c.events.forEach(function (e) { var k = normDate(e.dateKey); if (!k) return; (byDay[k] = byDay[k] || []).push(e); });
+    c.events.forEach(function (e) { evSaleDates(e).forEach(function (k) { (byDay[k] = byDay[k] || []).push(e); }); });
+    var openBy = {}; (c.open || []).forEach(function (o) { var k = normDate(o.date); if (!k || o.voided || o.cancelled) return; var x = openBy[k] = openBy[k] || { n: 0, REG: 0, COUP: 0 }; x.n++; x[o.kind] = 1; });
     var nPlan = 0;
     c.plans.forEach(function (p) {
       var a = planStart(p); if (!a) return; var e = planEnd(p);
@@ -460,9 +477,11 @@
     for (i = 0; i < first; i++) h += '<div class="cal-day other"></div>';
     for (var d = 1; d <= days; d++) {
       var k = mp + '-' + pad2(d), r = byDay[k] || [], pl = plansBy[k] || [];
-      var hasR = r.some(function (e) { return e.kind === 'REG'; }), hasC = r.some(function (e) { return e.kind === 'COUP'; });
+      var ob = openBy[k];
+      var hasR = r.some(function (e) { return e.kind === 'REG'; }) || !!(ob && ob.REG), hasC = r.some(function (e) { return e.kind === 'COUP'; }) || !!(ob && ob.COUP);
       var names = []; r.forEach(function (e) { if (e.eventName && names.indexOf(e.eventName) < 0) names.push(e.eventName); });
-      h += '<div class="cal-day' + (r.length ? ' has' : '') + (k === today ? ' today' : '') + (k === S.sel ? ' sel' : '') + '" onclick="pickDay(\'' + k + '\')">' +
+      if (ob) names.push('미마감 ' + ob.n + '건');
+      h += '<div class="cal-day' + (r.length || ob ? ' has' : '') + (k === today ? ' today' : '') + (k === S.sel ? ' sel' : '') + '" onclick="pickDay(\'' + k + '\')">' +
         '<span class="cal-num">' + d + '</span> ' + (hasR ? '<span class="dot dot-reg"></span>' : '') + (hasC ? '<span class="dot dot-coup"></span>' : '') +
         '<div class="cal-name">' + esc(names.join(', ')) + '</div>' +
         pl.map(function (p) { var a = planStart(p), e = planEnd(p); return '<div class="cal-plan' + (a !== e ? (k === a ? ' first' : k === e ? ' last' : ' mid') : '') + '">' + (k === a || d === 1 || new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10)).getDay() === 0 ? esc(p.name) : '&nbsp;') + '</div>'; }).join('') + '</div>';
@@ -475,15 +494,18 @@
   function loadDay(k, force) {
     var c = S.day[k];
     if (c && (c.loading || (!force && Date.now() - c.at < 60000))) return;
-    S.day[k] = { events: c ? c.events : null, loading: true, at: 0, err: '' };
-    Cloud.eq('events', 'dateKey', k).then(function (evs) { S.day[k] = { events: evs, loading: false, at: Date.now(), err: '' }; })
+    S.day[k] = { events: c ? c.events : null, open: c ? c.open : [], loading: true, at: 0, err: '' };
+    Promise.all([Cloud.range('events', 'dateKey', k, addDays(k, 60)), Cloud.eq('orders', 'closed', false)]).then(function (r) {
+      var evs = r[0].filter(function (e) { var hs = e.history || []; return hs.length ? hs.some(function (o) { return (normDate(o.date) || normDate(e.dateKey)) === k; }) : normDate(e.dateKey) === k; });
+      S.day[k] = { events: evs, open: r[1], loading: false, at: Date.now(), err: '' };
+    })
       .catch(function (e) { var o = S.day[k]; o.loading = false; o.err = e.message || String(e); })
       .then(function () { if (S.sel === k) renderDay(); });
   }
   function renderDay() {
     var k = S.sel; if (!k) { $('dayCard').innerHTML = '<div class="empty">날짜를 누르세요.</div>'; return; }
     loadDay(k, false);
-    var c = S.day[k] || {}, mp = k.slice(0, 7), mc = S.month[mp] || { plans: [] };
+    var c = S.day[k] || {}, mp = k.slice(0, 7), mc = S.month[mp] || { plans: [] }, RR = null, RC = null;
     var dd = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10));
     var h = '<div class="day-title"><b>' + (+k.slice(5, 7)) + '월 ' + (+k.slice(8, 10)) + '일 (' + WD[dd.getDay()] + ')</b><button onclick="openPlan(null, \'' + k + '\')">＋ 이 날 예정</button></div>';
     // 예정
@@ -495,21 +517,32 @@
           '<div class="acts"><button style="background:#1c7ed6;" onclick="openPlan(\'' + esc(p.id) + '\')">수정</button></div></div>';
       });
     }
+    // [추가] 이 날 판매 합계 (마감·미마감 모두, 판매한 날짜 기준)
+    if (c.events) {
+      RR = aggregateIntegrated('REG', c.events, c.open || [], [], k); RC = aggregateIntegrated('COUP', c.events, c.open || [], [], k);
+      if (RR.list.length || RC.list.length) {
+        var dn = function (R) { return R.list.map(function (p) { return esc(p.device) + (p.openN ? ' (미마감 ' + p.openN + '건)' : ''); }).join(', '); };
+        h += '<div class="sec-t">이 날 판매 합계 (마감 안 한 주문 포함)</div><div class="item day-sum">' +
+          (RR.list.length ? '<div class="sum">일반 매출 <span style="color:#1b5e20">' + won(RR.tot.total) + '</span> · ' + RR.tot.n + '건<div class="meta">' + dn(RR) + '</div></div>' : '') +
+          (RC.list.length ? '<div class="sum">쿠폰 ' + '<span style="color:#e65100">' + RC.tot.qty + '장</span> / 청구 <span style="color:#e65100">' + won(RC.tot.claim) + '</span> · ' + RC.tot.n + '건<div class="meta">' + dn(RC) + '</div></div>' : '') + '</div>';
+      }
+    }
     // 마감 기록
     h += '<div class="sec-t">마감 기록 (전체 기기)</div>';
     if (c.loading && !c.events) h += '<div class="empty">불러오는 중…</div>';
     else if (c.err && !c.events) h += '<div class="empty" style="color:#c92a2a;">불러오기 실패: ' + esc(c.err) + '</div>';
     else {
       var evs = (c.events || []).slice().sort(function (a, b) { return (a.device || '').localeCompare(b.device || '') || (a.id || 0) - (b.id || 0); });
-      if (!evs.length) h += '<div class="empty">이 날은 마감 기록이 없습니다.</div>';
+      if (!evs.length) h += '<div class="empty">이 날은 마감한 기록이 없습니다.</div>';
       evs.forEach(function (ev) {
         var t = eventTotals(ev), isC = ev.kind === 'COUP';
         h += '<div class="item"><div class="nm"><span class="badge ' + (isC ? 'b-coup">쿠폰' : 'b-reg">일반') + '</span>' + (ev.device ? '<span class="badge b-dev">' + esc(ev.device) + '</span>' : '') + esc(ev.eventName) + '</div>' +
           '<div class="meta">' + esc(ev.dateStr || '') + ' ' + esc(ev.timeStr || '') + '</div>' +
           '<div class="sum">' + (isC ? '쿠폰 <span style="color:#e65100">' + t.coup + '장</span> / 청구 <span style="color:#e65100">' + won(t.claim) + '</span>' : '매출 <span style="color:#1b5e20">' + won(t.sales) + '</span>') + '</div></div>';
       });
-      if (evs.length) {
-        var hasR = evs.some(function (e) { return e.kind === 'REG'; }), hasC = evs.some(function (e) { return e.kind === 'COUP'; });
+      var anyR = RR && (RR.list.length > 0), anyC = RC && (RC.list.length > 0);
+      if (evs.length || anyR || anyC) {
+        var hasR = anyR || evs.some(function (e) { return e.kind === 'REG'; }), hasC = anyC || evs.some(function (e) { return e.kind === 'COUP'; });
         h += '<div class="row2" style="margin-top:4px;">' +
           '<button class="btn btn-green" ' + (hasR ? '' : 'disabled style="opacity:.35;"') + ' onclick="openInt(\'REG\')">🧾 일반 통합 영수증</button>' +
           '<button class="btn btn-orange" ' + (hasC ? '' : 'disabled style="opacity:.35;"') + ' onclick="openInt(\'COUP\')">🧾 쿠폰 통합 영수증</button></div>';
@@ -526,25 +559,25 @@
     $('tabReg').className = isC ? '' : 'on-reg'; $('tabCoup').className = isC ? 'on-coup' : '';
     $('intTitle').textContent = isC ? '[ 쿠폰 통합 정산 (전체 기기) ]' : '[ 일반 통합 매출 (전체 기기) ]';
     var body = $('intBody'); body.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">서버에서 불러오는 중...</div>';
-    Promise.all([Cloud.eq('events', 'dateKey', date), Cloud.eq('orders', 'closed', false), Cloud.all('devices')]).then(function (r) {
+    Promise.all([Cloud.range('events', 'dateKey', date, addDays(date, 60)), Cloud.eq('orders', 'closed', false), Cloud.all('devices')]).then(function (r) { // 다음 날 이후 마감한 기록·미마감 주문까지
       if (S.sel !== date || S.intKind !== kind) return;
       var R = aggregateIntegrated(kind, r[0], r[1], r[2], date);
       var fmtT = function (t) { return t ? new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'; };
-      var evNames = []; r[0].forEach(function (e) { if (e.kind === kind && normDate(e.dateKey) === date && e.eventName && evNames.indexOf(e.eventName) < 0) evNames.push(e.eventName); });
+      var evNames = []; r[0].forEach(function (e) { if (e.kind === kind && e.eventName && evNames.indexOf(e.eventName) < 0 && (e.history || []).some(function (o) { return (normDate(o.date) || normDate(e.dateKey)) === date; })) evNames.push(e.eventName); });
       var h = '<div style="text-align:center; font-size:14px; font-weight:900; color:#222; margin-bottom:2px;">' + esc(evNames.length ? evNames.join(' · ') : '(행사명 없음)') + '</div>';
       var cls = isC ? 'int-sec int-coup' : 'int-sec int-reg';
       h += '<div class="' + cls + '"><div style="font-weight:900; margin-bottom:6px;">기기별 (' + date + ')</div><table><thead><tr style="border-bottom:1px solid #999; color:#555;"><th style="text-align:left;">기기</th><th style="text-align:right;">주문</th>' +
         (isC ? '<th style="text-align:right;">회수</th><th style="text-align:right;">청구액</th>' : '<th style="text-align:right;">카드</th><th style="text-align:right;">현금</th><th style="text-align:right;">합계</th>') + '</tr></thead><tbody>';
       R.list.forEach(function (p) {
         var rng = p.seqs.length ? ' (' + p.device + '-' + Math.min.apply(null, p.seqs) + '~' + p.device + '-' + Math.max.apply(null, p.seqs) + (p.cancel ? ', 취소 ' + p.cancel : '') + ')' : '';
-        h += '<tr><td><b>' + esc(p.device) + '</b><div style="font-size:10px; color:#666;">동기화 ' + fmtT(p.lastSeen) + '</div></td><td style="text-align:right;">' + p.n + '건<div style="font-size:10px; color:#666;">' + esc(rng) + '</div></td>' +
+        h += '<tr><td><b>' + esc(p.device) + '</b><div style="font-size:10px; color:#666;">동기화 ' + fmtT(p.lastSeen) + '</div>' + (p.openN ? '<div style="font-size:10px; color:#e8590c; font-weight:bold;">미마감 ' + p.openN + '건 포함</div>' : '') + '</td><td style="text-align:right;">' + p.n + '건<div style="font-size:10px; color:#666;">' + esc(rng) + '</div></td>' +
           (isC ? '<td style="text-align:right;">' + p.qty + '장</td><td style="text-align:right; font-weight:bold;">' + won(p.claim) + '</td>'
                : '<td style="text-align:right;">' + won(p.card) + '</td><td style="text-align:right;">' + won(p.cash) + (p.other ? '<div style="font-size:10px; color:#c92a2a;">미지정 ' + won(p.other) + '</div>' : '') + '</td><td style="text-align:right; font-weight:bold;">' + won(p.total) + '</td>') + '</tr>';
       });
       if (!R.list.length) h += '<tr><td colspan="5" style="text-align:center; color:#999; padding:10px;">이 날짜의 기록이 없습니다.</td></tr>';
       h += '</tbody></table></div>';
       var opens = R.list.filter(function (p) { return p.openN > 0; });
-      if (opens.length) h += '<div style="margin-top:8px; padding:8px; background:#fff5f5; border:1px solid #ffc9c9; border-radius:6px; color:#c92a2a; font-size:12px;">⚠ 아직 마감 안 된 주문이 있습니다 (합계에 미포함):<br>' + opens.map(function (p) { return '· ' + esc(p.device) + '기기: ' + p.openN + '건 ' + won(p.openAmt); }).join('<br>') + '</div>';
+      if (opens.length) h += '<div style="margin-top:8px; padding:8px; background:#fff4e6; border:1px solid #ffd8a8; border-radius:6px; color:#d9480f; font-size:12px;">ℹ 아직 마감 안 한 주문도 합계에 포함했습니다:<br>' + opens.map(function (p) { return '· ' + esc(p.device) + '기기: ' + p.openN + '건 ' + won(p.openAmt); }).join('<br>') + '</div>';
       h += '<div class="' + cls + '"><div style="font-weight:900; margin-bottom:6px;">품목 합계 (전체 기기)</div><table><thead><tr style="border-bottom:1px solid #999; color:#555;"><th style="text-align:left;">품목</th><th style="text-align:right;">단가</th><th style="text-align:right;">잔수</th><th style="text-align:right;">' + (isC ? '청구액' : '합계') + '</th></tr></thead><tbody>' +
         R.items.map(function (it) { return '<tr><td>' + esc(it.n) + '</td><td style="text-align:right;">' + it.p.toLocaleString() + '</td><td style="text-align:right;">' + it.qty + '잔</td><td style="text-align:right; font-weight:bold;">' + won(isC ? (it.b + it.ex) * it.qty : it.p * it.qty) + '</td></tr>'; }).join('') + '</tbody></table></div>';
       h += '<div style="border-top:2px solid #222; margin-top:12px; padding-top:8px;">' +

@@ -521,7 +521,8 @@
     <div class="modal-box" style="width:92%; max-width:440px;">
       <h3 style="font-size:19px; font-weight:900; margin-bottom:6px;">🏷 이 기기의 번호 정하기</h3>
       <p style="font-size:12px; color:#555; margin-bottom:10px; line-height:1.5;">판매하는 기기마다 다른 번호를 정해주세요 (예: <b>A</b>, <b>B</b>, <b>C</b>).<br>주문번호가 <b>A-1, A-2…</b>처럼 기기별로 매겨지고, 서버에 기기별로 백업됩니다.<br><b>고장 난 기기를 대신하는 경우</b>에는 그 기기의 번호를 그대로 입력하면 백업된 기록이 복원됩니다.</p>
-      <div class="form-group"><label>기기 번호 (영문 대문자·숫자 1~3자)</label><input type="text" id="deviceCodeInput" maxlength="3" style="text-transform:uppercase; font-size:20px; font-weight:900; height:46px;"></div>
+      <div id="deviceKnown" style="margin-bottom:10px;"></div>
+      <div class="form-group"><label>새 기기 번호 (영문 대문자·숫자 1~3자)</label><input type="text" id="deviceCodeInput" maxlength="3" style="text-transform:uppercase; font-size:20px; font-weight:900; height:46px;"></div>
       <div id="deviceMsg" style="font-size:12px; color:#d32f2f; min-height:16px; margin-bottom:6px;"></div>
       <button style="width:100%; height:46px; background:#2e7d32; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:16px; cursor:pointer; margin-bottom:8px;" onclick="submitDeviceCode()">이 번호로 판매 기기 등록</button>
       <div style="display:flex; gap:8px;">
@@ -555,7 +556,9 @@
       <div style="font-size:40px;">⛔</div>
       <h3 style="font-size:19px; font-weight:900; margin:6px 0;" id="lockTitle">이 기기에서는 판매할 수 없습니다</h3>
       <p style="font-size:13px; color:#444; line-height:1.5; margin-bottom:12px;" id="lockText"></p>
-      <button style="width:100%; height:44px; background:#e03131; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:14px; cursor:pointer;" onclick="resetLockedDevice()">이 기기 판매기록 지우고 새 번호로 시작</button>
+      <button style="width:100%; height:48px; background:#2e7d32; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:15px; cursor:pointer; margin-bottom:8px;" onclick="reclaimLockedDevice()">이 패드로 다시 가져오기 (같은 번호로 계속 판매)</button>
+      <div style="font-size:12px; color:#666; margin-bottom:10px; line-height:1.4;">다른 패드(또는 사파리로 연 포스)에서 이 번호를 쓰게 된 경우입니다. 가져오면 그쪽은 판매가 막히고, 기록은 합쳐집니다.</div>
+      <button style="width:100%; height:40px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;" onclick="resetLockedDevice()">이 패드 판매기록 지우고 새 번호로 시작</button>
     </div>
   </div>
 
@@ -1366,7 +1369,8 @@ var PhotoArt = (function () {
       const timeText = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} 마감`;
       const evData = { id: Date.now(), kind: wantC ? 'COUP' : 'REG', dateStr: dateText, timeStr: timeText, eventName: eventName, baseCouponVal: baseCouponVal, history: picked };
       if (devCode()) evData.device = devCode();         // [추가] 어느 기기의 마감인지
-      evData.dateKey = padDate(now);                    // [추가] 통합 영수증 날짜 검색용
+      evData.dateKey = padDate(now);                    // [추가] 통합 영수증 날짜 검색용 (마감한 날)
+      evData.saleDates = picked.map(o => normDate(o.date)).filter((d, i, a) => d && a.indexOf(d) === i).sort(); // [추가] 이 마감에 들어간 판매 날짜들 (달력 표시용)
       pastEvents.push(evData);
       if (!safeSet('coffee_past_events', JSON.stringify(pastEvents))) { pastEvents.pop(); return; } // 저장 실패 시 당일 내역 보존
       syncOnClose(evData, kind, picked);                 // [추가] 서버에 마감 기록 백업
@@ -1406,15 +1410,21 @@ var PhotoArt = (function () {
     function calRecords(monthPrefix) {
       // 날짜별 기록 모으기: { 'YYYY-MM-DD': [{kind, name, device, local idx|null}] }
       const map = {}, seen = {};
+      // [수정] 마감한 날이 아니라 판매한 날짜에 표시 (다음 날 마감해도 판매한 날에)
+      const datesOf = ev => { const ds = (ev.history || []).map(o => normDate(o.date)).filter((d, i, a) => d && a.indexOf(d) === i); return ds.length ? ds : [evDateKey(ev)].filter(Boolean); };
       pastEvents.forEach((ev, i) => {
-        const k = evDateKey(ev); if (!k || k.indexOf(monthPrefix) !== 0) return;
-        (map[k] = map[k] || []).push({ kind: ev.kind, name: ev.eventName, device: ev.device || '', idx: i });
+        datesOf(ev).forEach(k => { if (k.indexOf(monthPrefix) !== 0) return; (map[k] = map[k] || []).push({ kind: ev.kind, name: ev.eventName, device: ev.device || '', idx: i }); });
         seen[(ev.device || '') + '|' + ev.id] = true;
       });
       (pastCal.srv[monthPrefix] || []).forEach(ev => {
-        const k = normDate(ev.dateKey); if (!k || k.indexOf(monthPrefix) !== 0 || seen[(ev.device || '') + '|' + ev.id]) return;
-        (map[k] = map[k] || []).push({ kind: ev.kind, name: ev.eventName, device: ev.device || '', idx: null });
+        if (seen[(ev.device || '') + '|' + ev.id]) return;
+        const ds = (ev.saleDates && ev.saleDates.length) ? ev.saleDates.map(normDate) : [normDate(ev.dateKey)];
+        ds.forEach(k => { if (!k || k.indexOf(monthPrefix) !== 0) return; (map[k] = map[k] || []).push({ kind: ev.kind, name: ev.eventName, device: ev.device || '', idx: null }); });
       });
+      // 아직 마감 안 한 판매 (서버)
+      const op = {};
+      (pastCal.open || []).forEach(o => { const k = normDate(o.date); if (!k || k.indexOf(monthPrefix) !== 0 || o.voided || o.cancelled) return; const key = k + '|' + o.device + '|' + o.kind; op[key] = op[key] || { k, kind: o.kind, device: o.device || '?', n: 0 }; op[key].n++; });
+      Object.keys(op).forEach(key => { const x = op[key]; (map[x.k] = map[x.k] || []).push({ kind: x.kind, name: '', device: x.device, idx: null, open: x.n }); });
       return map;
     }
     function loadCalServer(monthPrefix) {
@@ -1423,9 +1433,10 @@ var PhotoArt = (function () {
       if (st === 'loading' || (st && Date.now() - st < 60000)) return; // 1분 안에는 다시 안 받음
       pastCal.srvState[monthPrefix] = 'loading';
       Promise.all([
-        Sync.backend.queryRange('events', 'dateKey', monthPrefix + '-01', monthPrefix + '-31', ['dateKey', 'eventName', 'kind', 'device', 'id']),
+        Sync.backend.queryRange('events', 'dateKey', monthPrefix + '-01', planAddDays(monthPrefix + '-01', 92), ['dateKey', 'saleDates', 'eventName', 'kind', 'device', 'id']), // 다음 달에 마감한 것도
+        Sync.backend.query('orders', [['closed', '==', false]]).then(r => r.docs), // 아직 마감 안 한 판매
         Sync.backend.queryRange('plans', 'date', planAddDays(monthPrefix + '-01', -31), monthPrefix + '-31', ['date', 'endDate', 'name', 'memo', 'id']) // [추가] 행사 예정 (행사 달력 앱에서 입력, 여러 날 행사는 앞달에서 시작할 수 있음)
-      ]).then(r => { pastCal.srv[monthPrefix] = r[0] || []; pastCal.plans[monthPrefix] = r[1] || []; pastCal.srvState[monthPrefix] = Date.now(); })
+      ]).then(r => { pastCal.srv[monthPrefix] = r[0] || []; pastCal.open = r[1] || []; pastCal.plans[monthPrefix] = r[2] || []; pastCal.srvState[monthPrefix] = Date.now(); })
         .catch(() => { pastCal.srvState[monthPrefix] = 0; })
         .then(() => { if (document.getElementById('pastEventsModal').style.display === 'flex') renderPastCal(); });
     }
@@ -1456,6 +1467,7 @@ var PhotoArt = (function () {
         const k = `${mp}-${String(d).padStart(2, '0')}`, r = recs[k] || [];
         const hasR = r.some(x => x.kind === 'REG'), hasC = r.some(x => x.kind === 'COUP');
         const names = []; r.forEach(x => { if (x.name && names.indexOf(x.name) < 0) names.push(x.name); });
+        const openN = r.reduce((a, x) => a + (x.open || 0), 0); if (openN) names.push('미마감 ' + openN + '건');
         const pl = (pastCal.plans[mp] || []).filter(x => planOn(x, k));
         h += `<div class="cal-day${r.length ? ' has' : ''}${k === today ? ' today' : ''}${k === pastCal.sel ? ' sel' : ''}" onclick="pickCalDay('${k}')"><span class="cal-num">${d}</span><span class="cal-dots">${hasR ? '<span class="cal-dot dot-reg"></span>' : ''}${hasC ? '<span class="cal-dot dot-coup"></span>' : ''}</span><div class="cal-name">${names.join(', ')}</div>${pl.map(x => `<div class="cal-plan">${x.name}</div>`).join('')}</div>`;
       }
@@ -1473,8 +1485,9 @@ var PhotoArt = (function () {
       (pastCal.plans[sm] || []).filter(x => planOn(x, sel)).forEach(x => { const a = normDate(x.date), e = planEndOf(x); lh += `<div style="background:#f1f8ff; border:1px solid #a5d8ff; border-radius:8px; padding:8px 10px; margin-bottom:8px;"><b style="font-size:15px;"><span class="cal-plan" style="display:inline-block; font-size:12px;">예정</span> ${x.name}</b>${a !== e ? `<div style="font-size:12px; color:#1c7ed6; font-weight:bold; margin-top:2px;">${+a.slice(5,7)}/${+a.slice(8,10)} ~ ${+e.slice(5,7)}/${+e.slice(8,10)}</div>` : ''}${x.memo ? `<div style="font-size:12px; color:#555; margin-top:3px; white-space:pre-wrap;">${x.memo}</div>` : ''}</div>`; });
       if (!r.length) lh += '<div style="text-align:center; padding:10px; color:#666; font-size:13px;">이 날은 마감 기록이 없습니다.</div>';
       r.filter(x => x.idx !== null).sort((a, b) => b.idx - a.idx).forEach(x => { lh += pastCardHtml(pastEvents[x.idx], x.idx); });
-      const others = r.filter(x => x.idx === null);
+      const others = r.filter(x => x.idx === null && !x.open), opens = r.filter(x => x.open);
       if (others.length) lh += `<div style="font-size:12px; color:#555; margin:4px 0 6px;">다른 기기 마감 (영수증은 통합 영수증에서 확인):</div>` + others.map(x => `<div style="background:#f1f3f5; border-radius:6px; padding:6px 8px; margin-bottom:4px; font-size:13px; font-weight:bold;"><span class="cal-dot ${x.kind === 'COUP' ? 'dot-coup' : 'dot-reg'}"></span> ${x.device || '?'} · ${x.kind === 'COUP' ? '쿠폰' : '일반'} · ${x.name || ''}</div>`).join('');
+      if (opens.length) lh += `<div style="font-size:12px; color:#d9480f; margin:4px 0 6px;">아직 마감 안 한 판매 (통합 영수증 합계에 포함):</div>` + opens.map(x => `<div style="background:#fff4e6; border-radius:6px; padding:6px 8px; margin-bottom:4px; font-size:13px; font-weight:bold;"><span class="cal-dot ${x.kind === 'COUP' ? 'dot-coup' : 'dot-reg'}"></span> ${x.device} · ${x.kind === 'COUP' ? '쿠폰' : '일반'} · 미마감 ${x.open}건</div>`).join('');
       list.innerHTML = lh;
     }
     function openIntegratedFor(k) { document.getElementById('intDate').value = k; openIntegrated(); }
@@ -1916,6 +1929,26 @@ var PhotoArt = (function () {
       document.getElementById('deviceMsg').innerText = '';
       document.getElementById('deviceCodeInput').value = '';
       document.getElementById('deviceModal').style.display = 'flex';
+      loadKnownDevices();
+    }
+    // [추가] 같은 패드인데 번호를 다시 물어볼 때(홈 화면 앱과 사파리는 저장 공간이 따로라 생김): 쓰던 번호를 눌러 이어서 쓰기
+    function loadKnownDevices() {
+      const box = document.getElementById('deviceKnown'); box.innerHTML = '';
+      if (!cloudRead() || !Sync.backend) return;
+      box.innerHTML = '<div style="font-size:12px; color:#666;">쓰던 기기 번호 불러오는 중…</div>';
+      Sync.backend.query('devices', []).then(r => {
+        const list = (r.docs || []).filter(d => d && d.code).sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+        if (!list.length) { box.innerHTML = ''; return; }
+        const fmt = t => t ? new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+        box.innerHTML = `<div style="font-size:13px; font-weight:900; margin-bottom:6px;">이 패드가 쓰던 번호가 있으면 눌러서 이어서 쓰세요</div>` +
+          list.map(d => `<button style="width:100%; height:44px; margin-bottom:6px; background:#e7f5ff; border:2px solid #74c0fc; border-radius:8px; font-weight:900; font-size:15px; color:#1864ab; cursor:pointer; text-align:left; padding:0 12px;" onclick="reuseDevice('${d.code}')">${d.code}번 <span style="font-size:12px; font-weight:bold; color:#555;">· 마지막 사용 ${fmt(d.lastSeen)}</span><span style="float:right;">이어서 쓰기 ›</span></button>`).join('') +
+          `<div style="font-size:12px; color:#666; margin:2px 0 4px;">처음 쓰는 패드라면 아래에 새 번호를 넣으세요.</div>`;
+      }).catch(() => { box.innerHTML = ''; });
+    }
+    function reuseDevice(code) {
+      if (!confirm(`'${code}'번으로 이어서 씁니다.\n\n· 서버에 있는 ${code}번의 판매·마감 기록을 이 패드로 가져옵니다\n· 다른 패드에서 ${code}번을 쓰고 있었다면 그 패드는 판매가 막힙니다\n\n계속할까요?`)) return;
+      document.getElementById('deviceCodeInput').value = code;
+      submitDeviceCode(true);
     }
     function closeDeviceModal() { document.getElementById('deviceModal').style.display = 'none'; updateSyncBadge(); }
     function useViewerMode() {
@@ -1963,7 +1996,8 @@ var PhotoArt = (function () {
         });
         ledgers[k].history.sort((a, b) => b.seq - a.seq);
         ledgers[k].seq = Math.max(ledgers[k].seq, ledgers[k].history.reduce((m, o) => Math.max(m, o.seq || 0), 0) + 1);
-        ledgers[k].history.forEach(o => { const d = orderDocOf(k, o); Sync.st.hash['orders/' + d.key] = JSON.stringify(d); });
+        // 서버 사본 기준으로 표시 → 이 패드에만 있거나 바뀐 주문은 다음 확인 때 서버로 올라감
+        os.docs.filter(d => d.kind === k && !d.voided).forEach(d => { const sd = orderDocOf(k, { id: d.id, seq: d.seq, date: d.date, time: d.time, payType: d.payType, items: d.items, ...(d.cancelled ? { cancelled: true, cancelTime: d.cancelTime } : {}) }); Sync.st.hash['orders/' + sd.key] = JSON.stringify(sd); });
       });
       const haveEv = new Set(pastEvents.map(e => String(e.id) + '_' + (e.kind || '')));
       es.docs.forEach(e => { if (!haveEv.has(String(e.id) + '_' + (e.kind || ''))) pastEvents.push(e); });
@@ -1980,6 +2014,16 @@ var PhotoArt = (function () {
         (pendingCount() ? `<br><br><b style="color:#d32f2f">⚠ 이 기기에만 있고 서버에 못 올라간 기록이 ${pendingCount()}건 있습니다.</b>` : '');
       document.getElementById('lockOverlay').style.display = 'flex';
       updateSyncBadge();
+    }
+    async function reclaimLockedDevice() {
+      const code = devCode(); if (!code || !Sync.backend) return;
+      try {
+        await Sync.backend.claimDevice(code, Sync.device.instanceId, true);   // 서버에 '이 패드가 이 번호'로 다시 표시
+        await restoreFromServer(code);                                       // 다른 쪽에서 판 주문도 합쳐 가져옴 (같은 주문은 한 번만)
+      } catch (e) { alert('다시 가져오지 못했습니다. 인터넷 연결을 확인하고 다시 눌러주세요.'); return; }
+      Sync.locked = false; document.getElementById('lockOverlay').style.display = 'none';
+      startCloud(); renderCurrentCart(); updateSyncBadge(); flushOutbox();
+      alert(`'${code}'번으로 이 패드에서 계속 판매합니다.`);
     }
     function resetLockedDevice() {
       if (!confirm('이 기기의 판매 장부(일반·쿠폰)를 지우고 새 기기번호로 다시 시작합니다.\n(서버에 백업된 기록은 남아 있습니다) 계속할까요?')) return;
@@ -2057,39 +2101,51 @@ var PhotoArt = (function () {
       window.print();
     }
     function aggregateIntegrated(kind, events, openOrders, devices, date) {
-      // 순수 계산 함수 (검증용으로 분리) — 마감된 기록만 합산, 미마감은 경고로 따로
+      // 순수 계산 함수 (검증용으로 분리)
+      // [수정] 마감했든 안 했든 '판매한 날짜' 기준으로 모든 주문을 합산
+      //  · 마감한 주문: 마감 기록(events) 안의 주문 — 주문마다 판매 날짜(o.date), 없으면 마감 날짜
+      //  · 마감 안 한 주문: 서버의 주문(closed=false) — 같은 주문이 마감 기록에도 있으면 한 번만 셈
       const isC = kind === 'COUP';
-      const per = {}, items = {};
-      const dev = d => (per[d] = per[d] || { device: d, n: 0, cancel: 0, seqs: [], card: 0, cash: 0, other: 0, total: 0, qty: 0, base: 0, extra: 0, claim: 0, openN: 0, openAmt: 0 });
-      events.filter(e => e.kind === kind && normDate(e.dateKey) === date).forEach(e => {
-        const P = dev(e.device || '?');
+      const per = {}, items = {}, seen = {};
+      const dev = d => (per[d] = per[d] || { device: d, n: 0, cancel: 0, seqs: [], card: 0, cash: 0, other: 0, total: 0, qty: 0, base: 0, extra: 0, claim: 0, openN: 0, openAmt: 0, openCancel: 0 });
+      const okey = (d, o) => `${d}|${kind}|${o.id != null ? o.id : 's' + o.seq}`;
+      const addOrder = (P, o, fallbackBase, isOpen) => {
+        if (!o.items || !o.items.some(it => !!it.isC === isC)) return;
+        if (typeof o.seq === 'number') P.seqs.push(o.seq);
+        if (o.cancelled) { P.cancel++; if (isOpen) P.openCancel++; return; }
+        P.n++; if (isOpen) P.openN++;
+        o.items.forEach(it => {
+          if (!!it.isC !== isC) return;
+          if (isC) {
+            const b = getBase(it, fallbackBase), ex = getEx(it, b), lb = b * it.qty, le = ex * it.qty;
+            P.qty += it.qty; P.base += lb; P.extra += le; P.claim += lb + le; if (isOpen) P.openAmt += lb + le;
+            const k = `${it.n}|${it.p}|${b}`; items[k] = items[k] || { n: it.n, p: it.p, b, ex, qty: 0 }; items[k].qty += it.qty;
+          } else {
+            const v = it.p * it.qty; P.total += v; if (isOpen) P.openAmt += v;
+            if (o.payType === 'CARD') P.card += v; else if (o.payType === 'CASH') P.cash += v; else P.other += v;
+            const k = `${it.n}|${it.p}`; items[k] = items[k] || { n: it.n, p: it.p, qty: 0 }; items[k].qty += it.qty;
+          }
+        });
+      };
+      // 1) 마감한 주문 (어느 날 마감했든, 판매한 날짜가 이 날인 주문만)
+      events.filter(e => e.kind === kind).forEach(e => {
+        const d = e.device || '?';
         (e.history || []).forEach(o => {
-          if (!o.items.some(it => !!it.isC === isC)) return;
-          if (typeof o.seq === 'number') P.seqs.push(o.seq);
-          if (o.cancelled) { P.cancel++; return; }
-          P.n++;
-          o.items.forEach(it => {
-            if (!!it.isC !== isC) return;
-            if (isC) {
-              const b = getBase(it, e.baseCouponVal), ex = getEx(it, b), lb = b * it.qty, le = ex * it.qty;
-              P.qty += it.qty; P.base += lb; P.extra += le; P.claim += lb + le;
-              const k = `${it.n}|${it.p}|${b}`; items[k] = items[k] || { n: it.n, p: it.p, b, ex, qty: 0 }; items[k].qty += it.qty;
-            } else {
-              const v = it.p * it.qty; P.total += v;
-              if (o.payType === 'CARD') P.card += v; else if (o.payType === 'CASH') P.cash += v; else P.other += v;
-              const k = `${it.n}|${it.p}`; items[k] = items[k] || { n: it.n, p: it.p, qty: 0 }; items[k].qty += it.qty;
-            }
-          });
+          const od = normDate(o.date) || normDate(e.dateKey);
+          if (od !== date) return;
+          const k = okey(d, o); if (seen[k]) return; seen[k] = 1;   // 같은 주문이 두 마감 기록에 있어도 한 번만
+          addOrder(dev(d), o, e.baseCouponVal, false);
         });
       });
-      openOrders.filter(o => o.kind === kind && !o.voided && !o.cancelled && normDate(o.date) === date).forEach(o => {
-        const P = dev(o.device || '?'); P.openN++;
-        o.items.forEach(it => { if (!!it.isC !== isC) return; P.openAmt += isC ? (getBase(it, baseCouponVal) + getEx(it, getBase(it, baseCouponVal))) * it.qty : it.p * it.qty; });
+      // 2) 아직 마감 안 한 주문 (서버에 올라간 것). 이미 마감 기록에 들어간 주문은 건너뜀
+      openOrders.filter(o => o.kind === kind && !o.voided && !o.closed && normDate(o.date) === date).forEach(o => {
+        const d = o.device || '?', k = okey(d, o); if (seen[k]) return; seen[k] = 1;
+        addOrder(dev(d), o, baseCouponVal, true);
       });
-      (devices || []).forEach(d => { if (d.code) dev(d.code).lastSeen = d.lastSeen || 0; });
+      (devices || []).forEach(d => { if (d.code && per[d.code]) per[d.code].lastSeen = d.lastSeen || 0; });
       const list = Object.values(per).sort((a, b) => a.device.localeCompare(b.device));
       const sum = f => list.reduce((s, p) => s + p[f], 0);
-      return { list, items: Object.values(items), tot: { n: sum('n'), cancel: sum('cancel'), card: sum('card'), cash: sum('cash'), other: sum('other'), total: sum('total'), qty: sum('qty'), base: sum('base'), extra: sum('extra'), claim: sum('claim'), openN: sum('openN') } };
+      return { list, items: Object.values(items), tot: { n: sum('n'), cancel: sum('cancel'), card: sum('card'), cash: sum('cash'), other: sum('other'), total: sum('total'), qty: sum('qty'), base: sum('base'), extra: sum('extra'), claim: sum('claim'), openN: sum('openN'), openAmt: sum('openAmt') } };
     }
     async function renderIntegrated() {
       const body = document.getElementById('intBody');
@@ -2100,7 +2156,7 @@ var PhotoArt = (function () {
       let ev, op, dv;
       try {
         [ev, op, dv] = await Promise.all([
-          Sync.backend.query('events', [['dateKey', '==', date]]),
+          (typeof Sync.backend.queryRange === 'function' ? Sync.backend.queryRange('events', 'dateKey', date, planAddDays(date, 60)).then(d => ({ docs: d })) : Sync.backend.query('events', [])), // [수정] 다음 날 이후 마감한 기록도
           Sync.backend.query('orders', [['closed', '==', false]]),
           Sync.backend.query('devices', [])
         ]);
@@ -2108,7 +2164,7 @@ var PhotoArt = (function () {
       const R = aggregateIntegrated(kind, ev.docs, op.docs, dv.docs, date);
       const won = v => v.toLocaleString() + '원';
       const fmtT = t => t ? new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-      const evNames = []; ev.docs.forEach(e => { if (e.kind === kind && normDate(e.dateKey) === date && e.eventName && evNames.indexOf(e.eventName) < 0) evNames.push(e.eventName); }); // [수정] 그날 실제 행사명
+      const evNames = []; ev.docs.forEach(e => { if (e.kind === kind && e.eventName && evNames.indexOf(e.eventName) < 0 && (e.history || []).some(o => (normDate(o.date) || normDate(e.dateKey)) === date)) evNames.push(e.eventName); }); // 그날 판매가 들어 있는 마감 기록의 행사명
       let h = `<div style="text-align:center; font-size:14px; font-weight:900; color:#222; margin-bottom:2px;">${evNames.length ? evNames.join(' · ') : '(행사명 없음)'}</div><div style="text-align:center; font-size:12px; color:#555;">${(ev.fromCache || op.fromCache) ? '<b style="color:#e67700">오프라인: 마지막으로 받은 데이터 기준</b>' : ''}</div>`;
       const cls = isC ? 'int-sec int-coup' : 'int-sec int-reg';
       // 기기별
@@ -2116,14 +2172,14 @@ var PhotoArt = (function () {
         (isC ? `<th style="text-align:right;">회수</th><th style="text-align:right;">청구액</th>` : `<th style="text-align:right;">카드</th><th style="text-align:right;">현금</th><th style="text-align:right;">합계</th>`) + `</tr></thead><tbody>`;
       R.list.forEach(p => {
         const rng = p.seqs.length ? ` (${p.device}-${Math.min(...p.seqs)}~${p.device}-${Math.max(...p.seqs)}${p.cancel ? ', 취소 ' + p.cancel : ''})` : '';
-        h += `<tr><td><b>${p.device}</b><div style="font-size:10px; color:#666;">동기화 ${fmtT(p.lastSeen)}</div></td><td style="text-align:right;">${p.n}건<div style="font-size:10px; color:#666;">${rng}</div></td>` +
+        h += `<tr><td><b>${p.device}</b><div style="font-size:10px; color:#666;">동기화 ${fmtT(p.lastSeen)}</div>${p.openN ? `<div style="font-size:10px; color:#e8590c; font-weight:bold;">미마감 ${p.openN}건 포함</div>` : ''}</td><td style="text-align:right;">${p.n}건<div style="font-size:10px; color:#666;">${rng}</div></td>` +
           (isC ? `<td style="text-align:right;">${p.qty}장</td><td style="text-align:right; font-weight:bold;">${won(p.claim)}</td>` : `<td style="text-align:right;">${won(p.card)}</td><td style="text-align:right;">${won(p.cash)}${p.other ? `<div style="font-size:10px; color:#c92a2a;">미지정 ${won(p.other)}</div>` : ''}</td><td style="text-align:right; font-weight:bold;">${won(p.total)}</td>`) + `</tr>`;
       });
       if (!R.list.length) h += `<tr><td colspan="5" style="text-align:center; color:#999; padding:10px;">이 날짜의 기록이 없습니다.</td></tr>`;
       h += `</tbody></table></div>`;
-      // 미마감 경고
+      // [수정] 마감 안 한 주문도 합계에 포함 — 안내만
       const opens = R.list.filter(p => p.openN > 0);
-      if (opens.length) h += `<div style="margin-top:8px; padding:8px; background:#fff5f5; border:1px solid #ffc9c9; border-radius:6px; color:#c92a2a; font-size:12px;">⚠ 아직 마감 안 된 주문이 있습니다 (합계에 미포함):<br>` + opens.map(p => `· ${p.device}기기: ${p.openN}건 ${won(p.openAmt)}`).join('<br>') + `<br>해당 기기에서 마감 후 [새로고침]을 누르세요.</div>`;
+      if (opens.length) h += `<div style="margin-top:8px; padding:8px; background:#fff4e6; border:1px solid #ffd8a8; border-radius:6px; color:#d9480f; font-size:12px;">ℹ 아직 마감 안 한 주문도 합계에 포함했습니다:<br>` + opens.map(p => `· ${p.device}기기: ${p.openN}건 ${won(p.openAmt)}`).join('<br>') + `</div>`;
       // 품목 합계
       h += `<div class="${cls}"><div style="font-weight:900; margin-bottom:6px;">품목 합계 (전체 기기)</div><table><thead><tr style="border-bottom:1px solid #999; color:#555;"><th style="text-align:left;">품목</th><th style="text-align:right;">단가</th><th style="text-align:right;">잔수</th><th style="text-align:right;">${isC ? '청구액' : '합계'}</th></tr></thead><tbody>` +
         R.items.map(it => `<tr><td>${it.n}</td><td style="text-align:right;">${it.p.toLocaleString()}</td><td style="text-align:right;">${it.qty}잔</td><td style="text-align:right; font-weight:bold;">${won(isC ? (it.b + it.ex) * it.qty : it.p * it.qty)}</td></tr>`).join('') + `</tbody></table></div>`;
