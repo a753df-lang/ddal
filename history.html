@@ -120,6 +120,11 @@
     #intOv { position: absolute !important; left: 0; top: 0; background: none !important; padding: 0 !important; overflow: visible !important; }
     #intOv .box { max-width: none !important; box-shadow: none !important; }
     .noprint { display: none !important; }
+    /* [추가] 월별·연도별 합계 인쇄 */
+    body.p-sum #intOv { display: none !important; }
+    body.p-sum #sumOv, body.p-sum #sumOv * { visibility: visible !important; }
+    body.p-sum #sumOv { position: absolute !important; left: 0; top: 0; background: none !important; padding: 0 !important; overflow: visible !important; }
+    body.p-sum #sumOv .box { max-width: none !important; box-shadow: none !important; }
   }
 </style>
 </head>
@@ -148,6 +153,7 @@
       <button class="btn btn-dark" onclick="openSearch('name')">🔍 행사명 검색</button>
       <button class="btn btn-dark" onclick="openSearch('date')">📅 날짜로 찾기</button>
     </div>
+    <button class="btn btn-green" style="width:100%; margin-bottom:10px;" onclick="openSum()">📊 월별·연도별 매출 합계</button>
     <div class="card">
       <div class="cal-head">
         <button onclick="moveMonth(-1)">◀</button>
@@ -204,6 +210,24 @@
     <div class="row2 noprint" style="margin-top:14px;">
       <button class="btn btn-green" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
       <button class="btn btn-dark" onclick="closeOv('intOv')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 월별·연도별 합계 -->
+<div class="ov" id="sumOv">
+  <div class="box" style="font-family:monospace;">
+    <h2 style="font-size:19px; font-weight:900; text-align:center; margin-bottom:6px;">[ 월별 · 연도별 매출 합계 ]</h2>
+    <div class="noprint" style="display:flex; justify-content:center; align-items:center; margin-bottom:8px;">
+      <button class="btn btn-blue" style="width:48px; height:38px; padding:0;" onclick="sumNav(-1)">‹</button>
+      <b id="sumYearLbl" style="font-size:20px; margin:0 16px; min-width:110px; text-align:center;"></b>
+      <button class="btn btn-blue" style="width:48px; height:38px; padding:0;" onclick="sumNav(1)">›</button>
+    </div>
+    <div id="sumBody" style="font-size:13px;"></div>
+    <div class="noprint" style="display:flex; justify-content:space-between; margin-top:12px;">
+      <button class="btn btn-green" style="width:40%;" onclick="printSum()">🖨 인쇄 / PDF</button>
+      <button class="btn btn-blue" id="sumBackBtn" style="width:28%;" onclick="sumBack()">‹ 연간</button>
+      <button class="btn btn-dark" style="width:28%;" onclick="closeOv('sumOv')">닫기</button>
     </div>
   </div>
 </div>
@@ -410,6 +434,32 @@
     const sum = f => list.reduce((s, p) => s + p[f], 0);
     return { list, items: Object.values(items), tot: { n: sum('n'), cancel: sum('cancel'), card: sum('card'), cash: sum('cash'), other: sum('other'), total: sum('total'), qty: sum('qty'), base: sum('base'), extra: sum('extra'), claim: sum('claim'), openN: sum('openN'), openAmt: sum('openAmt') } };
   }
+  // [추가] 월별·연도별 합계 (coffee_pos.html 에서 그대로 가져옴 — 바꾸지 말 것)
+  function sumByDay(events, openOrders) {
+    const evAt = {}, opAt = {}, names = {};
+    events.forEach(e => {
+      const ds = {};
+      (e.history || []).forEach(o => { const d = normDate(o.date) || normDate(e.dateKey); if (d) ds[d] = 1; });
+      Object.keys(ds).forEach(d => { (evAt[d] = evAt[d] || []).push(e); if (e.eventName && e.eventName !== '이름을 터치해서 입력하세요') { names[d] = names[d] || []; if (names[d].indexOf(e.eventName) < 0) names[d].push(e.eventName); } });
+    });
+    openOrders.forEach(o => { const d = normDate(o.date); if (d) (opAt[d] = opAt[d] || []).push(o); });
+    const all = {}; Object.keys(evAt).concat(Object.keys(opAt)).forEach(d => { all[d] = 1; });
+    const out = {};
+    Object.keys(all).forEach(d => {
+      const R = aggregateIntegrated('REG', evAt[d] || [], opAt[d] || [], [], d).tot;
+      const C = aggregateIntegrated('COUP', evAt[d] || [], opAt[d] || [], [], d).tot;
+      if (!(R.n || C.n)) return;   // 취소만 있는 날은 장사일로 세지 않음
+      out[d] = { reg: R.total, card: R.card, cash: R.cash, other: R.other, coup: C.claim, qty: C.qty, n: R.n + C.n, openN: R.openN + C.openN, names: names[d] || [] };
+    });
+    return out;
+  }
+  function sumRange(days, prefix) {
+    const t = { days: 0, reg: 0, card: 0, cash: 0, other: 0, coup: 0, qty: 0, n: 0, openN: 0 };
+    Object.keys(days).forEach(d => { if (d.indexOf(prefix) !== 0) return; const v = days[d]; t.days++; ['reg', 'card', 'cash', 'other', 'coup', 'qty', 'n', 'openN'].forEach(k => { t[k] += v[k]; }); });
+    t.total = t.reg + t.coup;
+    return t;
+  }
+
   window.__aggregateIntegrated = aggregateIntegrated;
   // 마감 기록 1건의 합계 (포스 과거 내역 카드와 같은 계산)
   function eventTotals(ev) {
@@ -778,6 +828,74 @@
     renderCal(); loadMonth(false); renderDay();
     setTimeout(function () { var el = $('dayCard'); if (!el.scrollIntoView) return; try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} } }, 50);
   };
+
+  // ===== [추가] 월별·연도별 매출 합계 (계산은 위 sumByDay → 통합 영수증 계산과 같음) =====
+  var Sum = { year: 0, month: 0, days: null, at: 0, busy: false };
+  window.openSum = function () {
+    if (!Sum.year) Sum.year = new Date().getFullYear();
+    Sum.month = 0; $('sumOv').style.display = 'block';
+    loadSum(Date.now() - Sum.at > 60000);
+  };
+  function loadSum(force) {
+    if (Sum.days && !force) { renderSum(); return; }
+    if (Sum.busy) return;
+    Sum.busy = true;
+    $('sumYearLbl').textContent = Sum.year + '년';
+    $('sumBody').innerHTML = '<div class="empty">서버에서 불러오는 중...</div>';
+    Promise.all([Cloud.range('events', 'dateKey', '2000-01-01', '2999-12-31'), Cloud.eq('orders', 'closed', false)]).then(function (r) {
+      Sum.days = sumByDay(r[0], r[1]); Sum.at = Date.now(); Sum.busy = false; renderSum();
+    }).catch(function (e) { Sum.busy = false; $('sumBody').innerHTML = '<div style="color:#c92a2a; padding:12px;">불러오기 실패: ' + esc(e.message || e) + ' (인터넷 연결 확인)</div>'; });
+  }
+  window.sumNav = function (d) { if (Sum.month) { var m = Sum.month + d, y = Sum.year; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } Sum.month = m; Sum.year = y; } else Sum.year += d; renderSum(); };
+  window.sumBack = function () { Sum.month = 0; renderSum(); };
+  window.sumMonth = function (m) { Sum.month = m; renderSum(); };
+  window.sumYear = function (y) { Sum.year = y; Sum.month = 0; renderSum(); };
+  window.sumGoDay = function (k) { closeOv('sumOv'); goDay(k); };
+  window.printSum = function () {
+    document.body.classList.add('p-sum');
+    var done = function () { document.body.classList.remove('p-sum'); window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    window.print();
+  };
+  function renderSum() {
+    var D = Sum.days || {}, Y = Sum.year, M = Sum.month, h = '';
+    var w = function (v) { return v ? Number(v).toLocaleString() : '0'; };
+    var th = 'style="text-align:right; padding:4px 2px; color:#555; border-bottom:1px solid #999;"', td = 'style="text-align:right; padding:6px 2px; border-bottom:1px dashed #ddd;"';
+    var thL = 'style="text-align:left; padding:4px 2px; color:#555; border-bottom:1px solid #999;"', tt = 'style="text-align:right; border-top:2px solid #222; font-weight:900;"';
+    var openTag = '<div style="font-size:10px; color:#e8590c; font-weight:bold;">미마감 포함</div>';
+    $('sumBackBtn').style.visibility = M ? 'visible' : 'hidden';
+    if (!M) {
+      $('sumYearLbl').textContent = Y + '년';
+      h += '<table style="width:100%; border-collapse:collapse;"><thead><tr><th ' + thL + '>월</th><th ' + th + '>장사일</th><th ' + th + '>일반 매출</th><th ' + th + '>쿠폰 청구</th><th ' + th + '>합계</th></tr></thead><tbody>';
+      for (var m = 1; m <= 12; m++) {
+        var t = sumRange(D, Y + '-' + pad2(m));
+        if (!t.days) { var te = 'style="text-align:right; padding:2px; border-bottom:1px dashed #eee;"'; h += '<tr style="color:#bbb; font-size:12px;"><td style="padding:2px; border-bottom:1px dashed #eee;">' + m + '월</td><td ' + te + '>-</td><td ' + te + '>-</td><td ' + te + '>-</td><td ' + te + '>-</td></tr>'; continue; }
+        h += '<tr style="cursor:pointer;" onclick="sumMonth(' + m + ')"><td style="padding:6px 2px; border-bottom:1px dashed #ddd; color:#1864ab; font-weight:900;">' + m + '월 ›' + (t.openN ? openTag : '') + '</td><td ' + td + '>' + t.days + '일</td><td ' + td + '>' + w(t.reg) + '</td><td ' + td + '>' + w(t.coup) + '</td><td ' + td + '><b>' + w(t.total) + '</b></td></tr>';
+      }
+      var yv = sumRange(D, String(Y));
+      h += '<tr><td style="padding:8px 2px; border-top:2px solid #222; font-weight:900;">' + Y + '년</td><td ' + tt + '>' + yv.days + '일</td><td ' + tt + '>' + w(yv.reg) + '</td><td ' + tt + '>' + w(yv.coup) + '</td><td style="text-align:right; border-top:2px solid #222; font-weight:900; font-size:15px;">' + w(yv.total) + '</td></tr></tbody></table>';
+      h += '<div style="font-size:12px; margin-top:6px; line-height:1.6;">일반 매출 = 카드 ' + w(yv.card) + ' + 현금 ' + w(yv.cash) + (yv.other ? ' + 결제수단 미지정 ' + w(yv.other) : '') + '<br>쿠폰 회수 ' + yv.qty + '장 · 주문 ' + yv.n + '건' + (yv.openN ? ' <span style="color:#e8590c; font-weight:bold;">(미마감 ' + yv.openN + '건 포함)</span>' : '') + '</div>';
+      var years = {}; Object.keys(D).forEach(function (d) { years[d.slice(0, 4)] = 1; });
+      var ys = Object.keys(years).sort().reverse();
+      h += '<div style="border-top:2px solid #222; margin-top:10px; padding-top:6px;"><div style="font-weight:900; margin-bottom:4px;">연도별</div><table style="width:100%; border-collapse:collapse;">';
+      ys.forEach(function (yy) { var t2 = sumRange(D, yy); h += '<tr style="cursor:pointer;' + (+yy === Y ? ' background:#e7f5ff;' : '') + '" onclick="sumYear(' + (+yy) + ')"><td style="padding:6px 2px; border-bottom:1px dashed #ddd;">' + yy + '년</td><td ' + td + '>' + t2.days + '일</td><td ' + td + '><b>' + w(t2.total) + '원</b></td></tr>'; });
+      if (!ys.length) h += '<tr><td style="color:#999; padding:8px; text-align:center;">기록이 없습니다.</td></tr>';
+      h += '</table></div>';
+    } else {
+      var mm = pad2(M);
+      $('sumYearLbl').textContent = Y + '년 ' + M + '월';
+      var ds = Object.keys(D).filter(function (d) { return d.indexOf(Y + '-' + mm) === 0; }).sort();
+      h += '<table style="width:100%; border-collapse:collapse;"><thead><tr><th ' + thL + '>날짜</th><th ' + thL + '>행사</th><th ' + th + '>일반</th><th ' + th + '>쿠폰</th><th ' + th + '>합계</th></tr></thead><tbody>';
+      ds.forEach(function (d) { var v = D[d]; h += '<tr style="cursor:pointer;" onclick="sumGoDay(\'' + d + '\')"><td style="padding:6px 2px; border-bottom:1px dashed #ddd; color:#1864ab; font-weight:900;">' + d.slice(5).replace('-', '/') + '</td><td style="padding:6px 2px; border-bottom:1px dashed #ddd; font-size:11px; font-family:sans-serif;">' + (v.names.map(esc).join(', ') || '-') + (v.openN ? openTag : '') + '</td><td ' + td + '>' + w(v.reg) + '</td><td ' + td + '>' + w(v.coup) + '</td><td ' + td + '><b>' + w(v.reg + v.coup) + '</b></td></tr>'; });
+      if (!ds.length) h += '<tr><td colspan="5" style="color:#999; padding:10px; text-align:center;">이 달의 기록이 없습니다.</td></tr>';
+      var tm = sumRange(D, Y + '-' + mm);
+      h += '<tr><td colspan="2" style="padding:8px 2px; border-top:2px solid #222; font-weight:900;">' + M + '월 합계 (' + tm.days + '일)</td><td ' + tt + '>' + w(tm.reg) + '</td><td ' + tt + '>' + w(tm.coup) + '</td><td style="text-align:right; border-top:2px solid #222; font-weight:900; font-size:15px;">' + w(tm.total) + '</td></tr></tbody></table>';
+      h += '<div style="font-size:12px; margin-top:6px; line-height:1.6;">일반 매출 = 카드 ' + w(tm.card) + ' + 현금 ' + w(tm.cash) + (tm.other ? ' + 결제수단 미지정 ' + w(tm.other) : '') + ' · 쿠폰 회수 ' + tm.qty + '장</div>';
+      h += '<div class="noprint" style="font-size:11px; color:#666; margin-top:4px; font-family:sans-serif;">날짜를 누르면 그날 기록(통합 영수증)으로 갑니다.</div>';
+    }
+    h += '<div style="font-size:11px; color:#666; margin-top:8px; line-height:1.5; font-family:sans-serif;">· 판매한 날짜 기준, 모든 기기 합산 · 합계 = 일반 매출 + 쿠폰 청구액<br>· 마감 안 한 주문도 포함 · 계산 방식은 통합 영수증과 같음</div>';
+    $('sumBody').innerHTML = h;
+  }
 
   // 앱으로 돌아오면 새로 불러오기
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && auth) { loadMonth(true); if (S.sel) loadDay(S.sel, true); } });
