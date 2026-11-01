@@ -281,7 +281,7 @@
       <button id="btnTabCoup" class="tab-side-btn" onclick="setMode('COUP')">★ 쿠폰 판매</button>
       <button class="btn-action-top" style="background:#5c7cfa; color:#fff;" onclick="openPastEventsModal()">📅 과거</button>
       <button class="btn-action-top btn-opt-theme" onclick="openModeOptionModal()">⚙ 옵션</button>
-      <button class="btn-action-top" style="background:#1b5e20; color:#fff;" id="btnReceiptTop" onclick="showReceipt()">🧾 마감</button>
+      <button class="btn-action-top" style="background:#1b5e20; color:#fff;" id="btnReceiptTop" onclick="openCloseReceipt()">🧾 마감</button>
     </div>
   </header>
 
@@ -504,8 +504,8 @@
   <!-- [추가] 서버 백업 로그인 -->
   <div class="modal-overlay" id="loginModal" style="z-index:1200;">
     <div class="modal-box" style="width:92%; max-width:420px;">
-      <h3 style="font-size:19px; font-weight:900; margin-bottom:6px;">☁ 서버 백업 로그인</h3>
-      <p style="font-size:12px; color:#555; margin-bottom:10px; line-height:1.4;">Firebase에 만들어 둔 포스용 이메일·비밀번호로 로그인하세요.<br>한 번 로그인하면 이 기기에서는 계속 유지됩니다.</p>
+      <h3 style="font-size:19px; font-weight:900; margin-bottom:6px;">☁ 포스 로그인</h3>
+      <p style="font-size:12px; color:#555; margin-bottom:10px; line-height:1.4;">포스용 이메일·비밀번호로 로그인하세요.<br>아이패드·갤럭시탭·핸드폰·PC 어디서든 로그인하면 <b>같은 장부로 이어서</b> 판매합니다.<br>한 번 로그인하면 이 기기에서는 계속 유지됩니다.</p>
       <div class="form-group"><label>이메일</label><input type="email" id="loginEmail" autocomplete="username"></div>
       <div class="form-group"><label>비밀번호</label><input type="password" id="loginPw" autocomplete="current-password"></div>
       <div id="loginMsg" style="font-size:12px; color:#d32f2f; min-height:16px; margin-bottom:6px;"></div>
@@ -1212,7 +1212,7 @@ var PhotoArt = (function () {
         else btnArea.innerHTML = `<div class="action-grid"><button class="btn-action btn-card" onclick="completeOrder('CARD')">카드 결제</button><button class="btn-action btn-cash" onclick="openCashModal()">현금 결제</button></div>`;
       } else {
         const ord = orderHistory[currentViewingIndex];
-        titleEl.innerHTML = `<span style="color:#1971c2;">${ordNo(ord.seq)} [${String(ord.time || '').replace(/:\d{2}$/, '')}]</span>` + (ord.cancelled ? ` <span style="color:#e03131; font-weight:900;">취소</span>` : '');
+        titleEl.innerHTML = `<span style="color:#1971c2;">${ordNo(ord.seq, ord)} [${String(ord.time || '').replace(/:\d{2}$/, '')}]</span>` + (ord.cancelled ? ` <span style="color:#e03131; font-weight:900;">취소</span>` : '');
         if (ord.cancelled) {
           document.getElementById('vTotal').innerText = '주문취소';
           document.getElementById('vDirect').innerText = '취소';
@@ -1291,7 +1291,7 @@ var PhotoArt = (function () {
       const ord = orderHistory[idx];
       if (!ord) { currentViewingIndex = -1; editSnapshot = null; renderCurrentCart(); return; }
       if (ord.cancelled) return;
-      if(ord.items.length === 0) { leavePastOrder(); alert(`주문 ${ordNo(ord.seq)} 은(는) 품목이 없어 '주문취소'로 처리되었습니다.`); }
+      if(ord.items.length === 0) { leavePastOrder(); alert(`주문 ${ordNo(ord.seq, ord)} 은(는) 품목이 없어 '주문취소'로 처리되었습니다.`); }
       else {
         // [수정] 쿠폰 주문에 일반(유료) 메뉴가 추가되면 결제수단을 지정받음
         const dir = ord.items.reduce((s, it) => s + (it.isC ? 0 : it.p * it.qty), 0);
@@ -1300,7 +1300,7 @@ var PhotoArt = (function () {
         } else if (dir === 0) {
           ord.payType = 'COUPON';
         }
-        alert(`주문 ${ordNo(ord.seq)} 저장됨.`);
+        alert(`주문 ${ordNo(ord.seq, ord)} 저장됨.`);
       }
       // [수정] 저장 후 다음 번호 주문으로 이동 (가장 최근 주문이면 그대로). 현재 주문은 '새주문'으로 돌아감
       enterPastOrder(Math.max(0, idx - 1));
@@ -1312,7 +1312,7 @@ var PhotoArt = (function () {
       const idx = currentViewingIndex;
       const o = orderHistory[idx];
       if (!o || o.cancelled) return;
-      if (!confirm(`주문 ${ordNo(o.seq)} 을(를) 취소하시겠습니까?\n\n번호는 그대로 남고 전표에 '주문취소'로 표시됩니다.\n금액·잔수·쿠폰 합계에서는 빠집니다.`)) return;
+      if (!confirm(`주문 ${ordNo(o.seq, o)} 을(를) 취소하시겠습니까?\n\n번호는 그대로 남고 전표에 '주문취소'로 표시됩니다.\n금액·잔수·쿠폰 합계에서는 빠집니다.`)) return;
       if (o.items.length === 0) {
         o.items = editSnapshot || [];  // 이미 품목을 지운 상태면 원래 품목을 기록으로 (쿠폰은 지울 때 이미 되돌려짐)
       } else {
@@ -1328,7 +1328,7 @@ var PhotoArt = (function () {
       if (!o || !o.cancelled) return;
       let coup = 0; o.items.forEach(it => { if (it.isC) coup += it.qty; });
       if (coup > 0 && remCoupons !== null && remCoupons - coup < 0 && !confirm(`잔여 쿠폰(${remCoupons}장)보다 되살릴 쿠폰(${coup}장)이 많습니다. 계속할까요?`)) return;
-      if (!confirm(`주문 ${ordNo(o.seq)} 취소를 철회하고 다시 합계에 포함하시겠습니까?`)) return;
+      if (!confirm(`주문 ${ordNo(o.seq, o)} 취소를 철회하고 다시 합계에 포함하시겠습니까?`)) return;
       adjustRemCoupons(-coup);
       o.cancelled = false; delete o.cancelTime;
       enterPastOrder(currentViewingIndex);
@@ -1369,6 +1369,7 @@ var PhotoArt = (function () {
       const timeText = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} 마감`;
       const evData = { id: Date.now(), kind: wantC ? 'COUP' : 'REG', dateStr: dateText, timeStr: timeText, eventName: eventName, baseCouponVal: baseCouponVal, history: picked };
       if (devCode()) evData.device = devCode();         // [추가] 어느 기기의 마감인지
+      if (myInst()) evData.inst = myInst();              // [추가] 이 기기가 마감한 기록 표시 (잔여 쿠폰 계산용)
       evData.dateKey = padDate(now);                    // [추가] 통합 영수증 날짜 검색용 (마감한 날)
       evData.saleDates = picked.map(o => normDate(o.date)).filter((d, i, a) => d && a.indexOf(d) === i).sort(); // [추가] 이 마감에 들어간 판매 날짜들 (달력 표시용)
       pastEvents.push(evData);
@@ -1527,10 +1528,14 @@ var PhotoArt = (function () {
 
         // [수정] 주문 건수: 이 영수증 종류의 품목이 든 주문 수(취소건 제외) + 주문번호 범위 + 취소 건수
         const kindOrders = targetHistory.filter(o => o.items.some(it => !!it.isC === isCoupMode));
+        // [추가] 마감한 날과 다른 날 판 주문이 들어 있으면 판매일을 함께 표시 (예: 전에 마감 안 한 주문을 이어받은 경우)
+        const saleDs = kindOrders.map(o => normDate(o.date)).filter((d, i, a) => d && a.indexOf(d) === i).sort();
+        const closeD = isHist ? normDate(histData.dateKey || '') : padDate(new Date());
+        if (saleDs.length > 1 || (saleDs.length === 1 && closeD && saleDs[0] !== closeD)) document.getElementById('rPrintDateTime').innerText = dateText + '\n판매일: ' + saleDs.map(d => d.slice(5).replace('-', '/')).join(', ');
         const activeCnt = kindOrders.filter(o => !o.cancelled).length;
         const cancelCnt = kindOrders.length - activeCnt;
         const seqs = kindOrders.map(o => o.seq).filter(s => typeof s === 'number');
-        const pfx = isHist ? (histData.device ? histData.device + '-' : '#') : (devCode() ? devCode() + '-' : '#'); // [추가] 기기번호
+        const pfx = '#'; // [수정] 주문번호는 기기 상관없이 #번호
         const orderCountText = kindOrders.length === 0 ? '0건'
           : `${activeCnt}건` + (seqs.length || cancelCnt ? ` (${seqs.length ? `${pfx}${Math.min(...seqs)} ~ ${pfx}${Math.max(...seqs)}` : ''}${seqs.length && cancelCnt ? ', ' : ''}${cancelCnt ? `취소 ${cancelCnt}건` : ''})` : '');
         document.getElementById(isCoupMode ? 'rCoupOrders' : 'rDirectOrders').innerText = orderCountText;
@@ -1719,19 +1724,33 @@ var PhotoArt = (function () {
       viewer: localStorage.getItem('coffee_viewer') === '1',  // 보기 전용 기기(핸드폰 등)
       st: Object.assign({ hash: {}, outbox: {}, init: false, cuH: '' }, loadJSON('coffee_sync', {})),
       inflight: {}, timer: null, couponCfg: null, couponUse: {}, locked: false, lastErr: '',
-      menuTs: Number(localStorage.getItem('coffee_menu_ts')) || 0, pendingMenu: null, unsub: [], lastSeenAt: 0
+      menuTs: Number(localStorage.getItem('coffee_menu_ts')) || 0, pendingMenu: null, unsub: [], lastSeenAt: 0,
+      ackAt: {}, pulling: false, lastPull: 0, claiming: false
     };
+    // [수정] 보기 전용·기기번호 정하기 없앰: 로그인한 기기는 모두 같은 장부로 판매
+    if (Sync.viewer) { Sync.viewer = false; try { localStorage.removeItem('coffee_viewer'); } catch (e) {} }
     function syncSave() { try { localStorage.setItem('coffee_sync', JSON.stringify(Sync.st)); } catch (e) { Sync.lastErr = '기기 저장공간 부족'; } }
     function devCode() { return Sync.device ? Sync.device.code : ''; }
-    function ordNo(seq) { return Sync.device ? `${Sync.device.code}-${seq}` : `#${seq}`; }
+    // [수정] 주문번호는 기기 상관없이 #1, #2 … (한 장부를 여러 기기가 이어서 씀).
+    //        인터넷 없이 두 기기가 동시에 팔아 같은 번호가 생기면 다른 기기 주문 뒤에 작게 기기 글자를 붙여 구분
+    function ordNo(seq, o) {
+      let t = `#${seq}`;
+      if (o && o.dev && o.dev !== devCode()) {
+        const H = [orderHistory, ledgers.REG.history, ledgers.COUP.history].find(h => h.indexOf(o) >= 0) || orderHistory;
+        if (H.some(x => x !== o && x.seq === seq)) t += `(${o.dev})`;
+      }
+      return t;
+    }
     function cloudRead() { return !!(Sync.backend && Sync.uid); }
     function cloudOn() { return !!(cloudRead() && Sync.device && !Sync.locked && !Sync.viewer); }
     function padDate(d) { const t = (d instanceof Date) ? d : new Date(d); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; }
     function normDate(s) { const m = String(s || '').match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); return m ? `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}` : ''; }
 
+    // [수정] 주문은 '처음 판 기기' 기준으로 서버에 한 개만 (다른 기기가 이어받아 고쳐도 같은 주문을 고침)
     function orderDocOf(kind, o) {
+      const dv = o.dev || devCode();
       return JSON.parse(JSON.stringify({
-        key: `${devCode()}_${kind}_${o.seq}_${o.id}`, device: devCode(), kind, id: o.id, seq: o.seq,
+        key: `${dv}_${kind}_${o.seq}_${o.id}`, device: dv, kind, id: o.id, seq: o.seq,
         date: o.date || '', time: o.time || '', payType: o.payType || '', cancelled: !!o.cancelled, cancelTime: o.cancelTime || '',
         items: o.items, closed: false, voided: false
       }));
@@ -1750,9 +1769,15 @@ var PhotoArt = (function () {
       clearTimeout(Sync.timer);
       Sync.timer = setTimeout(syncScan, 300);
     }
+    // 이 기기에서 만든 주문에 기기 글자를 붙여 둠 (나중에 기기 글자가 바뀌어도 서버의 같은 주문을 가리키도록)
+    function stampDev() {
+      const c = devCode(); if (!c) return;
+      ['REG', 'COUP'].forEach(k => ledgers[k].history.forEach(o => { if (!o.dev) o.dev = c; }));
+    }
     function syncScan() {
       if (!cloudOn()) return;
       stashLedger();
+      stampDev();
       const local = {};
       ['REG', 'COUP'].forEach(k => ledgers[k].history.forEach(o => { const d = orderDocOf(k, o); local['orders/' + d.key] = d; }));
       // 1) 새로 생기거나 바뀐 주문 → 보낼 목록
@@ -1781,7 +1806,7 @@ var PhotoArt = (function () {
         Sync.inflight[p] = e.h;
         Sync.backend.set(p, e.data, true).then(() => {
           if (Sync.inflight[p] === e.h) delete Sync.inflight[p];
-          if (p.startsWith('orders/')) { if (e.patch) delete Sync.st.hash[p]; else Sync.st.hash[p] = e.h; }
+          if (p.startsWith('orders/')) { Sync.ackAt[p] = Date.now(); if (e.patch) delete Sync.st.hash[p]; else Sync.st.hash[p] = e.h; }
           if (p.startsWith('couponUse/')) Sync.st.cuH = e.h;
           const cur = Sync.st.outbox[p];
           if (cur && cur.h === e.h) delete Sync.st.outbox[p];
@@ -1811,32 +1836,62 @@ var PhotoArt = (function () {
       flushOutbox(); // 마감 기록은 바로 전송
     }
 
-    // ----- 잔여 쿠폰 (모든 기기 공유) : 시작 수량 − 모든 기기의 회수 합계 -----
+    // ----- 잔여 쿠폰 (모든 기기 공유) -----
+    // [수정] 장부를 여러 기기가 함께 쓰므로 '주문 하나하나'를 기준으로 셈 (같은 주문은 절대 두 번 세지 않음):
+    //   잔여 = 시작 수량 − (마감된 쿠폰 주문 합: 모든 기기가 올린 '마감한 주문 목록'을 합쳐 같은 주문은 한 번만)
+    //                    − (지금 장부의 마감 안 한 쿠폰 주문 중 위 목록에 없는 것)
+    //   · 인터넷이 안 되던 기기가 이미 다른 기기에서 마감한 주문을 또 마감해도 한 번만 셈
+    //   · 아직 예전 버전인 기기는 그 기기 몫 전체(used)를 쓰고, 그 기기가 판 주문은 이 기기 장부에서 빼고 셈
     function cloudCouponActive() { return cloudOn() && Sync.couponCfg && typeof Sync.couponCfg.start === 'number'; }
-    function ownCouponUsed(startAt) {
-      let u = 0;
-      const add = o => { if (o.cancelled || (o.id || 0) < startAt) return; (o.items || []).forEach(it => { if (it.isC) u += it.qty; }); };
-      ledgers.COUP.history.forEach(add);
-      pastEvents.forEach(ev => { if (ev.kind === 'REG') return; if (ev.device && ev.device !== devCode()) return; (ev.history || []).forEach(add); });
-      return u;
+    function myInst() { return (Sync.device && Sync.device.instanceId) || ''; }
+    function coupKey(o, fallbackDev) { return `${o.dev || fallbackDev || devCode()}_COUP_${o.seq}_${o.id}`; }
+    function coupQty(o) { let q = 0; if (!o.cancelled) (o.items || []).forEach(it => { if (it.isC) q += it.qty; }); return q; }
+    function ownClosedMap(startAt) {   // 이 기기가 마감한 쿠폰 주문: { 주문키: 회수 잔수 }
+      const m = {};
+      pastEvents.forEach(ev => {
+        if (ev.kind === 'REG') return;
+        if (ev.inst ? ev.inst !== myInst() : (ev.device && ev.device !== devCode())) return;   // 이 기기가 마감한 기록만
+        (ev.history || []).forEach(o => {
+          if ((o.id || 0) < startAt || !(o.items || []).some(it => it.isC)) return;
+          const k = coupKey(o, ev.device), q = coupQty(o);
+          m[k] = Math.max(m[k] || 0, q);
+        });
+      });
+      return m;
     }
+    function ownCouponUsed(startAt) { const m = ownClosedMap(startAt); return Object.keys(m).reduce((t, k) => t + m[k], 0); }
     function recomputeCloudCoupons() {
       if (!cloudCouponActive()) return false;
       stashLedger();
       const sa = Sync.couponCfg.startAt || 0;
-      const mine = ownCouponUsed(sa);
-      let others = 0;
-      for (const d in Sync.couponUse) { if (d === devCode()) continue; const u = Sync.couponUse[d]; if (u && u.startAt === sa) others += (u.used || 0); }
-      remCoupons = Sync.couponCfg.start - mine - others;
+      const mine = ownClosedMap(sa);
+      const all = Object.assign({}, mine), oldVer = {};
+      let oldUsed = 0;
+      for (const d in Sync.couponUse) {
+        if (d === devCode()) continue;
+        const u = Sync.couponUse[d]; if (!u || u.startAt !== sa) continue;
+        if (u.v === 3) { const m = u.cmap || {}; for (const k in m) all[k] = Math.max(all[k] || 0, Number(m[k]) || 0); }
+        else { oldUsed += (u.used || 0); oldVer[d] = 1; }
+      }
+      let closed = 0; for (const k in all) closed += all[k];
+      let open = 0;
+      ledgers.COUP.history.forEach(o => {
+        if ((o.id || 0) < sa) return;
+        const dv = o.dev || devCode();
+        if (oldVer[dv] || (coupKey(o) in all)) return;
+        open += coupQty(o);
+      });
+      remCoupons = Sync.couponCfg.start - closed - open - oldUsed;
       try { localStorage.setItem('coffee_rem_coup', String(remCoupons)); } catch (e) {}
-      const data = { device: devCode(), used: mine, startAt: sa };
+      const data = { device: devCode(), startAt: sa, v: 3, cmap: mine, used: null };
       const h = JSON.stringify(data);
       const srvMine = Sync.couponUse[devCode()];
-      const srvStale = srvMine && (srvMine.used !== mine || srvMine.startAt !== sa) && !Sync.st.outbox['couponUse/' + devCode()];
+      const srvStale = srvMine && (srvMine.v !== 3 || srvMine.startAt !== sa || JSON.stringify(sortKeys(srvMine.cmap || {})) !== JSON.stringify(sortKeys(mine))) && !Sync.st.outbox['couponUse/' + devCode()];
       if (Sync.st.cuH !== h || srvStale) { if (srvStale) Sync.st.cuH = ''; enqueue('couponUse/' + devCode(), data, { h }); } // 서버 값이 틀어져 있으면 다시 보냄(자가 복구)
       updateCouponUI();
       return true;
     }
+    function sortKeys(m) { const o = {}; Object.keys(m).sort().forEach(k => { o[k] = Number(m[k]) || 0; }); return o; }
 
     // ----- 메뉴판 공유 -----
     function syncMenuSaved() {
@@ -1866,8 +1921,7 @@ var PhotoArt = (function () {
         stopCloud();
         if (user) {
           document.getElementById('loginModal').style.display = 'none';
-          if (Sync.viewer) { updateSyncBadge(); return; }
-          if (!Sync.device) openDeviceModal(); else startCloud();
+          if (!Sync.device) autoClaimDevice(); else startCloud();   // [수정] 기기번호를 묻지 않고 자동으로
         } else if (localStorage.getItem('coffee_login_skip') !== '1') openLoginModal();
         updateSyncBadge();
       });
@@ -1878,7 +1932,8 @@ var PhotoArt = (function () {
       stopCloud();
       const B = Sync.backend, code = devCode();
       Sync.unsub.push(B.listen('devices/' + code, d => {
-        if (d && d.instanceId && d.instanceId !== Sync.device.instanceId) lockDevice();
+        // [수정] 같은 기기 글자를 다른 화면(예: 사파리로 연 포스)이 가져갔으면 막지 않고 이 기기에 새 글자를 자동으로 줌
+        if (d && d.instanceId && d.instanceId !== Sync.device.instanceId) reassignDevice();
       }));
       Sync.unsub.push(B.listen('config/menu', d => {
         if (!d) { if (cloudOn()) syncMenuSaved(); return; }            // 서버에 메뉴판이 없으면 이 기기 메뉴판을 올림
@@ -1902,6 +1957,149 @@ var PhotoArt = (function () {
         Sync.st.init = true; syncSave();
       }
       syncScan();
+      pullShared();
+    }
+
+    // =====================================================================
+    // [추가] 한 장부 공유: 로그인한 어느 기기든 서버에 올라간 '마감 안 한 주문'을 모두 받아 이어서 판매
+    //  - 받을 때 규칙 (돈 계산이 틀어지지 않게)
+    //    · 이 기기에서 고쳤는데 아직 안 올라간 주문은 이 기기 것을 그대로 둠 (올라간 뒤에 반영)
+    //    · 서버와 같던 주문이 서버에서 바뀌었으면(다른 기기에서 수정·취소) 서버 것으로 바꿈
+    //    · 서버와 같던 주문이 서버에서 없어졌으면(다른 기기에서 마감·당일초기화) 이 기기 장부에서도 뺌
+    //    · 처음 보는 주문은 장부에 추가, 주문번호는 가장 큰 번호 다음부터
+    //  - 과거 주문을 열어 고치는 중이거나 영수증 화면이 떠 있으면 받지 않고 다음에 받음
+    // =====================================================================
+    function pullBusy() {
+      const open = id => { const e = document.getElementById(id); return !!(e && e.style.display === 'flex'); };
+      return currentViewingIndex !== -1 || ledgers.REG.view !== -1 || ledgers.COUP.view !== -1 || open('rModal') || open('cashModal') || open('slushModal');
+    }
+    function fromServerOrder(d) {
+      const o = { id: d.id, seq: d.seq, date: d.date, time: d.time, payType: d.payType, items: d.items || [], dev: d.device };
+      if (d.cancelled) { o.cancelled = true; o.cancelTime = d.cancelTime || ''; }
+      return o;
+    }
+    async function pullShared() {
+      if (!cloudOn() || Sync.pulling) return false;
+      if (pullBusy()) return false;
+      Sync.pulling = true;
+      const t0 = Date.now();
+      let r;
+      try { r = await Sync.backend.query('orders', [['closed', '==', false]]); }
+      catch (e) { Sync.pulling = false; return false; }
+      Sync.pulling = false;
+      if (!cloudOn() || pullBusy() || !r || r.fromCache) return false;
+      applyPull(r.docs || [], t0);
+      return true;
+    }
+    function applyPull(docs, t0) {
+      stashLedger();
+      stampDev();
+      const srv = {};
+      docs.forEach(d => { if (d && !d.voided && !d.closed && d.key && (d.kind === 'REG' || d.kind === 'COUP') && d.id != null && typeof d.seq === 'number') srv['orders/' + d.key] = d; });
+      const busyPath = p => (Sync.ackAt[p] || 0) >= t0 || !!Sync.inflight[p] || !!Sync.st.outbox[p];
+      let changed = false;
+      ['REG', 'COUP'].forEach(k => {
+        const L = ledgers[k], have = {};
+        const next = [];
+        L.history.forEach(o => {
+          const doc = orderDocOf(k, o), p = 'orders/' + doc.key;
+          have[p] = 1;
+          if (busyPath(p)) { next.push(o); return; }
+          const synced = Sync.st.hash[p] === JSON.stringify(doc);   // 마지막으로 서버와 맞춘 뒤 이 기기에서 안 바뀜
+          const sd = srv[p];
+          if (!sd) {
+            if (synced) { delete Sync.st.hash[p]; changed = true; return; }   // 다른 기기에서 마감·초기화됨
+            next.push(o); return;                                             // 아직 안 올라간 주문
+          }
+          if (synced) {
+            const no = fromServerOrder(sd), nh = JSON.stringify(orderDocOf(k, no));
+            if (nh !== Sync.st.hash[p]) { Sync.st.hash[p] = nh; next.push(no); changed = true; return; }
+          }
+          next.push(o);
+        });
+        Object.keys(srv).forEach(p => {
+          const sd = srv[p]; if (sd.kind !== k || have[p] || busyPath(p)) return;
+          const no = fromServerOrder(sd);
+          Sync.st.hash[p] = JSON.stringify(orderDocOf(k, no));
+          next.push(no); changed = true;
+        });
+        next.sort((a, b) => (b.seq - a.seq) || ((b.id || 0) - (a.id || 0)));
+        L.history = next;
+        const maxSeq = next.reduce((m, o) => Math.max(m, o.seq || 0), 0);
+        L.seq = changed ? maxSeq + 1 : Math.max(L.seq, maxSeq + 1);   // 비면 #1부터
+      });
+      loadLedger(mode);
+      Sync.lastPull = Date.now();
+      syncSave();
+      if (changed) { saveSalesData(); renderCurrentCart(); }
+      if (recomputeCloudCoupons()) { syncSave(); flushOutbox(); }
+      updateSyncBadge();
+    }
+    // 앱으로 돌아올 때·인터넷 연결될 때·30초마다 받아옴
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(pullShared, 400); });
+    window.addEventListener('online', () => setTimeout(pullShared, 800));
+    setInterval(() => { if (!document.hidden) pullShared(); }, window.__PULL_MS || 30000);
+    // 마감 버튼: 인터넷이 되면 다른 기기 주문을 먼저 받은 뒤 영수증을 엶 (최대 4초 기다림)
+    function openCloseReceipt() {
+      if (cloudOn() && navigator.onLine === false) {
+        // 인터넷이 안 될 때: 다른 기기에서 이미 마감한 지난 날짜 주문이 남아 있을 수 있음을 알려줌
+        stashLedger();
+        const today = padDate(new Date());
+        const old = orderHistory.filter(o => { const d = normDate(o.date); return d && d < today; });
+        if (old.length && !confirm(`⚠ 지금 인터넷이 안 돼서 다른 기기에서 이미 마감했는지 확인을 못 했습니다.\n\n이 장부에 지난 날짜(${old.map(o => normDate(o.date).slice(5).replace('-', '/')).filter((d, i, a) => a.indexOf(d) === i).join(', ')}) 주문 ${old.length}건이 들어 있습니다.\n다른 기기에서 마감했다면 와이파이에 연결한 뒤 다시 눌러주세요.\n\n그래도 영수증을 열까요?`)) return;
+      }
+      if (!cloudOn() || navigator.onLine === false || pullBusy()) { showReceipt(); return; }
+      let done = false;
+      const go = () => { if (done) return; done = true; showReceipt(); };
+      setTimeout(go, 4000);
+      syncScan();
+      pullShared().then(go, go);
+    }
+
+    // ----- 기기 글자 자동 지정 (사람이 정하지 않음, 서버 구분용) -----
+    function devName() {
+      const u = navigator.userAgent || '';
+      if (/iPad/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1)) return '아이패드';
+      if (/iPhone/.test(u)) return '아이폰';
+      if (/Android/.test(u)) return /Mobile/.test(u) ? '안드로이드폰' : '안드로이드탭';
+      return 'PC';
+    }
+    async function autoClaimDevice() {
+      if (Sync.device || Sync.claiming || !cloudRead()) return;
+      Sync.claiming = true;
+      try {
+        const inst = localStorage.getItem('coffee_instance') || newInstanceId();
+        localStorage.setItem('coffee_instance', inst);
+        const used = {};
+        try { ((await Sync.backend.query('devices', [])).docs || []).forEach(d => { if (d && d.code) used[d.code] = 1; }); } catch (e) {}
+        const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        const cands = L.concat([].concat.apply([], L.map(a => L.map(b => a + b))));
+        let got = null;
+        for (const code of cands) {
+          if (used[code]) continue;
+          const r = await Sync.backend.claimDevice(code, inst, false);
+          if (r && r.ok) { got = code; break; }
+        }
+        if (!got) throw new Error('no-code');
+        Sync.device = { code: got, instanceId: inst };
+        safeSet('coffee_device', JSON.stringify(Sync.device));
+        Object.keys(Sync.st.outbox).forEach(p => { if (p.startsWith('couponUse/')) delete Sync.st.outbox[p]; });
+        Sync.st.cuH = '';
+        stampDev(); syncSave(); saveSalesData();
+        Sync.backend.set('devices/' + got, { name: devName() }, true).catch(() => {});
+        Sync.claiming = false;
+        startCloud(); renderCurrentCart(); updateSyncBadge();
+      } catch (e) {
+        Sync.claiming = false; updateSyncBadge();
+        setTimeout(autoClaimDevice, 20000);   // 인터넷이 안 되면 잠시 후 다시
+      }
+    }
+    function reassignDevice() {
+      if (Sync.claiming) return;
+      stashLedger(); stampDev(); saveSalesData();   // 지금까지 판 주문은 원래 글자 그대로 (서버의 같은 주문)
+      stopCloud();
+      Sync.device = null; try { localStorage.removeItem('coffee_device'); } catch (e) {}
+      autoClaimDevice();
     }
 
     // ----- 로그인 / 기기번호 -----
@@ -2043,12 +2241,13 @@ var PhotoArt = (function () {
       let t, c = '';
       const n = pendingCount();
       if (Sync.locked) { t = '⛔ 기기번호 이동됨'; c = 'bad'; }
+      else if (Sync.backend && Sync.uid && !Sync.device) { t = '☁ 연결 중…'; c = 'wait'; }
       else if (!Sync.backend) { t = Sync.failed ? '☁ 서버 연결 안 됨(이 기기에만 저장)' : '☁ 연결 준비 중'; c = Sync.failed ? 'wait' : ''; }
       else if (!Sync.uid) { t = '☁ 로그인 안 됨 — 백업 꺼짐'; c = 'bad'; }
       else if (Sync.viewer) { t = '📱 보기 전용'; c = ''; }
       else if (!Sync.device) { t = '☁ 기기번호 등록 필요'; c = 'bad'; }
-      else if (n > 0) { t = `☁ ${devCode()} · 올릴 기록 ${n}건${navigator.onLine === false ? ' (오프라인)' : ''}`; c = 'wait'; }
-      else { const a = Sync.st.lastAck ? new Date(Sync.st.lastAck) : null; t = `☁ ${devCode()} · 백업 완료${a ? ' ' + a.getHours().toString().padStart(2,'0') + ':' + a.getMinutes().toString().padStart(2,'0') : ''}`; c = 'ok'; }
+      else if (n > 0) { t = `☁ 올릴 기록 ${n}건${navigator.onLine === false ? ' (오프라인)' : ''}`; c = 'wait'; }
+      else { const a = Sync.st.lastAck ? new Date(Sync.st.lastAck) : null; t = `☁ 백업 완료${a ? ' ' + a.getHours().toString().padStart(2,'0') + ':' + a.getMinutes().toString().padStart(2,'0') : ''}`; c = 'ok'; }
       b.innerText = t; b.className = 'sync-badge ' + c;
       if (document.getElementById('modeOptModal').style.display === 'flex') renderCloudCard();
     }
@@ -2067,8 +2266,9 @@ var PhotoArt = (function () {
       else {
         lines.push(`계정: <b>${Sync.email || ''}</b>`);
         if (Sync.viewer) lines.push('이 기기: <b>보기 전용</b> (판매 기록 백업 안 함)');
-        else if (Sync.device) lines.push(`이 기기 번호: <b>${devCode()}</b> (주문번호 ${devCode()}-1, ${devCode()}-2 …)`);
-        else lines.push('<b style="color:#c92a2a">기기번호 미등록</b>');
+        else if (Sync.device) lines.push(`로그인한 모든 기기가 <b>한 장부</b>를 함께 씁니다 (이 기기: ${devName()} · ${devCode()})`);
+        else lines.push('<b style="color:#e67700">서버에 연결 중…</b> (인터넷 연결 필요)');
+        if (Sync.lastPull) lines.push(`다른 기기 주문 받아온 시각: ${new Date(Sync.lastPull).toLocaleTimeString('ko-KR')}`);
         if (Sync.device && !Sync.viewer) lines.push(pendingCount() ? `<b style="color:#e67700">서버에 올릴 기록 ${pendingCount()}건 대기 중</b> — 와이파이에 연결되면 자동으로 올라갑니다.` : `모든 기록이 서버에 백업됨${Sync.st.lastAck ? ' (' + new Date(Sync.st.lastAck).toLocaleString('ko-KR') + ')' : ''}`);
         if (Sync.lastErr) lines.push(`<span style="color:#c92a2a">최근 오류: ${Sync.lastErr}</span>`);
       }
@@ -2076,8 +2276,7 @@ var PhotoArt = (function () {
       let h = '';
       if (!Sync.backend) h += B('🔄 다시 연결', 'location.reload()', '#1864ab');
       if (Sync.backend && !Sync.uid) h += B('로그인', 'closeModeOptionModal(); openLoginModal()', '#1864ab');
-      if (cloudRead() && (!Sync.device || Sync.viewer)) h += B('판매 기기로 등록', 'closeModeOptionModal(); openDeviceModal()', '#2e7d32');
-      if (cloudOn()) h += B('지금 서버로 보내기', 'syncScan(); renderCloudCard()', '#2e7d32');
+      if (cloudOn()) h += B('지금 주고받기', 'syncScan(); pullShared().then(renderCloudCard); renderCloudCard()', '#2e7d32');
       if (cloudRead()) h += B('🌐 통합 영수증', 'closeModeOptionModal(); openIntegrated()', '#1864ab');
       if (cloudRead()) h += B('로그아웃', 'doLogout()', '#868e96');
       btns.innerHTML = h;
@@ -2128,12 +2327,13 @@ var PhotoArt = (function () {
         });
       };
       // 1) 마감한 주문 (어느 날 마감했든, 판매한 날짜가 이 날인 주문만)
+      //    같은 주문인지는 '처음 판 기기(o.dev)+주문 고유번호'로 판단 → 다른 기기가 이어받아 마감해도, 두 번 마감돼도 한 번만
       events.filter(e => e.kind === kind).forEach(e => {
         const d = e.device || '?';
         (e.history || []).forEach(o => {
           const od = normDate(o.date) || normDate(e.dateKey);
           if (od !== date) return;
-          const k = okey(d, o); if (seen[k]) return; seen[k] = 1;   // 같은 주문이 두 마감 기록에 있어도 한 번만
+          const k = okey(o.dev || d, o); if (seen[k]) return; seen[k] = 1;
           addOrder(dev(d), o, e.baseCouponVal, false);
         });
       });
@@ -2171,7 +2371,7 @@ var PhotoArt = (function () {
       h += `<div class="${cls}"><div style="font-weight:900; margin-bottom:6px;">기기별 (${date})</div><table><thead><tr style="border-bottom:1px solid #999; color:#555;"><th style="text-align:left;">기기</th><th style="text-align:right;">주문</th>` +
         (isC ? `<th style="text-align:right;">회수</th><th style="text-align:right;">청구액</th>` : `<th style="text-align:right;">카드</th><th style="text-align:right;">현금</th><th style="text-align:right;">합계</th>`) + `</tr></thead><tbody>`;
       R.list.forEach(p => {
-        const rng = p.seqs.length ? ` (${p.device}-${Math.min(...p.seqs)}~${p.device}-${Math.max(...p.seqs)}${p.cancel ? ', 취소 ' + p.cancel : ''})` : '';
+        const rng = p.seqs.length ? ` (#${Math.min(...p.seqs)}~#${Math.max(...p.seqs)}${p.cancel ? ', 취소 ' + p.cancel : ''})` : '';
         h += `<tr><td><b>${p.device}</b><div style="font-size:10px; color:#666;">동기화 ${fmtT(p.lastSeen)}</div>${p.openN ? `<div style="font-size:10px; color:#e8590c; font-weight:bold;">미마감 ${p.openN}건 포함</div>` : ''}</td><td style="text-align:right;">${p.n}건<div style="font-size:10px; color:#666;">${rng}</div></td>` +
           (isC ? `<td style="text-align:right;">${p.qty}장</td><td style="text-align:right; font-weight:bold;">${won(p.claim)}</td>` : `<td style="text-align:right;">${won(p.card)}</td><td style="text-align:right;">${won(p.cash)}${p.other ? `<div style="font-size:10px; color:#c92a2a;">미지정 ${won(p.other)}</div>` : ''}</td><td style="text-align:right; font-weight:bold;">${won(p.total)}</td>`) + `</tr>`;
       });

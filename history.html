@@ -390,12 +390,13 @@
       });
     };
     // 1) 마감한 주문 (어느 날 마감했든, 판매한 날짜가 이 날인 주문만)
+    //    같은 주문인지는 '처음 판 기기(o.dev)+주문 고유번호'로 판단 → 다른 기기가 이어받아 마감해도, 두 번 마감돼도 한 번만
     events.filter(e => e.kind === kind).forEach(e => {
       const d = e.device || '?';
       (e.history || []).forEach(o => {
         const od = normDate(o.date) || normDate(e.dateKey);
         if (od !== date) return;
-        const k = okey(d, o); if (seen[k]) return; seen[k] = 1;   // 같은 주문이 두 마감 기록에 있어도 한 번만
+        const k = okey(o.dev || d, o); if (seen[k]) return; seen[k] = 1;
         addOrder(dev(d), o, e.baseCouponVal, false);
       });
     });
@@ -569,7 +570,7 @@
       h += '<div class="' + cls + '"><div style="font-weight:900; margin-bottom:6px;">기기별 (' + date + ')</div><table><thead><tr style="border-bottom:1px solid #999; color:#555;"><th style="text-align:left;">기기</th><th style="text-align:right;">주문</th>' +
         (isC ? '<th style="text-align:right;">회수</th><th style="text-align:right;">청구액</th>' : '<th style="text-align:right;">카드</th><th style="text-align:right;">현금</th><th style="text-align:right;">합계</th>') + '</tr></thead><tbody>';
       R.list.forEach(function (p) {
-        var rng = p.seqs.length ? ' (' + p.device + '-' + Math.min.apply(null, p.seqs) + '~' + p.device + '-' + Math.max.apply(null, p.seqs) + (p.cancel ? ', 취소 ' + p.cancel : '') + ')' : '';
+        var rng = p.seqs.length ? ' (#' + Math.min.apply(null, p.seqs) + '~#' + Math.max.apply(null, p.seqs) + (p.cancel ? ', 취소 ' + p.cancel : '') + ')' : '';
         h += '<tr><td><b>' + esc(p.device) + '</b><div style="font-size:10px; color:#666;">동기화 ' + fmtT(p.lastSeen) + '</div>' + (p.openN ? '<div style="font-size:10px; color:#e8590c; font-weight:bold;">미마감 ' + p.openN + '건 포함</div>' : '') + '</td><td style="text-align:right;">' + p.n + '건<div style="font-size:10px; color:#666;">' + esc(rng) + '</div></td>' +
           (isC ? '<td style="text-align:right;">' + p.qty + '장</td><td style="text-align:right; font-weight:bold;">' + won(p.claim) + '</td>'
                : '<td style="text-align:right;">' + won(p.card) + '</td><td style="text-align:right;">' + won(p.cash) + (p.other ? '<div style="font-size:10px; color:#c92a2a;">미지정 ' + won(p.other) + '</div>' : '') + '</td><td style="text-align:right; font-weight:bold;">' + won(p.total) + '</td>') + '</tr>';
