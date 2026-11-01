@@ -1,0 +1,103 @@
+# 커피트럭 포스 앱 자동 빌드: apps 폴더가 바뀌면 윈도우 설치 파일(.exe)과 안드로이드 앱(.apk)을 만들어
+# 'apps' 릴리스에 올림 → https://github.com/a753df-lang/ddal/releases/tag/apps
+name: build-apps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - ".github/workflows/build-apps.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: apps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build exe (PyInstaller)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pillow
+          python -c "from PIL import Image; Image.open('icon.png').convert('RGBA').save('icon.ico', sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])"
+          pyinstaller --noconfirm --clean --windowed --name DdalPOS --icon icon.ico --add-data "icon.png;." ddal_pos.py
+      - name: Build installer (Inno Setup)
+        run: |
+          ISCC="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
+          if [ ! -f "$ISCC" ]; then choco install innosetup -y --no-progress; fi
+          "$ISCC" installer.iss
+          ls -la installer
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: apps/installer/DdalPOS_Setup.exe
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+      - name: Assemble Android project
+        run: |
+          set -e
+          P=and; S=apps
+          mkdir -p $P/app/src/main/java/com/ddal/pos $P/app/src/main/res/values
+          cp $S/android_settings.gradle.kts $P/settings.gradle.kts
+          cp $S/android_build.gradle.kts $P/build.gradle.kts
+          cp $S/android_gradle.properties $P/gradle.properties
+          cp $S/android_app_build.gradle.kts $P/app/build.gradle.kts
+          cp $S/AndroidManifest.xml $P/app/src/main/AndroidManifest.xml
+          cp $S/MainActivity.kt $S/HistoryActivity.kt $P/app/src/main/java/com/ddal/pos/
+          cp $S/strings.xml $S/themes.xml $P/app/src/main/res/values/
+          pip install --quiet pillow
+          python3 - <<'EOF'
+          import os
+          from PIL import Image
+          im = Image.open('apps/icon.png').convert('RGBA')
+          for d, s in [('mdpi', 48), ('hdpi', 72), ('xhdpi', 96), ('xxhdpi', 144), ('xxxhdpi', 192)]:
+              p = f'and/app/src/main/res/mipmap-{d}'
+              os.makedirs(p, exist_ok=True)
+              im.resize((s, s), Image.LANCZOS).save(p + '/ic_launcher.png')
+          EOF
+          find $P -type f | sort
+      - name: Build apk
+        run: |
+          gradle -p and assembleDebug --no-daemon --stacktrace
+          cp and/app/build/outputs/apk/debug/app-debug.apk DdalPOS.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: DdalPOS.apk
+
+  release:
+    needs: [windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+      - name: Publish to 'apps' release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete apps -y --cleanup-tag || true
+          gh release create apps out/windows/DdalPOS_Setup.exe out/android/DdalPOS.apk \
+            --target "${{ github.sha }}" --title "커피트럭 포스 앱" \
+            --notes "윈도우: DdalPOS_Setup.exe / 안드로이드(갤럭시탭·폰): DdalPOS.apk — 빌드 ${{ github.run_number }}"
