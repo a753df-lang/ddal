@@ -2208,13 +2208,17 @@ var PhotoArt = (function () {
     const BASE_W = 1024, BASE_H = 768;
     function fitScreen(force) {
       const ae = document.activeElement;
-      if (!force && ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) return; // 키보드가 올라올 때는 화면 크기 유지
       const W = window.innerWidth, H = window.innerHeight;
       if (!W || !H) return;
+      // [수정] 입력 중 키보드가 올라와 '높이만 줄어든' 경우에만 그대로 둠. 폭이 바뀌거나(회전·분할화면) 커졌으면 항상 다시 맞춤
+      //        (전에는 입력칸에 커서가 남아 있으면 회전해도 안 맞춰져서 화면이 잘렸음)
+      const keyboardUp = ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName) && W === fitScreen.lastW && H < fitScreen.lastH;
+      if (!force && keyboardUp) return;
       const portrait = H > W;
       const bw = portrait ? BASE_H : BASE_W, bh = portrait ? BASE_W : BASE_H;
       let s = Math.min(W / bw, H / bh);
-      s = Math.max(0.6, Math.min(s, 2.5));
+      s = Math.max(0.25, Math.min(s, 2.5));   // [수정] 작은 화면(핸드폰·분할화면)에서도 잘리지 않게 더 작게 줄일 수 있게 함
+      if (!keyboardUp && (window.scrollX || window.scrollY)) { try { window.scrollTo(0, 0); } catch (e) {} } // 키보드 닫힌 뒤 화면이 밀려 있는 것 되돌림
       const app = document.getElementById('app');
       app.style.width = (W / s) + 'px';
       app.style.height = (H / s) + 'px';
