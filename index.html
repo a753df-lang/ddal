@@ -243,6 +243,46 @@
     .int-reg tbody tr:nth-child(even) td { background: #dcefdc; }
     .int-coup tbody tr:nth-child(even) td { background: #ffe8cc; }
 
+    /* [추가] 제조 화면 */
+    .kds { position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 900; background: var(--kbg); color: var(--kfg); display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+    .kds-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .kds-top b { font-size: 22px; }
+    .kds-st { font-size: 13px; margin-right: 10px; }
+    .kds-tbtn { height: 34px; padding: 0 12px; margin-left: 6px; border: none; border-radius: 6px; background: #495057; color: #fff; font-weight: bold; font-size: 13px; }
+    .kds-sum { background: var(--kbar); border-radius: 8px; padding: 4px 8px; margin-bottom: 6px; font-size: 16px; font-weight: 900; min-height: 26px; }
+    .kds-sum span { display: inline-block; margin: 1px 12px 1px 0; }
+    .kds-board { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-wrap: wrap; align-content: flex-start; position: relative; }
+    .kds-card { background: #fff; color: #111; border-radius: 9px; margin: 0 7px 7px 0; padding: 5px 8px 6px; box-sizing: border-box; border-top: 9px solid var(--kreg); cursor: pointer; }
+    .kds-card.coup { border-top-color: var(--kcoup); }
+    .kds-card.late1 { background: var(--klate1); } .kds-card.late2 { background: var(--klate2); }
+    .kds-card.new { box-shadow: 0 0 0 4px var(--knew); }
+    .kds-card.cx { opacity: .5; } .kds-card.cx .kds-it { text-decoration: line-through; }
+    .kds-hd { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #ddd; margin-bottom: 3px; padding-bottom: 2px; }
+    .kds-no { font-weight: 900; }
+    .kds-big { background: #c92a2a; color: #fff; font-size: 12px; font-weight: 900; border-radius: 5px; padding: 1px 6px; margin-left: 4px; vertical-align: middle; }
+    .kds-age { font-size: 12px; font-weight: bold; color: #c92a2a; }
+    .kds-prog { font-size: 13px; font-weight: 900; color: #2b8a3e; }
+    .kds-cols { display: flex; } .kds-cols > div { flex: 1; min-width: 0; } .kds-cols > div + div { margin-left: 10px; }
+    .kds-it { font-weight: 900; line-height: 1.38; display: flex; align-items: center; }
+    .kds-it .q { margin-left: auto; padding-left: 6px; white-space: nowrap; }
+    .kds-it .nm { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .kds-it.hot { color: var(--khot); } .kds-it.ice { color: var(--kice); }
+    .kds-it.ok { color: #adb5bd !important; text-decoration: line-through; }
+    .kds-ck { width: 1em; height: 1em; border: 2px solid #999; border-radius: 4px; margin-right: 5px; flex: none; box-sizing: border-box; }
+    .kds-it.ok .kds-ck { background: #2b8a3e; border-color: #2b8a3e; }
+    .kds-plus { font-size: 14px; font-weight: 900; color: #1864ab; margin-top: 2px; }
+    .kds-cxb { background: #c92a2a; color: #fff; font-size: 12px; padding: 1px 6px; border-radius: 4px; }
+    .kds-more { position: absolute; right: 16px; bottom: 58px; background: #ffd43b; color: #111; font-weight: 900; border-radius: 8px; padding: 8px 14px; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+    .kds-done { background: var(--kbar); border-radius: 8px; padding: 5px 8px; margin-top: 4px; font-size: 14px; min-height: 30px; white-space: nowrap; overflow: hidden; }
+    .kds-done button { height: 26px; margin-left: 6px; border: none; border-radius: 5px; background: #868e96; color: #fff; font-weight: bold; font-size: 13px; }
+    .kds-empty { width: 100%; text-align: center; margin-top: 120px; font-size: 22px; opacity: .6; }
+    .kds-set-row { display: flex; align-items: center; flex-wrap: wrap; margin: 8px 0; font-size: 14px; }
+    .kds-set-row .l { width: 170px; font-weight: bold; }
+    .kds-sw { width: 30px; height: 30px; border-radius: 50%; margin: 2px 6px 2px 0; border: 3px solid transparent; box-sizing: border-box; }
+    .kds-sw.on { border-color: #111; box-shadow: inset 0 0 0 2px #fff; }
+    .kds-opt { height: 32px; padding: 0 12px; margin: 2px 6px 2px 0; border: 2px solid #1864ab; background: #fff; color: #1864ab; border-radius: 6px; font-weight: bold; font-size: 13px; }
+    .kds-opt.on { background: #1864ab; color: #fff; }
+
     /* [수정] 인쇄 시 영수증만 출력 */
     @media print {
       html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
@@ -348,6 +388,25 @@
     </div>
   </div>
 
+  <!-- [추가] 제조 화면 -->
+  <div id="kdsView" class="kds" style="display:none;">
+    <div class="kds-top">
+      <b id="kdsCount">☕ 제조 대기</b>
+      <span><span id="kdsStatus" class="kds-st">연결 중...</span>
+      <button class="kds-tbtn" onclick="kdsOpenSettings()">⚙ 설정</button><button class="kds-tbtn" onclick="kdsExit()">포스 화면으로</button></span>
+    </div>
+    <div id="kdsSum" class="kds-sum"></div>
+    <div id="kdsBoard" class="kds-board"></div>
+    <div id="kdsMore" class="kds-more" style="display:none;" onclick="document.getElementById('kdsBoard').scrollTop += 400"></div>
+    <div id="kdsDone" class="kds-done"></div>
+  </div>
+  <div class="modal-overlay" id="kdsDetail" style="z-index:1100;" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal-box" style="width:92%; max-width:560px;" id="kdsDetailBox"></div>
+  </div>
+  <div class="modal-overlay" id="kdsSet" style="z-index:1100;">
+    <div class="modal-box" style="width:94%; max-width:620px;" id="kdsSetBox"></div>
+  </div>
+
   <!-- 옵션 모달 -->
   <div class="modal-overlay" id="modeOptModal">
     <div class="modal-box" style="width:92%; max-width:440px;">
@@ -369,6 +428,12 @@
         </div>
       </div>
       
+      <div class="opt-card" style="border-color:#2b8a3e; background:#ebfbee;">
+        <div class="opt-card-title" style="color:#2b8a3e;">☕ 제조 화면</div>
+        <p style="font-size:12px; color:#555; margin-bottom:8px; line-height:1.4;">제조하는 곳에 둔 탭에서 누르면, 주문받는 기기에서 결제한 주문이 1~3초 안에 크게 보입니다. (같은 계정 로그인 · 인터넷(핫스팟) 필요 · 판매 기록은 건드리지 않음)</p>
+        <button style="width:100%; height:40px; background:#2b8a3e; color:#fff; border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;" onclick="kdsEnable()">☕ 이 기기를 제조 화면으로 쓰기</button>
+      </div>
+
       <div class="opt-card" id="cloudCard" style="border-color:#74c0fc; background:#f1f8ff;">
         <div class="opt-card-title" style="color:#1864ab;">☁ 서버 백업 · 기기번호</div>
         <div id="cloudInfo" style="font-size:12px; color:#333; line-height:1.5; margin-bottom:8px;"></div>
@@ -1743,6 +1808,8 @@ var PhotoArt = (function () {
     //  - 오프라인이면 '보낼 목록(outbox)'에 쌓아두고 연결되면 자동 전송 (앱을 껐다 켜도 유지)
     //  - 서버 연결 코드(PosCloud)는 아래 별도 스크립트(REST 직접 통신)에서 붙음. 없으면 지금처럼 이 기기만으로 동작
     // =====================================================================
+    // [추가] 제조 화면으로 쓰는 기기: 판매 장부를 서버와 주고받지 않음 (보기만)
+    const KDS_ON = (function () { try { return localStorage.getItem('coffee_kds_on') === '1'; } catch (e) { return false; } })();
     const Sync = {
       backend: null, uid: null, email: null, failed: false,
       device: loadJSON('coffee_device', null),                 // { code, instanceId }
@@ -1750,7 +1817,8 @@ var PhotoArt = (function () {
       st: Object.assign({ hash: {}, outbox: {}, init: false, cuH: '' }, loadJSON('coffee_sync', {})),
       inflight: {}, timer: null, couponCfg: null, couponUse: {}, locked: false, lastErr: '',
       menuTs: Number(localStorage.getItem('coffee_menu_ts')) || 0, pendingMenu: null, unsub: [], lastSeenAt: 0,
-      ackAt: {}, pulling: false, lastPull: 0, claiming: false
+      ackAt: {}, pulling: false, lastPull: 0, claiming: false,
+      revKnown: null, revLastRead: null, lastFull: 0, revTimer: null   // [추가] 변경 신호 (서버 읽기 횟수 줄이기)
     };
     // [수정] 보기 전용·기기번호 정하기 없앰: 로그인한 기기는 모두 같은 장부로 판매
     if (Sync.viewer) { Sync.viewer = false; try { localStorage.removeItem('coffee_viewer'); } catch (e) {} }
@@ -1767,7 +1835,7 @@ var PhotoArt = (function () {
       return t;
     }
     function cloudRead() { return !!(Sync.backend && Sync.uid); }
-    function cloudOn() { return !!(cloudRead() && Sync.device && !Sync.locked && !Sync.viewer); }
+    function cloudOn() { return !!(cloudRead() && Sync.device && !Sync.locked && !Sync.viewer && !KDS_ON); }
     function padDate(d) { const t = (d instanceof Date) ? d : new Date(d); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; }
     function normDate(s) { const m = String(s || '').match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); return m ? `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}` : ''; }
 
@@ -1793,6 +1861,7 @@ var PhotoArt = (function () {
       recomputeCloudCoupons();
       clearTimeout(Sync.timer);
       Sync.timer = setTimeout(syncScan, 300);
+      kdsPublishSoon();
     }
     // 이 기기에서 만든 주문에 기기 글자를 붙여 둠 (나중에 기기 글자가 바뀌어도 서버의 같은 주문을 가리키도록)
     function stampDev() {
@@ -1831,7 +1900,7 @@ var PhotoArt = (function () {
         Sync.inflight[p] = e.h;
         Sync.backend.set(p, e.data, true).then(() => {
           if (Sync.inflight[p] === e.h) delete Sync.inflight[p];
-          if (p.startsWith('orders/')) { Sync.ackAt[p] = Date.now(); if (e.patch) delete Sync.st.hash[p]; else Sync.st.hash[p] = e.h; }
+          if (p.startsWith('orders/')) { Sync.ackAt[p] = Date.now(); if (e.patch) delete Sync.st.hash[p]; else Sync.st.hash[p] = e.h; bumpRevSoon(); }
           if (p.startsWith('couponUse/')) Sync.st.cuH = e.h;
           const cur = Sync.st.outbox[p];
           if (cur && cur.h === e.h) delete Sync.st.outbox[p];
@@ -1946,6 +2015,7 @@ var PhotoArt = (function () {
         stopCloud();
         if (user) {
           document.getElementById('loginModal').style.display = 'none';
+          if (KDS.on) { kdsStart(); updateSyncBadge(); return; }      // [추가] 제조 화면: 보기만 함 (판매 장부와 연결하지 않음)
           if (!Sync.device) autoClaimDevice(); else startCloud();   // [수정] 기기번호를 묻지 않고 자동으로
         } else if (localStorage.getItem('coffee_login_skip') !== '1') openLoginModal();
         updateSyncBadge();
@@ -2003,10 +2073,33 @@ var PhotoArt = (function () {
       if (d.cancelled) { o.cancelled = true; o.cancelTime = d.cancelTime || ''; }
       return o;
     }
-    async function pullShared() {
+    // [추가] 서버 읽기 줄이기: 주문을 올린 기기가 작은 '변경 신호'(config/rev)를 남기고,
+    //        30초마다 하는 확인은 이 신호 하나만 읽음 → 바뀌었을 때만 주문 전체를 받음 (10분마다는 무조건 전체 확인)
+    //        로그인·앱 복귀·인터넷 연결·마감 때는 지금처럼 바로 전체를 받음
+    const FULL_PULL_MS = window.__FULLPULL_MS || 600000;
+    function bumpRevSoon() {
+      clearTimeout(Sync.revTimer);
+      Sync.revTimer = setTimeout(() => {
+        if (!cloudOn() || typeof Sync.backend.get !== 'function') return;
+        const before = Sync.revLastRead, r = Date.now() + '_' + myInst();
+        Sync.backend.set('config/rev', { r }, true).then(() => {
+          if (before === Sync.revKnown) Sync.revKnown = r;   // 그 전까지 다른 기기 변경이 없었으면 '이미 아는 상태'
+          Sync.revLastRead = r;
+        }).catch(() => {});
+      }, 400);
+    }
+    async function pullShared(opts) {
       if (!cloudOn() || Sync.pulling) return false;
       if (pullBusy()) return false;
+      const cheap = !!(opts && opts.cheap) && typeof Sync.backend.get === 'function';
       Sync.pulling = true;
+      let rev = null;
+      if (typeof Sync.backend.get === 'function') {
+        try { const d = await Sync.backend.get('config/rev'); rev = (d && d.r) || ''; Sync.revLastRead = rev; }
+        catch (e) { if (cheap) { Sync.pulling = false; return false; } }
+        if (cheap && rev === Sync.revKnown && Date.now() - Sync.lastFull < FULL_PULL_MS) { Sync.pulling = false; return false; }
+      }
+      if (!cloudOn() || pullBusy()) { Sync.pulling = false; return false; }
       const t0 = Date.now();
       let r;
       try { r = await Sync.backend.query('orders', [['closed', '==', false]]); }
@@ -2014,6 +2107,8 @@ var PhotoArt = (function () {
       Sync.pulling = false;
       if (!cloudOn() || pullBusy() || !r || r.fromCache) return false;
       applyPull(r.docs || [], t0);
+      Sync.lastFull = Date.now();
+      if (rev !== null) Sync.revKnown = rev;
       return true;
     }
     function applyPull(docs, t0) {
@@ -2063,7 +2158,7 @@ var PhotoArt = (function () {
     // 앱으로 돌아올 때·인터넷 연결될 때·30초마다 받아옴
     document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(pullShared, 400); });
     window.addEventListener('online', () => setTimeout(pullShared, 800));
-    setInterval(() => { if (!document.hidden) pullShared(); }, window.__PULL_MS || 30000);
+    setInterval(() => { if (!document.hidden) pullShared({ cheap: true }); }, window.__PULL_MS || 30000);
     // 마감 버튼: 인터넷이 되면 다른 기기 주문을 먼저 받은 뒤 영수증을 엶 (최대 4초 기다림)
     function openCloseReceipt() {
       if (cloudOn() && navigator.onLine === false) {
@@ -2531,6 +2626,236 @@ var PhotoArt = (function () {
     }
     function escHtml(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
 
+    // =====================================================================
+    // [추가] 제조 화면 (KDS)
+    //  - 판매 기기: 장부가 바뀌면 오늘 주문 목록(이름·잔수·HOT/ICE·취소 여부만, 금액 없음)을 서버 kitchen/board 에 올리고 kitchen/rev 신호를 바꿈
+    //  - 제조 화면 기기: 2.5초마다 kitchen/rev(작은 문서) 하나만 읽고, 바뀌었을 때만 목록을 받음 → 서버 읽기·데이터 적게 씀
+    //  - 제조 화면은 보기만 함: 판매 장부·서버 주문·마감·쿠폰 기록을 절대 쓰지 않음 (완료·체크는 그 기기에만 저장)
+    // =====================================================================
+    function kdsTemp(n) {
+      for (let i = 0; i < menuBoards.length; i++) { const its = menuBoards[i].items || []; for (let j = 0; j < its.length; j++) if (its[j].n === n) return menuTemp(its[j]); }
+      return guessTemp(n);
+    }
+    // 판매 장부 → 제조 화면 목록 (순수 함수: 검증용)
+    function kdsBuild(ledgersIn, today, dev) {
+      const list = [];
+      ['REG', 'COUP'].forEach(k => {
+        (ledgersIn[k].history || []).forEach(o => {
+          if (!o || !o.items || !o.items.length || normDate(o.date) !== today) return;
+          const m = {}, order = [];
+          o.items.forEach(it => { const t = kdsTemp(it.n); const key = it.n + '|' + t; if (!m[key]) { m[key] = [it.n, 0, t === 'hot' ? 'h' : (t === 'ice' ? 'i' : '')]; order.push(key); } m[key][1] += it.qty; });
+          list.push({ k: `${o.dev || dev}_${k}_${o.id}`, c: k === 'COUP' ? 1 : 0, s: o.seq, a: o.id, x: o.cancelled ? 1 : 0, it: order.map(x => m[x]) });
+        });
+      });
+      list.sort((a, b) => a.a - b.a);
+      return list.slice(-150);
+    }
+    const KDS = { on: false, pubTimer: null, pubH: '', pubBusy: false, pubDirty: false, rev: null, list: [], day: '', lastOk: 0, lastTry: 0, timer: null, tick: null, st: null, newAt: {}, first: true, audio: null };
+    KDS.on = KDS_ON;
+    function kdsPublishSoon() {
+      if (KDS.on) return;
+      clearTimeout(KDS.pubTimer);
+      KDS.pubTimer = setTimeout(kdsPublish, 700);
+    }
+    function kdsPublish() {
+      if (KDS.on || !cloudOn() || typeof Sync.backend.get !== 'function') return;
+      if (KDS.pubBusy) { KDS.pubDirty = true; return; }
+      stashLedger();
+      const today = padDate(new Date());
+      const j = JSON.stringify(kdsBuild(ledgers, today, devCode()));
+      if (j === KDS.pubH) return;
+      KDS.pubBusy = true; KDS.pubDirty = false;
+      const r = Date.now() + '_' + myInst();
+      Sync.backend.set('kitchen/board', { day: today, j: j, r: r }, false)
+        .then(() => Sync.backend.set('kitchen/rev', { r: r }, false))
+        .then(() => { KDS.pubH = j; KDS.pubBusy = false; if (KDS.pubDirty) kdsPublishSoon(); })
+        .catch(() => { KDS.pubBusy = false; setTimeout(kdsPublishSoon, 20000); });   // 인터넷 없으면 잠시 후 다시
+    }
+    setInterval(() => { if (!KDS.on && cloudOn()) kdsPublish(); }, 60000);   // 날짜가 바뀌거나 놓친 것 정리
+
+    // ----- 제조 화면 기기 -----
+    const KDS_DEF = { reg: '#2e7d32', coup: '#e8590c', late1: '#fff3bf', late2: '#ffc9c9', m1: 7, m2: 12, nw: '#ffd43b', hot: '#a61e1e', ice: '#1864ab', bg: 'dark', size: 'auto', sound: 1, bigKinds: 6, bigCups: 10 };
+    function kdsLoad() { let st = {}; try { st = JSON.parse(localStorage.getItem('coffee_kds') || '{}') || {}; } catch (e) {} st.cfg = Object.assign({}, KDS_DEF, st.cfg || {}); st.done = st.done || {}; st.chk = st.chk || {}; st.seen = st.seen || {}; return st; }
+    function kdsSave() { try { localStorage.setItem('coffee_kds', JSON.stringify(KDS.st)); } catch (e) {} }
+    function kdsEnable() {
+      if (!cloudRead()) return alert('제조 화면은 서버에 로그인한 뒤 쓸 수 있습니다.\n(같은 계정으로 로그인)');
+      if (pendingCount() > 0) return alert('이 기기에 아직 서버에 안 올라간 판매가 있습니다.\n인터넷 연결 후 잠시 기다렸다가 다시 눌러 주세요.');
+      if (!confirm('이 기기를 제조 화면으로 쓸까요?\n\n· 이 기기에서는 판매하지 않고 주문만 보여줍니다\n· 다음부터 켜면 바로 제조 화면이 나옵니다\n· 언제든 [포스 화면으로] 버튼으로 돌아올 수 있습니다')) return;
+      try { localStorage.setItem('coffee_kds_on', '1'); } catch (e) {}
+      location.reload();
+    }
+    function kdsExit() {
+      if (!confirm('제조 화면을 끄고 포스 화면으로 돌아갈까요?')) return;
+      try { localStorage.removeItem('coffee_kds_on'); } catch (e) {}
+      location.reload();
+    }
+    function kdsApplyTheme() {
+      const c = KDS.st.cfg, v = document.getElementById('kdsView'), dark = c.bg !== 'light';
+      const set = (k, val) => v.style.setProperty(k, val);
+      set('--kbg', dark ? '#1b1e22' : '#e9ecef'); set('--kfg', dark ? '#fff' : '#111'); set('--kbar', dark ? '#343a40' : '#fff');
+      set('--kreg', c.reg); set('--kcoup', c.coup); set('--klate1', c.late1); set('--klate2', c.late2); set('--knew', c.nw); set('--khot', c.hot); set('--kice', c.ice);
+    }
+    function kdsStart() {
+      if (!KDS.on) return;
+      KDS.st = KDS.st || kdsLoad();
+      document.getElementById('kdsView').style.display = 'flex';
+      kdsApplyTheme(); kdsRender();
+      clearInterval(KDS.timer); clearInterval(KDS.tick);
+      KDS.timer = setInterval(() => { if (!document.hidden) kdsPoll(); }, window.__KDS_MS || 2500);
+      KDS.tick = setInterval(kdsRender, 15000);   // 기다린 시간·색 갱신
+      kdsPoll(true);
+    }
+    async function kdsPoll(force) {
+      if (!cloudRead() || typeof Sync.backend.get !== 'function' || KDS.polling) return;
+      KDS.polling = true; KDS.lastTry = Date.now();
+      try {
+        const rv = await Sync.backend.get('kitchen/rev');
+        const r = (rv && rv.r) || '';
+        if (force || r !== KDS.rev) {
+          const b = await Sync.backend.get('kitchen/board');
+          let list = [];
+          try { list = b && b.j ? JSON.parse(b.j) : []; } catch (e) { list = []; }
+          KDS.rev = (b && b.r) || r; KDS.day = (b && b.day) || '';
+          if (KDS.day !== padDate(new Date())) list = [];   // 어제 목록은 보이지 않음
+          kdsSetList(list);
+        }
+        KDS.lastOk = Date.now();
+      } catch (e) { }
+      KDS.polling = false;
+      kdsStatus();
+    }
+    function kdsSetList(list) {
+      const st = KDS.st, keys = {};
+      let hasNew = false;
+      list.forEach(o => {
+        keys[o.k] = 1;
+        if (!st.seen[o.k]) { st.seen[o.k] = 1; if (!KDS.first) { KDS.newAt[o.k] = Date.now(); hasNew = true; } }
+      });
+      // 목록에서 사라진 주문(마감 등)의 완료·체크 기록 정리
+      ['done', 'chk', 'seen'].forEach(f => Object.keys(st[f]).forEach(k => { if (!keys[k]) delete st[f][k]; }));
+      KDS.first = false; KDS.list = list; kdsSave();
+      if (hasNew) kdsBeep();
+      kdsRender();
+    }
+    function kdsStatus() {
+      const el = document.getElementById('kdsStatus'); if (!el) return;
+      const ago = KDS.lastOk ? Math.round((Date.now() - KDS.lastOk) / 1000) : -1;
+      if (ago >= 0 && ago < 15) { el.textContent = '● 실시간 연결'; el.style.color = '#8ce99a'; }
+      else { el.textContent = ago < 0 ? '● 연결 중...' : `● 연결 끊김 (${ago}초) — 인터넷 확인`; el.style.color = '#ff8787'; }
+    }
+    function kdsBeep() {
+      if (!KDS.st.cfg.sound) return;
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+        KDS.audio = KDS.audio || new AC();
+        const ctx = KDS.audio, o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = 1320; o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+        o.start(); o.stop(ctx.currentTime + 0.55);
+      } catch (e) {}
+    }
+    // 화면을 처음 누를 때 소리 켜기 (안드로이드는 누르기 전엔 소리를 막음)
+    document.addEventListener('touchstart', function unlock() { if (!KDS.on) return; try { const AC = window.AudioContext || window.webkitAudioContext; if (AC) { KDS.audio = KDS.audio || new AC(); if (KDS.audio.resume) KDS.audio.resume(); } } catch (e) {} }, { passive: true });
+
+    function kdsEsc(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+    function kdsCups(o) { return o.it.reduce((a, x) => a + x[1], 0); }
+    function kdsIsBig(o) { const c = KDS.st.cfg; return o.it.length >= c.bigKinds || kdsCups(o) > c.bigCups; }
+    const KDS_SIZES = { L: { w: 236, f: 21, no: 28, lines: 6 }, M: { w: 196, f: 16, no: 21, lines: 4 }, S: { w: 158, f: 13, no: 17, lines: 3 } };
+    function kdsLabel(o) { return (o.c ? '쿠폰 #' : '#') + o.s; }
+    // o.it[from..to) 줄을 그림. 다 못 그리면 마지막 줄 대신 '＋ N종 더'
+    function kdsItemsHtml(o, maxLines, from, to) {
+      const chk = KDS.st.chk[o.k] || {};
+      from = from || 0; to = to == null ? o.it.length : to;
+      const line = i => { const x = o.it[i]; return `<div class="kds-it ${x[2] === 'h' ? 'hot' : (x[2] === 'i' ? 'ice' : '')}${chk[x[0] + '|' + x[2]] ? ' ok' : ''}" onclick="event.stopPropagation(); kdsCheck('${o.k}', ${i})"><span class="kds-ck"></span><span class="nm">${kdsEsc(x[0])}</span><span class="q">×${x[1]}</span></div>`; };
+      const idx = []; for (let i = from; i < to; i++) idx.push(i);
+      if (maxLines && idx.length > maxLines) return idx.slice(0, maxLines - 1).map(line).join('') + `<div class="kds-plus" onclick="event.stopPropagation(); kdsDetail('${o.k}')">＋ ${idx.length - maxLines + 1}종 더 보기 ›</div>`;
+      return idx.map(line).join('');
+    }
+    function kdsCardHtml(o, sz, now) {
+      const c = KDS.st.cfg, big = kdsIsBig(o), mins = Math.floor((now - o.a) / 60000);
+      const chk = KDS.st.chk[o.k] || {}, cups = kdsCups(o), doneCups = o.it.reduce((a, x) => a + (chk[x[0] + '|' + x[2]] ? x[1] : 0), 0);
+      let cls = 'kds-card' + (o.c ? ' coup' : '') + (o.x ? ' cx' : '');
+      if (!o.x && mins >= c.m2) cls += ' late2'; else if (!o.x && mins >= c.m1) cls += ' late1';
+      if (KDS.newAt[o.k] && now - KDS.newAt[o.k] < 15000) cls += ' new';
+      const w = big ? sz.w * 2 + 7 : sz.w;
+      let h = `<div class="${cls}" style="width:${w}px; font-size:${sz.f}px;" onclick="kdsDone('${o.k}')">`;
+      h += `<div class="kds-hd"><span class="kds-no" style="font-size:${sz.no}px;">${kdsLabel(o)}${big ? `<span class="kds-big">대량 ${cups}잔</span>` : ''}</span>`;
+      h += o.x ? '<span class="kds-cxb">주문 취소됨</span>' : (doneCups && big ? `<span class="kds-prog">${doneCups} / ${cups}잔</span>` : `<span class="kds-age">${mins >= 1 ? mins + '분' : '방금'}</span>`);
+      h += '</div>';
+      if (big) {   // 2칸 넓이: 두 줄로 나눠 그림 (각 칸 최대 줄 수 넘으면 오른쪽 칸 끝에 '＋ N종 더')
+        const n = o.it.length, cap = sz.lines * 2;
+        if (n <= cap) { const half = Math.ceil(n / 2); h += `<div class="kds-cols"><div>${kdsItemsHtml(o, 0, 0, half)}</div><div>${kdsItemsHtml(o, 0, half, n)}</div></div>`; }
+        else h += `<div class="kds-cols"><div>${kdsItemsHtml(o, 0, 0, sz.lines)}</div><div>${kdsItemsHtml(o, sz.lines, sz.lines, n)}</div></div>`;
+      } else h += kdsItemsHtml(o, sz.lines);
+      return h + '</div>';
+    }
+    function kdsRender() {
+      if (!KDS.on || !KDS.st) return;
+      const st = KDS.st, c = st.cfg, now = Date.now();
+      const wait = KDS.list.filter(o => !st.done[o.k]);
+      document.getElementById('kdsCount').textContent = `☕ 제조 대기 ${wait.filter(o => !o.x).length}건`;
+      // 만들어야 할 음료 합계 (완료·체크·취소 제외)
+      const tot = {}, ord = [];
+      wait.forEach(o => { if (o.x) return; const chk = st.chk[o.k] || {}; o.it.forEach(x => { const key = x[0] + '|' + x[2]; if (chk[key]) return; if (!tot[key]) { tot[key] = [x[0], 0, x[2]]; ord.push(key); } tot[key][1] += x[1]; }); });
+      ord.sort((a, b) => tot[b][1] - tot[a][1]);
+      document.getElementById('kdsSum').innerHTML = ord.length ? ord.map(k => `<span style="color:${tot[k][2] === 'h' ? '#ff8787' : (tot[k][2] === 'i' ? '#74c0fc' : 'inherit')}">${kdsEsc(tot[k][0])} ${tot[k][1]}</span>`).join('') : '<span style="opacity:.6">만들 음료 없음</span>';
+      const board = document.getElementById('kdsBoard'), keepScroll = board.scrollTop;
+      const draw = sz => { board.innerHTML = wait.length ? wait.map(o => kdsCardHtml(o, sz, now)).join('') : '<div class="kds-empty">대기 중인 주문이 없습니다</div>'; };
+      if (c.size === 'auto') {
+        let used = 'L';
+        for (const key of ['L', 'M', 'S']) { used = key; draw(KDS_SIZES[key]); if (board.scrollHeight <= board.clientHeight + 2) break; }
+      } else draw(KDS_SIZES[c.size === 'big' ? 'L' : (c.size === 'small' ? 'S' : 'M')]);
+      board.scrollTop = keepScroll;
+      // 아래에 가려진 주문 수
+      const more = document.getElementById('kdsMore'); let hidden = 0;
+      const bottom = board.scrollTop + board.clientHeight;
+      Array.prototype.forEach.call(board.children, el => { if (el.offsetTop + 20 > bottom) hidden++; });
+      more.style.display = hidden ? 'block' : 'none'; more.textContent = `▼ 아래로 밀면 ${hidden}건 더`;
+      // 완료 목록 (최근 8개, 누르면 되돌리기)
+      const done = KDS.list.filter(o => st.done[o.k]).sort((a, b) => st.done[b.k] - st.done[a.k]).slice(0, 8);
+      document.getElementById('kdsDone').innerHTML = '완료' + (done.length ? done.map(o => `<button onclick="kdsUndo('${o.k}')">${kdsLabel(o)}</button>`).join('') + ' <span style="font-size:12px; opacity:.7;">← 잘못 눌렀으면 눌러서 되돌리기</span>' : ' <span style="opacity:.6">없음</span>');
+      kdsStatus();
+    }
+    function kdsDone(k) { KDS.st.done[k] = Date.now(); delete KDS.newAt[k]; kdsSave(); kdsRender(); }
+    function kdsUndo(k) { delete KDS.st.done[k]; kdsSave(); kdsRender(); }
+    function kdsCheck(k, i) {
+      const o = KDS.list.find(x => x.k === k); if (!o || !o.it[i]) return;
+      const key = o.it[i][0] + '|' + o.it[i][2], chk = KDS.st.chk[k] = KDS.st.chk[k] || {};
+      if (chk[key]) delete chk[key]; else chk[key] = 1;
+      kdsSave(); kdsRender();
+      if (document.getElementById('kdsDetail').style.display === 'flex') kdsDetail(k);
+    }
+    function kdsDetail(k) {
+      const o = KDS.list.find(x => x.k === k); if (!o) return;
+      document.getElementById('kdsDetailBox').innerHTML = `<div style="font-size:26px; font-weight:900; margin-bottom:6px;">${kdsLabel(o)} · ${kdsCups(o)}잔</div><div style="font-size:22px; --khot:${KDS.st.cfg.hot}; --kice:${KDS.st.cfg.ice};">${kdsItemsHtml(o, 0)}</div>
+        <div style="display:flex; justify-content:space-between; margin-top:12px;"><button style="width:58%; height:46px; background:#2b8a3e; color:#fff; border:none; border-radius:8px; font-weight:900; font-size:16px;" onclick="document.getElementById('kdsDetail').style.display='none'; kdsDone('${o.k}')">✓ 이 주문 완료</button><button style="width:38%; height:46px; background:#495057; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:15px;" onclick="document.getElementById('kdsDetail').style.display='none'">닫기</button></div>`;
+      document.getElementById('kdsDetail').style.display = 'flex';
+    }
+    // ----- 설정 -----
+    const KDS_SW = { reg: ['#2e7d32', '#1864ab', '#7048e8', '#495057'], coup: ['#e8590c', '#f08c00', '#d6336c', '#0c8599'], late1: ['#fff3bf', '#d3f9d8', '#e5dbff', '#ffffff'], late2: ['#ffc9c9', '#ffd8a8', '#ff8787', '#ffffff'], nw: ['#ffd43b', '#40c057', '#fa5252', '#ffffff'], hot: ['#a61e1e', '#e03131', '#111111'], ice: ['#1864ab', '#1098ad', '#111111'] };
+    function kdsOpenSettings() {
+      const c = KDS.st.cfg;
+      const sw = f => KDS_SW[f].map(v => `<span class="kds-sw${c[f] === v ? ' on' : ''}" style="background:${v};${v === '#ffffff' ? ' border-color:' + (c[f] === v ? '#111' : '#bbb') + ';' : ''}" onclick="kdsCfg('${f}','${v}')"></span>`).join('');
+      const opt = (f, list) => list.map(x => `<button class="kds-opt${c[f] === x[0] ? ' on' : ''}" onclick="kdsCfg('${f}', ${JSON.stringify(x[0]).replace(/"/g, '&quot;')})">${x[1]}</button>`).join('');
+      const num = (f, step, min, max, unit) => `<button class="kds-opt" onclick="kdsCfg('${f}', ${Math.max(min, c[f] - step)})">−</button><b style="min-width:52px; text-align:center; font-size:16px;">${c[f]}${unit}</b><button class="kds-opt" onclick="kdsCfg('${f}', ${Math.min(max, c[f] + step)})">＋</button>`;
+      document.getElementById('kdsSetBox').innerHTML = `<h3 style="font-size:19px; font-weight:900; margin-bottom:6px;">⚙ 제조 화면 설정 <span style="font-size:12px; color:#888;">(이 기기에만 저장)</span></h3>
+        <div class="kds-set-row"><span class="l">일반 주문 띠</span>${sw('reg')}</div>
+        <div class="kds-set-row"><span class="l">쿠폰 주문 띠</span>${sw('coup')}</div>
+        <div class="kds-set-row"><span class="l">오래 기다림 1단계</span>${num('m1', 1, 1, 60, '분')}<span style="margin:0 8px;">넘으면</span>${sw('late1')}</div>
+        <div class="kds-set-row"><span class="l">오래 기다림 2단계</span>${num('m2', 1, 2, 90, '분')}<span style="margin:0 8px;">넘으면</span>${sw('late2')}</div>
+        <div class="kds-set-row"><span class="l">새 주문 테두리</span>${sw('nw')}</div>
+        <div class="kds-set-row"><span class="l">HOT 글자색</span>${sw('hot')}<span class="l" style="width:auto; margin:0 8px 0 14px;">ICE</span>${sw('ice')}</div>
+        <div class="kds-set-row"><span class="l">배경</span>${opt('bg', [['dark', '어둡게'], ['light', '밝게']])}</div>
+        <div class="kds-set-row"><span class="l">카드 크기</span>${opt('size', [['auto', '자동'], ['big', '크게'], ['mid', '보통'], ['small', '작게']])}</div>
+        <div class="kds-set-row"><span class="l">새 주문 소리</span>${opt('sound', [[1, '켜기'], [0, '끄기']])}<button class="kds-opt" onclick="kdsBeep()">🔔 들어보기</button></div>
+        <div class="kds-set-row"><span class="l">대량 주문 기준</span>음료 ${num('bigKinds', 1, 2, 20, '종')} 이상 또는 ${num('bigCups', 1, 2, 99, '잔')} 넘으면</div>
+        <div style="display:flex; justify-content:space-between; margin-top:10px;"><button style="width:48%; height:44px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold;" onclick="kdsCfgReset()">기본값으로</button><button style="width:48%; height:44px; background:#333; color:#fff; border:none; border-radius:8px; font-weight:bold;" onclick="document.getElementById('kdsSet').style.display='none'">닫기</button></div>`;
+      document.getElementById('kdsSet').style.display = 'flex';
+    }
+    function kdsCfg(f, v) { KDS.st.cfg[f] = v; if (KDS.st.cfg.m2 <= KDS.st.cfg.m1) KDS.st.cfg.m2 = KDS.st.cfg.m1 + 1; kdsSave(); kdsApplyTheme(); kdsRender(); kdsOpenSettings(); }
+    function kdsCfgReset() { KDS.st.cfg = Object.assign({}, KDS_DEF); kdsSave(); kdsApplyTheme(); kdsRender(); kdsOpenSettings(); }
+    if (KDS.on) { KDS.st = kdsLoad(); document.getElementById('kdsView').style.display = 'flex'; kdsApplyTheme(); kdsRender(); }
+
     window.addEventListener('poscloud-ready', () => attachCloud(window.PosCloud));
     window.addEventListener('poscloud-failed', () => { if (Sync.backend) return; Sync.failed = true; Sync.failReason = window.__cloudErr || '알 수 없는 오류'; updateSyncBadge(); });
     // [추가] 연결 기능이 멈춰서 '준비 중'에서 넘어가지 않으면 30초 뒤 실패로 표시하고 이유를 보여줌
@@ -2540,7 +2865,7 @@ var PhotoArt = (function () {
       Sync.failReason = window.__cloudStage ? `[${window.__cloudStage}] 단계에서 30초 넘게 멈춤` : '연결 기능이 시작되지 않음 (이 브라우저가 지원하지 않을 수 있음)';
       updateSyncBadge();
     }, 30000);
-    window.addEventListener('online', () => { flushOutbox(); updateSyncBadge(); });
+    window.addEventListener('online', () => { flushOutbox(); updateSyncBadge(); kdsPublishSoon(); });
     window.addEventListener('offline', updateSyncBadge);
 
 
@@ -2807,6 +3132,8 @@ var PhotoArt = (function () {
       signOut: function () { auth = null; saveAuth(); subs = []; emitUser(); return Promise.resolve(); },
       set: function (p, d, merge) { var data = JSON.parse(JSON.stringify(d)); return setDoc(p, data, merge).then(function () { applyLocal(p, data, merge); }); },
       query: function (col, conds) { return runQuery(col, conds).then(function (docs) { return { docs: docs, fromCache: false }; }); },
+      // [추가] 문서 하나 읽기 (변경 신호·제조 화면용)
+      get: function (p) { return getDoc(p); },
       // [추가] 달력용: field 값이 lo~hi 사이인 문서의 일부 칸만 조회 (판매·정산 계산에는 쓰지 않음)
       queryRange: function (col, field, lo, hi, fields) {
         var f = function (op, v) { return { fieldFilter: { field: { fieldPath: field }, op: op, value: enc(v) } }; };
