@@ -268,6 +268,11 @@
     .kds-it .nm { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
     .kds-it.hot { color: var(--khot); } .kds-it.ice { color: var(--kice); }
     .kds-it.ok { color: #adb5bd !important; text-decoration: line-through; }
+    .kds-it.away { color: #adb5bd !important; font-weight: normal; }
+    .kds-away { font-size: 11px; background: #e9ecef; color: #868e96; border-radius: 4px; padding: 0 4px; margin-left: 4px; white-space: nowrap; font-weight: normal; }
+    .kds-card.allg { filter: grayscale(1); opacity: .45; }
+    .kds-chip { display: inline-block; border: 2px solid #2b8a3e; background: #fff; color: #2b8a3e; border-radius: 20px; padding: 6px 12px; margin: 0 6px 8px 0; font-weight: bold; font-size: 14px; }
+    .kds-chip.off { border-color: #adb5bd; background: #e9ecef; color: #868e96; }
     .kds-ck { width: 1em; height: 1em; border: 2px solid #999; border-radius: 4px; margin-right: 5px; flex: none; box-sizing: border-box; }
     .kds-it.ok .kds-ck { background: #2b8a3e; border-color: #2b8a3e; }
     .kds-plus { font-size: 14px; font-weight: 900; color: #1864ab; margin-top: 2px; }
@@ -2674,7 +2679,7 @@ var PhotoArt = (function () {
     setInterval(() => { if (!KDS.on && cloudOn()) kdsPublish(); }, 60000);   // 날짜가 바뀌거나 놓친 것 정리
 
     // ----- 제조 화면 기기 -----
-    const KDS_DEF = { reg: '#2e7d32', coup: '#e8590c', late1: '#fff3bf', late2: '#ffc9c9', m1: 7, m2: 12, nw: '#ffd43b', hot: '#a61e1e', ice: '#1864ab', bg: 'dark', size: 'auto', sound: 1, bigKinds: 6, bigCups: 10 };
+    const KDS_DEF = { reg: '#2e7d32', coup: '#e8590c', late1: '#fff3bf', late2: '#ffc9c9', m1: 7, m2: 12, nw: '#ffd43b', hot: '#a61e1e', ice: '#1864ab', bg: 'dark', size: 'auto', sound: 1, bigKinds: 6, bigCups: 10, split: 0, here: {} };
     function kdsLoad() { let st = {}; try { st = JSON.parse(localStorage.getItem('coffee_kds') || '{}') || {}; } catch (e) {} st.cfg = Object.assign({}, KDS_DEF, st.cfg || {}); st.done = st.done || {}; st.chk = st.chk || {}; st.seen = st.seen || {}; return st; }
     function kdsSave() { try { localStorage.setItem('coffee_kds', JSON.stringify(KDS.st)); } catch (e) {} }
     function kdsEnable() {
@@ -2729,7 +2734,7 @@ var PhotoArt = (function () {
       let hasNew = false;
       list.forEach(o => {
         keys[o.k] = 1;
-        if (!st.seen[o.k]) { st.seen[o.k] = 1; if (!KDS.first) { KDS.newAt[o.k] = Date.now(); hasNew = true; } }
+        if (!st.seen[o.k]) { st.seen[o.k] = 1; if (!KDS.first) { KDS.newAt[o.k] = Date.now(); if (o.it.some(x => kdsHere(x[0]))) hasNew = true; } }
       });
       // 목록에서 사라진 주문(마감 등)의 완료·체크 기록 정리
       ['done', 'chk', 'seen'].forEach(f => Object.keys(st[f]).forEach(k => { if (!keys[k]) delete st[f][k]; }));
@@ -2758,16 +2763,20 @@ var PhotoArt = (function () {
     document.addEventListener('touchstart', function unlock() { if (!KDS.on) return; try { const AC = window.AudioContext || window.webkitAudioContext; if (AC) { KDS.audio = KDS.audio || new AC(); if (KDS.audio.resume) KDS.audio.resume(); } } catch (e) {} }, { passive: true });
 
     function kdsEsc(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+    // [추가] 이 자리에서 만드는 음료만 골라 쓰는 경우: 고르지 않은 음료는 회색(다른 곳)
+    function kdsHere(name) { const c = KDS.st.cfg; return !c.split || !!(c.here && c.here[name]); }
     function kdsCups(o) { return o.it.reduce((a, x) => a + x[1], 0); }
     function kdsIsBig(o) { const c = KDS.st.cfg; return o.it.length >= c.bigKinds || kdsCups(o) > c.bigCups; }
     const KDS_SIZES = { L: { w: 236, f: 21, no: 28, lines: 6 }, M: { w: 196, f: 16, no: 21, lines: 4 }, S: { w: 158, f: 13, no: 17, lines: 3 } };
     function kdsLabel(o) { return (o.c ? '쿠폰 #' : '#') + o.s; }
+    // 그리는 순서: 이 자리에서 만드는 음료 먼저 (같은 쪽끼리는 원래 순서)
+    function kdsOrder(o) { const a = [], b = []; o.it.forEach((x, i) => (kdsHere(x[0]) ? a : b).push(i)); return a.concat(b); }
     // o.it[from..to) 줄을 그림. 다 못 그리면 마지막 줄 대신 '＋ N종 더'
     function kdsItemsHtml(o, maxLines, from, to) {
       const chk = KDS.st.chk[o.k] || {};
       from = from || 0; to = to == null ? o.it.length : to;
-      const line = i => { const x = o.it[i]; return `<div class="kds-it ${x[2] === 'h' ? 'hot' : (x[2] === 'i' ? 'ice' : '')}${chk[x[0] + '|' + x[2]] ? ' ok' : ''}" onclick="event.stopPropagation(); kdsCheck('${o.k}', ${i})"><span class="kds-ck"></span><span class="nm">${kdsEsc(x[0])}</span><span class="q">×${x[1]}</span></div>`; };
-      const idx = []; for (let i = from; i < to; i++) idx.push(i);
+      const line = i => { const x = o.it[i], here = kdsHere(x[0]); return `<div class="kds-it ${x[2] === 'h' ? 'hot' : (x[2] === 'i' ? 'ice' : '')}${chk[x[0] + '|' + x[2]] ? ' ok' : ''}${here ? '' : ' away'}" onclick="event.stopPropagation(); kdsCheck('${o.k}', ${i})"><span class="kds-ck"></span><span class="nm">${kdsEsc(x[0])}</span>${here ? '' : '<span class="kds-away">다른 곳</span>'}<span class="q">×${x[1]}</span></div>`; };
+      const idx = kdsOrder(o).slice(from, to);
       if (maxLines && idx.length > maxLines) return idx.slice(0, maxLines - 1).map(line).join('') + `<div class="kds-plus" onclick="event.stopPropagation(); kdsDetail('${o.k}')">＋ ${idx.length - maxLines + 1}종 더 보기 ›</div>`;
       return idx.map(line).join('');
     }
@@ -2777,6 +2786,7 @@ var PhotoArt = (function () {
       let cls = 'kds-card' + (o.c ? ' coup' : '') + (o.x ? ' cx' : '');
       if (!o.x && mins >= c.m2) cls += ' late2'; else if (!o.x && mins >= c.m1) cls += ' late1';
       if (KDS.newAt[o.k] && now - KDS.newAt[o.k] < 15000) cls += ' new';
+      if (!o.it.some(x => kdsHere(x[0]))) cls += ' allg';   // 이 자리에서 만들 음료가 없는 주문
       const w = big ? sz.w * 2 + 7 : sz.w;
       let h = `<div class="${cls}" style="width:${w}px; font-size:${sz.f}px;" onclick="kdsDone('${o.k}')">`;
       h += `<div class="kds-hd"><span class="kds-no" style="font-size:${sz.no}px;">${kdsLabel(o)}${big ? `<span class="kds-big">대량 ${cups}잔</span>` : ''}</span>`;
@@ -2793,12 +2803,16 @@ var PhotoArt = (function () {
       if (!KDS.on || !KDS.st) return;
       const st = KDS.st, c = st.cfg, now = Date.now();
       const wait = KDS.list.filter(o => !st.done[o.k]);
-      document.getElementById('kdsCount').textContent = `☕ 제조 대기 ${wait.filter(o => !o.x).length}건`;
+      document.getElementById('kdsCount').textContent = `☕ 제조 대기 ${wait.filter(o => !o.x && o.it.some(x => kdsHere(x[0]))).length}건`;
       // 만들어야 할 음료 합계 (완료·체크·취소 제외)
       const tot = {}, ord = [];
-      wait.forEach(o => { if (o.x) return; const chk = st.chk[o.k] || {}; o.it.forEach(x => { const key = x[0] + '|' + x[2]; if (chk[key]) return; if (!tot[key]) { tot[key] = [x[0], 0, x[2]]; ord.push(key); } tot[key][1] += x[1]; }); });
+      const away = {}, aord = [];
+      wait.forEach(o => { if (o.x) return; const chk = st.chk[o.k] || {}; o.it.forEach(x => { const key = x[0] + '|' + x[2]; if (chk[key]) return;
+        if (!kdsHere(x[0])) { if (!away[key]) { away[key] = [x[0], 0]; aord.push(key); } away[key][1] += x[1]; return; }
+        if (!tot[key]) { tot[key] = [x[0], 0, x[2]]; ord.push(key); } tot[key][1] += x[1]; }); });
       ord.sort((a, b) => tot[b][1] - tot[a][1]);
-      document.getElementById('kdsSum').innerHTML = ord.length ? ord.map(k => `<span style="color:${tot[k][2] === 'h' ? '#ff8787' : (tot[k][2] === 'i' ? '#74c0fc' : 'inherit')}">${kdsEsc(tot[k][0])} ${tot[k][1]}</span>`).join('') : '<span style="opacity:.6">만들 음료 없음</span>';
+      document.getElementById('kdsSum').innerHTML = (ord.length ? ord.map(k => `<span style="color:${tot[k][2] === 'h' ? '#ff8787' : (tot[k][2] === 'i' ? '#74c0fc' : 'inherit')}">${kdsEsc(tot[k][0])} ${tot[k][1]}</span>`).join('') : '<span style="opacity:.6">만들 음료 없음</span>')
+        + (aord.length ? `<span style="color:#868e96; font-weight:normal; font-size:13px;">· 다른 곳: ${aord.map(k => kdsEsc(away[k][0]) + ' ' + away[k][1]).join(', ')}</span>` : '');
       const board = document.getElementById('kdsBoard'), keepScroll = board.scrollTop;
       const draw = sz => { board.innerHTML = wait.length ? wait.map(o => kdsCardHtml(o, sz, now)).join('') : '<div class="kds-empty">대기 중인 주문이 없습니다</div>'; };
       if (c.size === 'auto') {
@@ -2848,11 +2862,25 @@ var PhotoArt = (function () {
         <div class="kds-set-row"><span class="l">배경</span>${opt('bg', [['dark', '어둡게'], ['light', '밝게']])}</div>
         <div class="kds-set-row"><span class="l">카드 크기</span>${opt('size', [['auto', '자동'], ['big', '크게'], ['mid', '보통'], ['small', '작게']])}</div>
         <div class="kds-set-row"><span class="l">새 주문 소리</span>${opt('sound', [[1, '켜기'], [0, '끄기']])}<button class="kds-opt" onclick="kdsBeep()">🔔 들어보기</button></div>
+        <div class="kds-set-row"><span class="l">이 자리에서 만드는 음료</span>${opt('split', [[0, '전부 (나누지 않음)'], [1, '골라서']])}</div>
+        ${c.split ? `<div style="font-size:12px; color:#555; margin:-2px 0 6px;">초록 = 이 자리에서 만듦(잘 보임) · 회색 = 다른 곳에서 만듦(흐리게, 합계에서 빠짐). 누를 때마다 바뀝니다.</div><div>${kdsMenuNames().map(n => `<span class="kds-chip${c.here[n] ? '' : ' off'}" onclick="kdsToggleHere(${JSON.stringify(n).replace(/"/g, '&quot;')})">${kdsEsc(n)}</span>`).join('')}</div>
+        <div style="margin-bottom:6px;"><button class="kds-opt" onclick="kdsHereAll(1)">전부 초록</button><button class="kds-opt" onclick="kdsHereAll(0)">전부 회색</button></div>` : ''}
         <div class="kds-set-row"><span class="l">대량 주문 기준</span>음료 ${num('bigKinds', 1, 2, 20, '종')} 이상 또는 ${num('bigCups', 1, 2, 99, '잔')} 넘으면</div>
         <div style="display:flex; justify-content:space-between; margin-top:10px;"><button style="width:48%; height:44px; background:#868e96; color:#fff; border:none; border-radius:8px; font-weight:bold;" onclick="kdsCfgReset()">기본값으로</button><button style="width:48%; height:44px; background:#333; color:#fff; border:none; border-radius:8px; font-weight:bold;" onclick="document.getElementById('kdsSet').style.display='none'">닫기</button></div>`;
       document.getElementById('kdsSet').style.display = 'flex';
     }
     function kdsCfg(f, v) { KDS.st.cfg[f] = v; if (KDS.st.cfg.m2 <= KDS.st.cfg.m1) KDS.st.cfg.m2 = KDS.st.cfg.m1 + 1; kdsSave(); kdsApplyTheme(); kdsRender(); kdsOpenSettings(); }
+    // 고를 수 있는 음료: 메뉴판 + 지금 들어온 주문 + 전에 골라 둔 것
+    function kdsMenuNames() {
+      const seen = {}, out = [];
+      const add = n => { if (n && !seen[n]) { seen[n] = 1; out.push(n); } };
+      menuBoards.forEach(b => (b.items || []).forEach(it => add(it.n)));
+      KDS.list.forEach(o => o.it.forEach(x => add(x[0])));
+      Object.keys(KDS.st.cfg.here || {}).forEach(add);
+      return out;
+    }
+    function kdsToggleHere(n) { const h = KDS.st.cfg.here = Object.assign({}, KDS.st.cfg.here || {}); if (h[n]) delete h[n]; else h[n] = 1; kdsSave(); kdsRender(); kdsOpenSettings(); }
+    function kdsHereAll(on) { const h = {}; if (on) kdsMenuNames().forEach(n => { h[n] = 1; }); KDS.st.cfg.here = h; kdsSave(); kdsRender(); kdsOpenSettings(); }
     function kdsCfgReset() { KDS.st.cfg = Object.assign({}, KDS_DEF); kdsSave(); kdsApplyTheme(); kdsRender(); kdsOpenSettings(); }
     if (KDS.on) { KDS.st = kdsLoad(); document.getElementById('kdsView').style.display = 'flex'; kdsApplyTheme(); kdsRender(); }
 
